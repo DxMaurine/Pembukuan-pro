@@ -350,6 +350,17 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
 server.listen(PORT, () => {
   console.log(`[SERVER] Backend running at http://localhost:${PORT}`);
   console.log(`[SERVER] Mode: Firebase-only (ngrok removed)`);
+});
+
+// Handle server errors
+server.on('error', (err: any) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`[ERROR] Port ${PORT} sudah dipakai! Pastikan tidak ada terminal dev atau aplikasi lain yang sedang berjalan.`);
+  } else {
+    console.error('[SERVER-ERROR]', err);
+  }
+});
+
   initWhatsApp();
 
   // Firebase QRIS status listener
@@ -366,4 +377,3 @@ server.listen(PORT, () => {
     console.log('[FIREBASE] Dana incoming:', text.substring(0, 80));
     await processDanaText(text, docId);
   });
-});
