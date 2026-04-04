@@ -65,7 +65,6 @@ export async function initWhatsApp() {
 
     sock = makeWASocket({
       version,
-      printQRInTerminal: true, // Also print to terminal for debugging
       auth: state,
       logger,
       browser: ['DM Pembukuan Pro', 'Chrome', '114.0.5735.199'],
@@ -79,15 +78,21 @@ export async function initWhatsApp() {
 
       if (qr) {
         qrCode = qr;
-        console.log('[WHATSAPP] >> New QR Code generated');
+        console.log('[WHATSAPP] >> QR Code Baru Dihasilkan');
         if (onQrUpdate) onQrUpdate(qr);
       }
 
       if (connection === 'close') {
         const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
         const reason = lastDisconnect?.error?.message || 'Unknown reason';
-        console.log(`[WHATSAPP] >> Connection closed. Reason: ${reason} (${statusCode})`);
+        console.log(`[WHATSAPP] >> Koneksi Terputus. Alasan: ${reason} (${statusCode})`);
         
+        if (statusCode === 401) {
+          console.log('[WHATSAPP] >> Sesi tidak valid (401). Menghapus folder auth dan mereset...');
+          logoutWhatsApp();
+          return;
+        }
+
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         
         connectionStatus = 'disconnected';
@@ -95,7 +100,7 @@ export async function initWhatsApp() {
         if (onStatusChange) onStatusChange({ status: connectionStatus });
 
         if (shouldReconnect) {
-          console.log('[WHATSAPP] >> Reconnecting...');
+          console.log('[WHATSAPP] >> Menyambung ulang...');
           setTimeout(connectToWhatsApp, 3000);
         }
       } else if (connection === 'open') {
