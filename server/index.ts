@@ -282,6 +282,7 @@ app.post('/api/service/send-report', async (req, res) => {
 // --- DANA PROCESSING LOGIC ---
 
 async function processDanaText(text: string, docId?: string): Promise<boolean> {
+  console.log(`[DEBUG-RAW-TEXT] Mendapat pesan: "${text}"`);
   const cleanText = text.replace(/[\r\n\t]/g, ' ').trim();
   const keywordsMatch = [...cleanText.matchAll(/(?:Rp|IDR|sebesar|sejumlah|nominal)[:\. ]*(\d[\d\.,]*)/gi)];
   const senderMatch = [...cleanText.matchAll(/dari ([a-zA-Z0-9 ]+)/gi)];
@@ -297,10 +298,10 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
 
   // Fallback: If no keywords match, try to find any number that looks like an amount
   if (amounts.length === 0) {
-    const fallbackMatch = [...cleanText.matchAll(/(\d[\d\.,]{3,})/g)];
+    const fallbackMatch = [...cleanText.matchAll(/(\d[\d\.,]{1,})/g)];
     for (const f of fallbackMatch) {
       const val = parseFloat(f[1].replace(/[\.,]/g, ''));
-      if (val >= 100 && val < 5000000) amounts.push(val);
+      if (val >= 1 && val < 5000000) amounts.push(val);
     }
   }
 
