@@ -370,10 +370,10 @@ server.on('error', (err: any) => {
       const success = updateWalletStatusLocal(numericId, status as any);
       if (success) io.emit('db:wallet-status-updated', { id: numericId, status });
     }
-  });
+  }).catch(err => console.error("[FIREBASE-FATAL] Gagal inisialisasi QRIS listener:", err));
 
   // Firebase DANA incoming listener (replaces ngrok tunnel completely)
   listenDanaIncoming(async (text, docId) => {
     console.log('[FIREBASE] Dana incoming:', text.substring(0, 80));
     await processDanaText(text, docId);
-  });
+  }).catch(err => console.error("[FIREBASE-FATAL] Gagal inisialisasi Dana listener:", err));
