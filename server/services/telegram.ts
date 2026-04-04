@@ -1,0 +1,107 @@
+import TelegramBot from 'node-telegram-bot-api';
+import { syncQRISToFirebase, updateFirebaseQRISStatus } from './firebase';
+import fs from 'fs';
+import path from 'path';
+import { sendInternalMessage } from './whatsapp';
+import { readDb } from '../db';
+
+const BOT_TOKEN = '8398912567:AAG8AjzEemIHzna9jEq4nEPV-3Kx6pEpTJs';
+const CHAT_ID = '7978582093';
+
+const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+
+console.log('[TELEGRAM] >> Bot aktif di Server!');
+
+export async function notifyQRISInternal(entry: any) {
+  try {
+    const message = `🔔 *NOTIFIKASI QRIS BARU*\n\n📝 Deskripsi: ${entry.description}\n💰 Nominal: Rp ${entry.amount.toLocaleString('id-ID')}\n📅 Tanggal: ${entry.date}\n\nSilahkan konfirmasi jika dana sudah masuk.`;
+
+    const options = {
+      parse_mode: 'Markdown',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            { text: '✅ DITERIMA', callback_data: `qris_received:${entry.id}` }
+          ]
+        ]
+      }
+    };
+
+    syncQRISToFirebase({ ...entry, status: 'pending' }).catch((e: any) =>
+      console.warn('[FIREBASE] Sync gagal:', e?.message)
+    );
+
+    await bot.sendMessage(CHAT_ID, message, options as any);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[TELEGRAM] Notify Error:', error.message);
+    return { success: false };
+  }
+}
+
+export async function notifyPreorderInternal(entry: any) {
+  try {
+    const message = `📋 *PESANAN PREORDER BARU*\n\n👤 Pelanggan: ${entry.customerName}\n🛠️ Layanan: ${entry.serviceName}\n💰 Total: Rp ${entry.totalAmount.toLocaleString('id-ID')}\n💳 DP: Rp ${entry.downPayment.toLocaleString('id-ID')}\n💸 Sisa: Rp ${entry.remainingAmount.toLocaleString('id-ID')}\n📅 Deadline: ${entry.dueDate}\n\n📝 Catatan: ${entry.notes || '-'}`;
+
+    await bot.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
+    return { success: true };
+  } catch (error: any) {
+    console.error('[TELEGRAM] Preorder Notify Error:', error.message);
+    return { success: false };
+  }
+}
+
+// Handler untuk callback query (konfirmasi DITERIMA)
+bot.on('callback_query', async (query) => {
+  const data = query.data;
+  if (data?.startsWith('qris_received:')) {
+    const entryId = parseInt(data.split(':')[1]);
+
+    await updateFirebaseQRISStatus(entryId.toString(), 'received');
+    
+    // NOTIFIKASI BACKEND: Di sini kita perlu memberitahu server untuk update lokal & emit socket
+    // Kita akan mengekspor function ini agar bisa dipanggil di index.ts atau sebaliknya
+    processConfirmation(entryId, query);
+  }
+});
+
+let onStatusUpdate: ((id: number, status: string) => void) | null = null;
+export function setStatusUpdateCallback(cb: (id: number, status: string) => void) {
+  onStatusUpdate = cb;
+}
+
+async function processConfirmation(entryId: number, query: TelegramBot.CallbackQuery) {
+  if (onStatusUpdate) onStatusUpdate(entryId, 'received');
+
+  if (query.message) {
+    await bot.editMessageText(
+      `${query.message.text}\n\n✅ *STATUS: DITERIMA OLEH OWNER*`,
+      {
+        chat_id: query.message.chat.id,
+        message_id: query.message.message_id,
+        parse_mode: 'Markdown'
+      }
+    );
+
+    const text = query.message.text || '';
+    const deskripsi = (text.match(/Deskripsi: (.*)/) || [])[1]?.trim() || '-';
+    const nominal = (text.match(/Nominal: (.*)/) || [])[1]?.trim() || '-';
+    const tanggal = (text.match(/Tanggal: (.*)/) || [])[1]?.trim() || '-';
+
+    try {
+      const dbData = readDb();
+      const cashierNumber = dbData.settings?.cashierNumber;
+
+      if (cashierNumber && cashierNumber.trim() !== '') {
+        const waMessage = `✅ *KONFIRMASI PEMBAYARAN*\n\n📝 Deskripsi: ${deskripsi}\n💰 Nominal: ${nominal}\n📅 Tanggal: ${tanggal}\n\n👤 *Status: TELAH DIVERIFIKASI OWNER*\nSilahkan diproses, terima kasih!`;
+        await sendInternalMessage(cashierNumber, waMessage);
+      }
+    } catch (e) {
+      console.error('[TELEGRAM] Error sending WA to cashier:', e);
+    }
+    
+    bot.answerCallbackQuery(query.id, { text: 'Konfirmasi QRIS Berhasil!' });
+  }
+}
+
+export default bot;

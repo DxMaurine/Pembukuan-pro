@@ -1,0 +1,12 @@
+{
+  "transactions": [],
+  "stock": [],
+  "debts": [],
+  "wallet": [],
+  "capital": [],
+  "preorders": [],
+  "settings": {
+    "password": "0000",
+    "storeName": "DM FOTOCOPY"
+  }
+}

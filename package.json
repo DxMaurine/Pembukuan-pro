@@ -16,7 +16,9 @@
     "postinstall": "electron-builder install-app-deps",
     "build:win": "npm run build && electron-builder --win --config electron-builder.yml",
     "build:mac": "npm run build && electron-builder --mac --config",
-    "build:linux": "npm run build && electron-builder --linux --config"
+    "build:linux": "npm run build && electron-builder --linux --config",
+    "server:dev": "cd server && ts-node-dev index.ts",
+    "server:start": "cd server && ts-node index.ts"
   },
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
@@ -24,7 +26,7 @@
     "@ngrok/ngrok": "^1.7.0",
     "@tailwindcss/vite": "^4.2.2",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
-    "axios": "^1.6.7",
+    "axios": "^1.14.0",
     "firebase": "^12.11.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",
@@ -36,6 +38,7 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.22.2",
     "recharts": "^3.8.1",
+    "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.24",
     "tailwindcss": "^4.2.2"
   },

@@ -1,75 +1,86 @@
-import { contextBridge, ipcRenderer } from 'electron'
+import { contextBridge } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import axios from 'axios'
+import { io } from 'socket.io-client'
+
+// Default Backend URL - Silahkan ganti IP Windows Bapak di sini
+// Jika di dalam satu WiFi, ganti localhost dengan IP (misal: 192.168.1.5)
+const BACKEND_URL = 'http://localhost:3000' 
+
+const socket = io(BACKEND_URL)
+
+// Helper to make code cleaner
+const rest = {
+  get: async (url: string, params?: any) => (await axios.get(`${BACKEND_URL}${url}`, { params })).data,
+  post: async (url: string, data?: any) => (await axios.post(`${BACKEND_URL}${url}`, data)).data,
+  put: async (url: string, data?: any) => (await axios.put(`${BACKEND_URL}${url}`, data)).data,
+  delete: async (url: string) => (await axios.delete(`${BACKEND_URL}${url}`)).data,
+}
 
 // Custom APIs for renderer
 const api = {
-  // Database operations
-  getTransactions: (filters: any) => ipcRenderer.invoke('db:get-transactions', filters),
-  addTransaction: (data: any) => ipcRenderer.invoke('db:add-transaction', data),
-  addBatchTransactions: (transactions: any[]) => ipcRenderer.invoke('db:add-batch-transactions', transactions),
-  updateTransaction: (data: any) => ipcRenderer.invoke('db:update-transaction', data),
-  deleteTransaction: (id: number) => ipcRenderer.invoke('db:delete-transaction', id),
+  // Database operations via REST
+  getTransactions: (filters: any) => rest.get('/api/transactions', filters),
+  addTransaction: (data: any) => rest.post('/api/transactions', data),
+  addBatchTransactions: (transactions: any[]) => rest.post('/api/transactions/batch', transactions),
+  updateTransaction: (data: any) => rest.put(`/api/transactions/${data.id}`, data),
+  deleteTransaction: (id: number) => rest.delete(`/api/transactions/${id}`),
   
-  getStock: () => ipcRenderer.invoke('db:get-stock'),
-  updateStock: (data: any) => ipcRenderer.invoke('db:update-stock', data),
-  deleteStock: (id: number) => ipcRenderer.invoke('db:delete-stock', id),
+  getStock: () => rest.get('/api/stock'),
+  updateStock: (data: any) => rest.post('/api/stock', data),
+  deleteStock: (id: number) => rest.delete(`/api/stock/${id}`),
   
-  getSummary: (filters?: any) => ipcRenderer.invoke('db:get-summary', filters),
+  getSummary: (filters?: any) => rest.get('/api/summary', filters),
   
   // Settings operations
-  getSettings: () => ipcRenderer.invoke('db:get-settings'),
-  saveSettings: (settings: any) => ipcRenderer.invoke('db:save-settings', settings),
+  getSettings: () => rest.get('/api/settings'),
+  saveSettings: (settings: any) => rest.post('/api/settings', settings),
   
   // Debt Management
-  getDebts: () => ipcRenderer.invoke('db:get-debts'),
-  addDebt: (data: any) => ipcRenderer.invoke('db:add-debt', data),
-  updateDebt: (data: any) => ipcRenderer.invoke('db:update-debt', data),
-  deleteDebt: (id: number) => ipcRenderer.invoke('db:delete-debt', id),
+  getDebts: () => rest.get('/api/debts'),
+  addDebt: (data: any) => rest.post('/api/debts', data),
+  updateDebt: (data: any) => rest.put(`/api/debts/${data.id}`, data),
+  deleteDebt: (id: number) => rest.delete(`/api/debts/${id}`),
 
   // Wallet & QRIS
-  getWallet: () => ipcRenderer.invoke('db:get-wallet'),
-  addWalletEntry: (data: any) => ipcRenderer.invoke('db:add-wallet-entry', data),
-  updateWalletEntry: (data: any) => ipcRenderer.invoke('db:update-wallet-entry', data),
-  deleteWalletEntry: (id: number) => ipcRenderer.invoke('db:delete-wallet-entry', id),
+  getWallet: () => rest.get('/api/wallet'),
+  addWalletEntry: (data: any) => rest.post('/api/wallet', data),
+  updateWalletEntry: (data: any) => rest.put(`/api/wallet/${data.id}`, data),
+  deleteWalletEntry: (id: number) => rest.delete(`/api/wallet/${id}`),
 
   // Capital
-  getCapital: () => ipcRenderer.invoke('db:get-capital'),
-  saveCapital: (data: any) => ipcRenderer.invoke('db:save-capital', data),
-
-  // Telegram & PDF
-  sendReport: (data: any) => ipcRenderer.invoke('service:send-report', data),
-  notifyQRIS: (data: any) => ipcRenderer.invoke('service:notify-qris', data),
-  notifyPreorder: (data: any) => ipcRenderer.invoke('service:notify-preorder', data),
+  getCapital: () => rest.get('/api/capital'),
+  saveCapital: (data: any) => rest.post('/api/capital', data),
 
   // Preorder Management
-  getPreorders: () => ipcRenderer.invoke('db:get-preorders'),
-  addPreorder: (data: any) => ipcRenderer.invoke('db:add-preorder', data),
-  updatePreorder: (data: any) => ipcRenderer.invoke('db:update-preorder', data),
-  deletePreorder: (id: number) => ipcRenderer.invoke('db:delete-preorder', id),
+  getPreorders: () => rest.get('/api/preorders'),
+  addPreorder: (data: any) => rest.post('/api/preorders', data),
+  updatePreorder: (data: any) => rest.put(`/api/preorders/${data.id}`, data),
+  deletePreorder: (id: number) => rest.delete(`/api/preorders/${id}`),
 
-  // Listeners
-  onWalletStatusUpdated: (callback: (data: any) => void) => {
-    const listener = (_: any, data: any) => callback(data)
-    ipcRenderer.on('db:wallet-status-updated', listener)
-    return () => ipcRenderer.removeListener('db:wallet-status-updated', listener)
-  },
+  // Services
+  sendReport: (data: any) => rest.post('/api/service/send-report', data),
+  notifyQRIS: (data: any) => rest.post('/api/service/notify-qris', data),
+  notifyPreorder: (data: any) => rest.post('/api/service/notify-preorder', data),
 
   // WhatsApp Operations
-  waGetStatus: () => ipcRenderer.invoke('wa:get-status'),
-  waReconnect: () => ipcRenderer.invoke('wa:reconnect'),
-  waLogout: () => ipcRenderer.invoke('wa:logout'),
-  waSendMessage: (data: { to: string, message: string }) => ipcRenderer.invoke('wa:send-message', data),
+  waGetStatus: () => rest.get('/api/wa/status'),
+  waReconnect: () => rest.post('/api/wa/reconnect'),
+  waLogout: () => rest.post('/api/wa/logout'),
+  waSendMessage: (data: { to: string, message: string }) => rest.post('/api/wa/send', data),
 
-  // WhatsApp Listeners
+  // --- Real-time Listeners via Socket.io ---
+  onWalletStatusUpdated: (callback: (data: any) => void) => {
+    socket.on('db:wallet-status-updated', callback)
+    return () => socket.off('db:wallet-status-updated', callback)
+  },
   onWaQrUpdate: (callback: (data: { qr: string }) => void) => {
-    const listener = (_: any, data: any) => callback(data)
-    ipcRenderer.on('wa:qr-update', listener)
-    return () => ipcRenderer.removeListener('wa:qr-update', listener)
+    socket.on('wa:qr-update', callback)
+    return () => socket.off('wa:qr-update', callback)
   },
   onWaStatusUpdate: (callback: (data: { status: string, pushName?: string }) => void) => {
-    const listener = (_: any, data: any) => callback(data)
-    ipcRenderer.on('wa:status-update', listener)
-    return () => ipcRenderer.removeListener('wa:status-update', listener)
+    socket.on('wa:status-update', callback)
+    return () => socket.off('wa:status-update', callback)
   }
 }
 
