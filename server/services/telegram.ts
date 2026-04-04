@@ -56,7 +56,7 @@ export async function sendReportInternal(data: { pdfData: string; filename: stri
     const { pdfData, filename, caption } = data;
     // Convert base64 to Buffer
     const buffer = Buffer.from(pdfData.split(',')[1] || pdfData, 'base64');
-
+    
     await bot.sendDocument(CHAT_ID, buffer, { caption }, { filename, contentType: 'application/pdf' });
     console.log('[TELEGRAM] Report terkirim:', filename);
     return { success: true };
@@ -73,9 +73,7 @@ bot.on('callback_query', async (query) => {
     const entryId = parseInt(data.split(':')[1]);
 
     await updateFirebaseQRISStatus(entryId.toString(), 'received');
-
-    // NOTIFIKASI BACKEND: Di sini kita perlu memberitahu server untuk update lokal & emit socket
-    // Kita akan mengekspor function ini agar bisa dipanggil di index.ts atau sebaliknya
+    
     processConfirmation(entryId, query);
   }
 });
@@ -98,25 +96,18 @@ async function processConfirmation(entryId: number, query: TelegramBot.CallbackQ
       }
     );
 
-    const text = query.message.text || '';
-    const deskripsi = (text.match(/Deskripsi: (.*)/) || [])[1]?.trim() || '-';
-    const nominal = (text.match(/Nominal: (.*)/) || [])[1]?.trim() || '-';
-    const tanggal = (text.match(/Tanggal: (.*)/) || [])[1]?.trim() || '-';
-
+    // Kirim notifikasi WA ke kasir jika diperlukan
     try {
-      const dbData = readDb();
-      const cashierNumber = dbData.settings?.cashierNumber;
-
-      if (cashierNumber && cashierNumber.trim() !== '') {
-        const waMessage = `✅ *KONFIRMASI PEMBAYARAN*\n\n📝 Deskripsi: ${deskripsi}\n💰 Nominal: ${nominal}\n📅 Tanggal: ${tanggal}\n\n👤 *Status: TELAH DIVERIFIKASI OWNER*\nSilahkan diproses, terima kasih!`;
-        await sendInternalMessage(cashierNumber, waMessage);
+      const data = readDb();
+      const entry = data.wallet.find(w => w.id === entryId);
+      if (entry) {
+        const waMsg = `✅ *PEMBAYARAN QRIS TERVERIFIKASI*\n\n💰 Nominal: Rp ${entry.amount.toLocaleString('id-ID')}\n📝 Keterangan: ${entry.description}\n\nDana sudah dikonfirmasi masuk oleh Owner.`;
+        sendInternalMessage(waMsg);
       }
     } catch (e) {
       console.error('[TELEGRAM] Error sending WA to cashier:', e);
     }
-
+    
     bot.answerCallbackQuery(query.id, { text: 'Konfirmasi QRIS Berhasil!' });
   }
 }
-
-export default bot;

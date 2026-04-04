@@ -28,7 +28,7 @@ export function setWhatsAppCallbacks(statusCb: (data: any) => void, qrCb: (qr: s
   onQrUpdate = qrCb;
 }
 
-export async function sendInternalMessage(to: string, message: string) {
+export async function sendInternalMessage(message: string, to: string = '6289653619739') {
   if (connectionStatus !== 'connected' || !sock) {
     return { success: false, error: 'WhatsApp not connected' };
   }

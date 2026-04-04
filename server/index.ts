@@ -74,7 +74,8 @@ setStatusUpdateCallback((id, status) => {
 
 // Server status
 app.get('/api/status', (req, res) => {
-  res.json({ online: true, port: PORT, mode: 'firebase', logsCount: danaLogs.length });
+  console.log('[API] Status check requested');
+  res.json({ online: true, port: PORT, mode: 'firebase', logsCount: danaLogs.length, timestamp: new Date().toISOString() });
 });
 
 // Dana logs
@@ -101,192 +102,254 @@ app.post('/api/transactions', (req, res) => {
   res.json(newTransaction);
 });
 
-app.post('/api/transactions/batch', (req, res) => {
-  const data = readDb();
-  const newTransactions = req.body.map((t: any, idx: number) => ({
-    ...t, id: Date.now() + idx, date: t.date || new Date().toISOString()
-  }));
-  data.transactions.push(...newTransactions);
-  saveDb(data);
-  res.json({ success: true, count: newTransactions.length });
-});
-
 app.put('/api/transactions/:id', (req, res) => {
-  const data = readDb();
   const id = parseInt(req.params.id);
-  const index = data.transactions.findIndex(t => t.id === id);
+  const data = readDb();
+  const index = data.transactions.findIndex((t) => t.id === id);
   if (index !== -1) {
     data.transactions[index] = { ...data.transactions[index], ...req.body };
     saveDb(data);
-    return res.json({ success: true });
+    res.json(data.transactions[index]);
+  } else {
+    res.status(404).json({ error: 'Transaction not found' });
   }
-  res.status(404).json({ success: false, error: 'Not found' });
 });
 
 app.delete('/api/transactions/:id', (req, res) => {
-  const data = readDb();
   const id = parseInt(req.params.id);
-  data.transactions = data.transactions.filter(t => t.id !== id);
+  const data = readDb();
+  data.transactions = data.transactions.filter((t) => t.id !== id);
+  saveDb(data);
+  res.json({ success: true });
+});
+
+app.post('/api/transactions/batch', (req, res) => {
+  const data = readDb();
+  const newBatch = req.body.map((t: any) => ({ ...t, id: Date.now() + Math.random() }));
+  data.transactions.push(...newBatch);
+  saveDb(data);
+  res.json({ success: true, count: newBatch.length });
+});
+
+app.get('/api/summary', (req, res) => {
+  const { startDate, endDate } = req.query;
+  const data = readDb();
+  let filtered = data.transactions;
+  if (startDate) filtered = filtered.filter(t => t.date >= (startDate as string));
+  if (endDate) filtered = filtered.filter(t => t.date <= (endDate as string));
+  
+  const totalIncome = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
+  const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  
+  res.json({
+    totalIncome,
+    totalExpense,
+    balance: totalIncome - totalExpense
+  });
+});
+
+// Wallet entries
+app.get('/api/wallet', (req, res) => {
+  const data = readDb();
+  res.json(data.wallet);
+});
+
+app.post('/api/wallet', (req, res) => {
+  const data = readDb();
+  const newEntry = { ...req.body, id: Date.now(), date: req.body.date || new Date().toISOString() };
+  data.wallet.push(newEntry);
+  saveDb(data);
+  res.json(newEntry);
+});
+
+app.put('/api/wallet/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  const index = data.wallet.findIndex((t) => t.id === id);
+  if (index !== -1) {
+    data.wallet[index] = { ...data.wallet[index], ...req.body };
+    saveDb(data);
+    res.json(data.wallet[index]);
+  } else {
+    res.status(404).json({ error: 'Wallet entry not found' });
+  }
+});
+
+app.delete('/api/wallet/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  data.wallet = data.wallet.filter((t) => t.id !== id);
   saveDb(data);
   res.json({ success: true });
 });
 
 // Stock
-app.get('/api/stock', (req, res) => res.json(readDb().stock));
+app.get('/api/stock', (req, res) => {
+  const data = readDb();
+  res.json(data.stock);
+});
+
 app.post('/api/stock', (req, res) => {
   const data = readDb();
-  const { id, ...rest } = req.body;
-  if (id) {
-    const index = data.stock.findIndex(s => s.id === id);
-    if (index !== -1) data.stock[index] = { ...data.stock[index], ...rest };
-  } else {
-    data.stock.push({ ...rest, id: Date.now() });
-  }
+  const newStock = { ...req.body, id: Date.now() };
+  data.stock.push(newStock);
   saveDb(data);
-  res.json({ success: true });
+  res.json(newStock);
 });
+
 app.delete('/api/stock/:id', (req, res) => {
-  const data = readDb();
   const id = parseInt(req.params.id);
-  data.stock = data.stock.filter(s => s.id !== id);
+  const data = readDb();
+  data.stock = data.stock.filter((s) => s.id !== id);
   saveDb(data);
   res.json({ success: true });
 });
 
-// Summary
-app.get('/api/summary', (req, res) => {
-  const { startDate, endDate } = req.query;
+// Alias for old endpoints if any
+app.get('/api/stocks', (req, res) => {
   const data = readDb();
-  let list = data.transactions;
-  if (startDate) list = list.filter(t => t.date.split('T')[0] >= (startDate as string));
-  if (endDate) list = list.filter(t => t.date.split('T')[0] <= (endDate as string));
-  const income = list.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  const expense = list.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
-  res.json({ totalIncome: income, totalExpense: expense, balance: income - expense });
+  res.json(data.stock);
 });
 
-// Settings
-app.get('/api/settings', (req, res) => res.json({ password: '0000', storeName: 'DM FOTOCOPY', ...readDb().settings }));
-app.post('/api/settings', (req, res) => {
+// Preorders
+app.get('/api/preorders', (req, res) => {
   const data = readDb();
-  data.settings = { ...data.settings, ...req.body };
+  res.json(data.preorders);
+});
+
+app.post('/api/preorders', (req, res) => {
+  const data = readDb();
+  const newPreorder = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };
+  data.preorders.push(newPreorder);
   saveDb(data);
-  res.json({ success: true });
+  
+  // Notify Telegram about new preorder
+  notifyPreorderInternal(newPreorder);
+  
+  res.json(newPreorder);
 });
 
-// Wallet (GET + PUT missing)
-app.get('/api/wallet', (req, res) => res.json(readDb().wallet));
-app.post('/api/wallet', (req, res) => {
-  const entry = addWalletEntryInternal(req.body);
-  io.emit('db:wallet-status-updated', { type: 'wallet' });
-  res.json(entry);
-});
-app.put('/api/wallet/:id', (req, res) => {
-  const data = readDb();
+app.put('/api/preorders/:id', (req, res) => {
   const id = parseInt(req.params.id);
-  const index = data.wallet.findIndex(w => w.id === id);
+  const data = readDb();
+  const index = data.preorders.findIndex((p) => p.id === id);
   if (index !== -1) {
-    data.wallet[index] = { ...data.wallet[index], ...req.body };
+    data.preorders[index] = { ...data.preorders[index], ...req.body };
     saveDb(data);
-    return res.json({ success: true });
+    res.json(data.preorders[index]);
+  } else {
+    res.status(404).json({ error: 'Preorder not found' });
   }
-  res.status(404).json({ success: false });
 });
-app.delete('/api/wallet/:id', (req, res) => {
+
+app.delete('/api/preorders/:id', (req, res) => {
+  const id = parseInt(req.params.id);
   const data = readDb();
-  data.wallet = data.wallet.filter(w => w.id !== parseInt(req.params.id));
+  data.preorders = data.preorders.filter((p) => p.id !== id);
   saveDb(data);
   res.json({ success: true });
 });
 
 // Debts
-app.get('/api/debts', (req, res) => res.json(readDb().debts));
+app.get('/api/debts', (req, res) => {
+  const data = readDb();
+  res.json(data.debts);
+});
+
 app.post('/api/debts', (req, res) => {
   const data = readDb();
-  const entry = { ...req.body, id: Date.now() };
-  data.debts.push(entry);
+  const newDebt = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };
+  data.debts.push(newDebt);
   saveDb(data);
-  res.json(entry);
+  res.json(newDebt);
 });
+
 app.put('/api/debts/:id', (req, res) => {
-  const data = readDb();
   const id = parseInt(req.params.id);
-  const index = data.debts.findIndex(d => d.id === id);
-  if (index !== -1) { data.debts[index] = { ...data.debts[index], ...req.body }; saveDb(data); return res.json({ success: true }); }
-  res.status(404).json({ success: false });
-});
-app.delete('/api/debts/:id', (req, res) => {
   const data = readDb();
-  data.debts = data.debts.filter(d => d.id !== parseInt(req.params.id));
+  const index = data.debts.findIndex((d) => d.id === id);
+  if (index !== -1) {
+    data.debts[index] = { ...data.debts[index], ...req.body };
+    saveDb(data);
+    res.json(data.debts[index]);
+  } else {
+    res.status(404).json({ error: 'Debt not found' });
+  }
+});
+
+app.delete('/api/debts/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  data.debts = data.debts.filter((d) => d.id !== id);
   saveDb(data);
   res.json({ success: true });
+});
+
+// WhatsApp API
+app.get('/api/wa/status', (req, res) => {
+  res.json(getWhatsAppStatus());
+});
+
+app.post('/api/wa/logout', async (req, res) => {
+  await logoutWhatsApp();
+  res.json({ success: true });
+});
+
+// Report Export
+app.post('/api/service/send-report', async (req, res) => {
+  const { pdfData, filename, caption } = req.body;
+  const result = await sendReportInternal({ pdfData, filename, caption });
+  res.json(result);
+});
+
+// Settings
+app.get('/api/settings', (req, res) => {
+  const data = readDb();
+  res.json(data.settings || { storeName: 'Pembukuan Toko', password: '0000' });
+});
+
+app.post('/api/settings', (req, res) => {
+  const data = readDb();
+  data.settings = { ...(data.settings || {}), ...req.body };
+  saveDb(data);
+  res.json(data.settings);
 });
 
 // Capital
-app.get('/api/capital', (req, res) => res.json(readDb().capital));
+app.get('/api/capital', (req, res) => {
+    const data = readDb();
+    res.json(data.capital || []);
+});
+
 app.post('/api/capital', (req, res) => {
-  const data = readDb();
-  const entry = { ...req.body, id: Date.now() };
-  data.capital.push(entry);
-  saveDb(data);
-  res.json(entry);
+    const data = readDb();
+    const newCapital = { ...req.body, id: Date.now() };
+    if (!data.capital) data.capital = [];
+    data.capital.push(newCapital);
+    saveDb(data);
+    res.json(newCapital);
 });
 
-// Preorders
-app.get('/api/preorders', (req, res) => res.json(readDb().preorders));
-app.post('/api/preorders', (req, res) => {
-  const data = readDb();
-  const entry = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };
-  data.preorders.push(entry);
-  saveDb(data);
-  res.json(entry);
-});
-app.put('/api/preorders/:id', (req, res) => {
-  const data = readDb();
-  const id = parseInt(req.params.id);
-  const index = data.preorders.findIndex(p => p.id === id);
-  if (index !== -1) { data.preorders[index] = { ...data.preorders[index], ...req.body }; saveDb(data); return res.json({ success: true }); }
-  res.status(404).json({ success: false });
-});
-app.delete('/api/preorders/:id', (req, res) => {
-  const data = readDb();
-  data.preorders = data.preorders.filter(p => p.id !== parseInt(req.params.id));
-  saveDb(data);
-  res.json({ success: true });
+// WhatsApp Additional
+app.post('/api/wa/reconnect', async (req, res) => {
+    await initWhatsApp();
+    res.json({ success: true });
 });
 
-// WhatsApp control
-app.get('/api/wa/status', (req, res) => res.json(getWhatsAppStatus()));
-app.post('/api/wa/reconnect', (req, res) => { initWhatsApp(); res.json({ success: true }); });
-app.post('/api/wa/logout', async (req, res) => { await logoutWhatsApp(); res.json({ success: true }); });
 app.post('/api/wa/send', async (req, res) => {
-  const { to, message } = req.body;
-  const result = await sendInternalMessage(to, message);
-  res.json(result);
+    const { to, message } = req.body;
+    await sendInternalMessage(message, to);
+    res.json({ success: true });
 });
 
-// Telegram/Service
-app.post('/api/service/notify-qris', async (req, res) => {
-  const result = await notifyQRISInternal(req.body);
-  res.json(result);
-});
-app.post('/api/service/notify-preorder', async (req, res) => {
-  const result = await notifyPreorderInternal(req.body);
-  res.json(result);
-});
-app.post('/api/service/send-report', async (req, res) => {
-  const result = await sendReportInternal(req.body);
-  res.json(result);
-});
+// --- HELPER FUNCTIONS ---
 
-// --- DANA PROCESSING LOGIC ---
-
-async function processDanaText(text: string, docId?: string): Promise<boolean> {
+async function processDanaText(text: string, docId?: string) {
   const cleanText = text.replace(/[\r\n\t]/g, ' ').trim();
-  const keywordsMatch = [...cleanText.matchAll(/(?:Rp|IDR|sebesar|sejumlah|nominal)[:\. ]*(\d[\d\.,]*)/gi)];
-  const senderMatch = [...cleanText.matchAll(/dari ([a-zA-Z0-9 ]+)/gi)];
-  const sender = senderMatch.length > 0 ? senderMatch[0][1].trim() : 'DANA';
+  console.log(`[FIREBASE-INTAKE] Processing text: "${cleanText}"`);
 
+  // Detect amounts
+  const keywordsMatch = [...cleanText.matchAll(/(?:Rp|IDR|sebesar|sejumlah|nominal)[:\. ]*(\d[\d\.,]*)/gi)];
   const amounts: number[] = [];
   for (const m of keywordsMatch) {
     const val = parseFloat(m[1].replace(/[\.,]/g, ''));
@@ -295,29 +358,29 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
     }
   }
 
-  if (amounts.length === 0) {
-    const fallbackMatch = [...cleanText.matchAll(/(\d[\d\.,]{1,})/g)];
-    for (const f of fallbackMatch) {
-      const val = parseFloat(f[1].replace(/[\.,]/g, ''));
-      if (val >= 1 && val < 5000000) amounts.push(val);
-    }
+  // Regex lebih spesifik agar tidak mengambil kata "berhasil..." sebagai nama pengirim
+  const senderMatch = [...cleanText.matchAll(/dari\s+([a-zA-Z0-9\s]+?)(?=\s+(?:berhasil|telah|sebesar|sejumlah|$))/gi)];
+  let sender = senderMatch.length > 0 ? senderMatch[0][1].trim() : 'DANA';
+  
+  // Jika pengirim terlalu panjang atau mengandung kata "Bisnis", bersihkan
+  if (sender.toUpperCase().includes('DANA BISNIS')) {
+      sender = sender.toUpperCase().replace('BERHASIL DITERIMA DANA BISNIS', '').trim();
   }
 
   // --- DEDUPLICATION CHECK (10 Seconds Window) ---
   const now = new Date();
   const isDuplicate = amounts.length > 0 && danaLogs.some(log => {
-    const logTime = new Date(log.timestamp);
-    const diffSeconds = (now.getTime() - logTime.getTime()) / 1000;
-    // Cek apakah sudah ada nominal yang sama dalam status success ATAU pending
-    return (log.status === 'success' || log.status === 'pending') &&
-      log.parsed === amounts[0] &&
-      diffSeconds < 10;
+      const logTime = new Date(log.timestamp);
+      const diffSeconds = (now.getTime() - logTime.getTime()) / 1000;
+      return (log.status === 'success' || log.status === 'pending') && 
+             log.parsed === amounts[0] && 
+             diffSeconds < 10;
   });
 
   const logEntry = addDanaLog({
-    timestamp: now.toISOString(),
+    timestamp: new Date().toISOString(),
     source: 'firebase',
-    rawContent: cleanText, // Tampilkan teks lengkap agar kita bisa analisa
+    rawContent: cleanText, 
     parsed: amounts.length > 0 ? amounts[0] : null,
     status: isDuplicate ? 'duplicate' : (amounts.length > 0 ? 'success' : 'failed'),
     docId,
@@ -334,7 +397,11 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
   }
 
   if (amounts.length > 0) {
-    const dateStr = new Date().toISOString().split('T')[0];
+    // Gunakan tanggal lokal (WIB) agar tidak melompat ke hari sebelumnya saat pagi hari (UTC)
+    const nowLocal = new Date();
+    const dateStr = nowLocal.getFullYear() + '-' + 
+                    String(nowLocal.getMonth() + 1).padStart(2, '0') + '-' + 
+                    String(nowLocal.getDate()).padStart(2, '0');
     for (const amount of amounts) {
       const newEntry = addWalletEntryInternal({
         type: 'qris',
@@ -346,14 +413,12 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
       io.emit('db:wallet-status-updated', { type: 'wallet' });
       await notifyQRISInternal(newEntry);
     }
-    // Update log status to success
     const idx = danaLogs.findIndex(l => l.id === logEntry.id);
     if (idx !== -1) danaLogs[idx].status = 'success';
     io.emit('server:dana-log-update', { id: logEntry.id, status: 'success' });
     return true;
   }
 
-  // Update log status to failed
   const idx = danaLogs.findIndex(l => l.id === logEntry.id);
   if (idx !== -1) danaLogs[idx].status = 'failed';
   io.emit('server:dana-log-update', { id: logEntry.id, status: 'failed' });
@@ -366,7 +431,6 @@ server.listen(PORT, () => {
   console.log(`[SERVER] Mode: Firebase-only (ngrok removed)`);
 });
 
-// Handle server errors
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`[ERROR] Port ${PORT} sudah dipakai! Pastikan tidak ada terminal dev atau aplikasi lain yang sedang berjalan.`);
@@ -375,19 +439,23 @@ server.on('error', (err: any) => {
   }
 });
 
-  initWhatsApp();
+// Initialization of services
+initWhatsApp();
 
-  // Firebase QRIS status listener
-  listenToFirebaseUpdates((id, status) => {
-    const numericId = parseInt(id);
-    if (!isNaN(numericId)) {
-      const success = updateWalletStatusLocal(numericId, status as any);
-      if (success) io.emit('db:wallet-status-updated', { id: numericId, status });
-    }
-  });
+// Firebase QRIS status listener
+listenToFirebaseUpdates((id, status) => {
+  const numericId = parseInt(id);
+  if (!isNaN(numericId)) {
+    const success = updateWalletStatusLocal(numericId, status as any);
+    if (success) io.emit('db:wallet-status-updated', { id: numericId, status });
+  }
+});
 
-  // Firebase DANA incoming listener (replaces ngrok tunnel completely)
-  listenDanaIncoming(async (text, docId) => {
-    console.log('[FIREBASE] Dana incoming:', text ? text.substring(0, 80) : 'EMPTY');
-    await processDanaText(text || '', docId);
-  });
+// Firebase DANA incoming listener
+console.log('[FIREBASE] Menghubungkan ke koleksi auto_dana_incoming...');
+listenDanaIncoming(async (text, docId) => {
+  console.log('[FIREBASE-WATCH] Data Baru Terdeteksi dari HP!', docId);
+  console.log('[FIREBASE-WATCH] Isi Pesan:', text ? text.substring(0, 100) : 'KOSONG');
+  await processDanaText(text || '', docId);
+});
+console.log('[FIREBASE] Listener Dana/Gopay Aktif (Menunggu Notifikasi)');
