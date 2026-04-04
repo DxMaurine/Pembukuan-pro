@@ -48,7 +48,7 @@ export async function sendInternalMessage(to: string, message: string) {
 }
 
 export async function initWhatsApp() {
-  const baileys = await import('@whiskeysockets/baileys');
+  const baileys = await (eval('import("@whiskeysockets/baileys")') as Promise<any>);
   const makeWASocket = baileys.default;
   const { useMultiFileAuthState, fetchLatestBaileysVersion, DisconnectReason } = baileys;
 
