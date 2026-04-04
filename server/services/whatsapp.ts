@@ -67,7 +67,7 @@ export async function initWhatsApp() {
       version,
       auth: state,
       logger,
-      browser: ['DM Pembukuan Pro', 'Chrome', '114.0.5735.199'],
+      browser: ['DM Pembukuan Pro', 'Chrome', '130.0.6723.70'],
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
       keepAliveIntervalMs: 30000,
