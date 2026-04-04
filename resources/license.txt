@@ -1,0 +1,25 @@
+PERJANJIAN LISENSI PENGGUNA AKHIR (EULA) - DM PEMBUKUAN PRO
+
+PENTING: HARAP BACA PERJANJIAN INI DENGAN SEKSAMA SEBELUM MENGGUNAKAN PERANGKAT LUNAK INI.
+
+1. LISENSI
+DM Fotocopy ("Pemberi Lisensi") memberikan Anda lisensi non-eksklusif untuk menggunakan Perangkat Lunak "DM Pembukuan Pro" sebagai alat bantu administrasi internal usaha Anda.
+
+2. HAK CIPTA
+Perangkat Lunak ini dimiliki oleh DM Fotocopy dan dilindungi oleh undang-undang hak cipta. 
+
+3. PEMBATASAN PENGGUNAAN
+Anda tidak diperbolehkan untuk:
+(a) Merekayasa balik (reverse engineer), mendekompilasi, atau membongkar Perangkat Lunak.
+(b) Mendistribusikan ulang atau menjual kembali Perangkat Lunak tanpa izin tertulis.
+(c) Menggunakan Perangkat Lunak untuk tujuan ilegal atau melanggar hukum.
+
+4. PENYANGKALAN JAMINAN
+PERANGKAT LUNAK INI DISEDIAKAN "APA ADANYA" TANPA JAMINAN APAPUN. PEMBERI LISENSI TIDAK BERTANGGUNG JAWAB ATAS KEGAGALAN DATA ATAU KERUGIAN FINANSIAL YANG TERJADI AKIBAT PENGGUNAAN PERANGKAT LUNAK INI.
+
+5. DATA PRIBADI
+Semua data transaksi disimpan secara lokal di perangkat Anda. Pemberi Lisensi tidak memiliki akses ke data keuangan Anda kecuali jika Anda secara sukarela mengirimkan laporan melalui fitur integrasi Telegram.
+
+DENGAN MENEKAN TOMBOL "SETUJU" ATAU MENGINSTAL PERANGKAT LUNAK INI, ANDA MENYATAKAN BAHWA ANDA TELAH MEMBACA, MEMAHAMI, DAN SETUJU UNTUK TERIKAT OLEH SYARAT-SYARAT INI.
+
+(c) 2026 DM Fotocopy - Semua Hak Dilindungi Undang-Undang.

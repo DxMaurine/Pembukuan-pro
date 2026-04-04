@@ -1,0 +1,186 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+
+  --color-primary: #f43f5e;
+  /* Rose 500 - more vibrant theme color */
+  --color-primary-hover: #e11d48;
+  /* Rose 600 */
+  --color-secondary: #ec4899;
+  --color-success: #10b981;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  /* Photoshop Harmony Dark */
+  --color-bg-dark: #1e1e1e;
+  --color-bg-card: #2d2d2d;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-text-muted: #8c8c8c;
+
+  /* Sophisticated Bone White */
+  --color-bg-light: #f5f5f2;
+  --color-card-light: #ffffff;
+}
+
+@layer base {
+  body {
+    @apply m-0 min-w-[320px] min-h-screen overflow-hidden text-black bg-bg-light transition-colors duration-300 dark:text-[#d4d4d4] dark:bg-bg-dark;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Root styles */
+  #root {
+    @apply w-screen h-screen flex place-content-center;
+  }
+
+  h1, h2, h3 {
+    @apply m-0 font-semibold;
+  }
+}
+
+@layer utilities {
+  .title-gradient {
+    @apply bg-gradient-to-r from-rose-500 via-pink-500 to-orange-500 bg-clip-text text-transparent;
+    @apply dark:from-rose-400 dark:via-pink-400 dark:to-orange-300;
+  }
+
+  .glass-card {
+    @apply bg-white dark:bg-bg-card backdrop-blur-md border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] transition-all ease-out duration-300;
+    @apply hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rose-500/5 hover:border-rose-200 dark:hover:border-primary/30 dark:hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.2)];
+  }
+
+  .btn {
+    @apply px-4 py-2 rounded-xl border border-transparent font-semibold cursor-pointer transition-all duration-200 inline-flex items-center gap-2;
+    @apply bg-rose-50/50 hover:bg-rose-200/80 hover:border-rose-300 text-black hover:text-black dark:bg-white/5 dark:hover:bg-white/10 dark:text-white dark:hover:text-white;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:scale-100;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white shadow-md shadow-primary/20 hover:brightness-110 hover:scale-[1.02] active:scale-95;
+  }
+
+  .btn-success {
+    @apply bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/20 hover:brightness-110 hover:scale-[1.02];
+  }
+
+  /* Raised 3D Effect Button */
+  .btn-timbul {
+    @apply relative px-4 py-3 rounded-full font-bold transition-all duration-200 active:scale-95;
+    @apply bg-white text-slate-700 shadow-[4px_4px_10px_rgba(0,0,0,0.1),-4px_-4px_10px_rgba(255,255,255,0.8)];
+    @apply dark:bg-[#333] dark:text-gray-300 dark:shadow-[4px_4px_10px_rgba(0,0,0,0.5),-2px_-2px_8px_rgba(255,255,255,0.05)];
+    @apply hover:shadow-[6px_6px_15px_rgba(0,0,0,0.12),-6px_-6px_15px_rgba(255,255,255,0.9)];
+    @apply dark:hover:shadow-[6px_6px_15px_rgba(0,0,0,0.6),-3px_-3px_10px_rgba(255,255,255,0.08)];
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white hover:brightness-110 shadow-md shadow-danger/20 hover:scale-[1.02];
+  }
+
+  .form-input {
+    @apply bg-white dark:bg-bg-card border border-slate-300 dark:border-border rounded-xl p-3 text-slate-800 dark:text-[#d4d4d4] outline-none transition-colors duration-200 w-full focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-white/5;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+
+  .animate-scale-up {
+    animation: scaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+
+@keyframes scaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Global SweetAlert2 Rounding & Theme Sync */
+.swal2-popup {
+  border-radius: 1.5rem !important;
+  /* matches rounded-3xl */
+  @apply bg-bg-light text-slate-700 dark:bg-bg-card dark:text-[#d4d4d4] dark:border dark:border-white/10;
+}
+
+.swal2-title {
+  @apply !font-bold !text-slate-800 dark:!text-white;
+}
+
+.swal2-styled.swal2-confirm {
+  @apply !rounded-xl !font-bold !px-6 !py-3 !shadow-lg !shadow-primary/20 !bg-primary hover:!brightness-110;
+}
+
+.swal2-styled.swal2-cancel {
+  @apply !rounded-xl !font-bold !px-6 !py-3 !bg-slate-200 dark:!bg-white/10 !text-slate-700 dark:!text-gray-300 hover:!bg-slate-300 dark:hover:!bg-white/20;
+}
+
+/* SweetAlert2 Icon Color Overrides - Total Zero Blue */
+.swal2-icon.swal2-info,
+.swal2-icon.swal2-question {
+  border-color: var(--color-primary) !important;
+  color: var(--color-primary) !important;
+}
+
+.swal2-icon.swal2-info::before,
+.swal2-icon.swal2-info::after,
+.swal2-icon.swal2-question::before,
+.swal2-icon.swal2-question::after {
+  background-color: var(--color-primary) !important;
+}
+
+.swal2-icon.swal2-info .swal2-info-content,
+.swal2-icon.swal2-question .swal2-question-content {
+  color: var(--color-primary) !important;
+}
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Custom Minimalist Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300/50 dark:bg-white/10 rounded-full transition-all;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400 dark:bg-white/20;
+}
+
+/* For Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+}
+
+.dark * {
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}

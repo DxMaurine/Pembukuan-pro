@@ -1,0 +1,23 @@
+appId: com.dmfotocopy.pembukuan
+productName: DM Pembukuan Pro
+directories:
+  output: dist
+  buildResources: resources
+files:
+  - out/**/*
+  - resources/**/*
+  - package.json
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always
+  createStartMenuShortcut: true
+  shortcutName: DM Pembukuan Pro
+  license: resources/license.txt
+  artifactName: "${productName} Setup ${version}.${ext}"
+win:
+  icon: resources/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
