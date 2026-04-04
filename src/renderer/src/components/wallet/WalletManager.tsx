@@ -48,7 +48,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
       await api.sendReport({
         pdfData: pdfBase64,
         filename: `laporan_wallet_${new Date().getTime()}.pdf`,
-        caption: `💰 LAPORAN TABUNGAN & QRIS - ${storeName}`
+        caption: `💰 *LAPORAN TABUNGAN & MONITOR QRIS*`
       });
       Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err: any) {
@@ -76,7 +76,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
     } else {
       newEntry = await api.addWalletEntry(payload);
       
-      // Jika QRIS dan statusnya pending, kirim notifikasi ke Telegram
+      // Jika QRIS dan statusnya pending, kirim notifikasi ke Owner
       if (activeSubTab === 'qris' && payload.status === 'pending') {
         api.notifyQRIS({
           ...newEntry,
@@ -137,7 +137,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
         </div>
         <div className="flex items-center gap-4">
           <button onClick={sendWalletReport} className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 flex items-center gap-2">
-            <Send size={18} /> Kirim ke Telegram
+            <Send size={18} /> Kirim ke Owner
           </button>
           <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1.5 rounded-2xl border border-slate-200/50 dark:border-border/50">
             <button 

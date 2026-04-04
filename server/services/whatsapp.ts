@@ -65,10 +65,13 @@ export async function initWhatsApp() {
 
     sock = makeWASocket({
       version,
-      printQRInTerminal: false,
+      printQRInTerminal: true, // Also print to terminal for debugging
       auth: state,
       logger,
-      browser: ['DM Pembukuan Pro', 'Chrome', '1.0.0'],
+      browser: ['DM Pembukuan Pro', 'Chrome', '114.0.5735.199'],
+      connectTimeoutMs: 60000,
+      defaultQueryTimeoutMs: 60000,
+      keepAliveIntervalMs: 30000,
     });
 
     sock.ev.on('connection.update', (update: any) => {
@@ -76,11 +79,15 @@ export async function initWhatsApp() {
 
       if (qr) {
         qrCode = qr;
+        console.log('[WHATSAPP] >> New QR Code generated');
         if (onQrUpdate) onQrUpdate(qr);
       }
 
       if (connection === 'close') {
         const statusCode = (lastDisconnect?.error as any)?.output?.statusCode;
+        const reason = lastDisconnect?.error?.message || 'Unknown reason';
+        console.log(`[WHATSAPP] >> Connection closed. Reason: ${reason} (${statusCode})`);
+        
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
         
         connectionStatus = 'disconnected';
@@ -88,15 +95,16 @@ export async function initWhatsApp() {
         if (onStatusChange) onStatusChange({ status: connectionStatus });
 
         if (shouldReconnect) {
-          connectToWhatsApp();
+          console.log('[WHATSAPP] >> Reconnecting...');
+          setTimeout(connectToWhatsApp, 3000);
         }
       } else if (connection === 'open') {
         connectionStatus = 'connected';
         qrCode = null;
-        console.log('[WHATSAPP] >> TERKONEKSI SEBAGAI:', sock.user.id);
+        console.log('[WHATSAPP] >> TERKONEKSI SEBAGAI:', sock?.user?.id || 'Unknown');
         if (onStatusChange) onStatusChange({ 
           status: connectionStatus,
-          pushName: sock.user.name || sock.user.id
+          pushName: sock?.user?.name || sock?.user?.id
         });
       }
     });

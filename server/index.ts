@@ -3,13 +3,10 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import bodyParser from 'body-parser';
-import fs from 'fs';
-import path from 'path';
-import ngrok from '@ngrok/ngrok';
 
-import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal } from './db';
+import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal } from './database';
 import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus } from './services/firebase';
-import { notifyQRISInternal, notifyPreorderInternal, setStatusUpdateCallback } from './services/telegram';
+import { notifyQRISInternal, notifyPreorderInternal, sendReportInternal, setStatusUpdateCallback } from './services/telegram';
 import { initWhatsApp, getWhatsAppStatus, logoutWhatsApp, sendInternalMessage, setWhatsAppCallbacks } from './services/whatsapp';
 
 const app = express();
@@ -22,14 +19,37 @@ app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
 
 const PORT = 3000;
-const DANA_PORT = 7878;
+
+// --- DANA LOG (in-memory, emitted to UI clients) ---
+interface DanaLog {
+  id: number;
+  timestamp: string;
+  source: 'firebase';
+  rawContent: string;
+  parsed: number | null;
+  status: 'success' | 'failed' | 'pending' | 'duplicate';
+  docId?: string;
+}
+
+const danaLogs: DanaLog[] = [];
+const MAX_LOGS = 100;
+
+function addDanaLog(log: Omit<DanaLog, 'id'>) {
+  const entry: DanaLog = { id: Date.now(), ...log };
+  danaLogs.unshift(entry);
+  if (danaLogs.length > MAX_LOGS) danaLogs.pop();
+  io.emit('server:dana-log', entry);
+  return entry;
+}
 
 // --- SOCKET.IO ---
 io.on('connection', (socket) => {
   console.log('[SOCKET] Client connected:', socket.id);
   
-  // Send initial WA status
+  // Send initial data to newly connected clients
   socket.emit('wa:status-update', getWhatsAppStatus());
+  socket.emit('server:dana-logs-history', danaLogs);
+  socket.emit('server:status', { online: true, port: PORT, mode: 'firebase' });
 
   socket.on('disconnect', () => {
     console.log('[SOCKET] Client disconnected');
@@ -50,7 +70,17 @@ setStatusUpdateCallback((id, status) => {
   }
 });
 
-// --- REST API ENDPOINTS (Corresponding to original IPC Handlers) ---
+// --- REST API ENDPOINTS ---
+
+// Server status
+app.get('/api/status', (req, res) => {
+  res.json({ online: true, port: PORT, mode: 'firebase', logsCount: danaLogs.length });
+});
+
+// Dana logs
+app.get('/api/server/dana-logs', (req, res) => {
+  res.json(danaLogs);
+});
 
 // Transactions
 app.get('/api/transactions', (req, res) => {
@@ -135,7 +165,7 @@ app.get('/api/summary', (req, res) => {
   res.json({ totalIncome: income, totalExpense: expense, balance: income - expense });
 });
 
-// Settings, Debt, Wallet, Capital, Preorders... (Simplified for now)
+// Settings
 app.get('/api/settings', (req, res) => res.json({ password: '0000', storeName: 'DM FOTOCOPY', ...readDb().settings }));
 app.post('/api/settings', (req, res) => {
   const data = readDb();
@@ -144,15 +174,83 @@ app.post('/api/settings', (req, res) => {
   res.json({ success: true });
 });
 
-// Wallet
+// Wallet (GET + PUT missing)
+app.get('/api/wallet', (req, res) => res.json(readDb().wallet));
 app.post('/api/wallet', (req, res) => {
   const entry = addWalletEntryInternal(req.body);
   io.emit('db:wallet-status-updated', { type: 'wallet' });
   res.json(entry);
 });
+app.put('/api/wallet/:id', (req, res) => {
+  const data = readDb();
+  const id = parseInt(req.params.id);
+  const index = data.wallet.findIndex(w => w.id === id);
+  if (index !== -1) {
+    data.wallet[index] = { ...data.wallet[index], ...req.body };
+    saveDb(data);
+    return res.json({ success: true });
+  }
+  res.status(404).json({ success: false });
+});
 app.delete('/api/wallet/:id', (req, res) => {
   const data = readDb();
   data.wallet = data.wallet.filter(w => w.id !== parseInt(req.params.id));
+  saveDb(data);
+  res.json({ success: true });
+});
+
+// Debts
+app.get('/api/debts', (req, res) => res.json(readDb().debts));
+app.post('/api/debts', (req, res) => {
+  const data = readDb();
+  const entry = { ...req.body, id: Date.now() };
+  data.debts.push(entry);
+  saveDb(data);
+  res.json(entry);
+});
+app.put('/api/debts/:id', (req, res) => {
+  const data = readDb();
+  const id = parseInt(req.params.id);
+  const index = data.debts.findIndex(d => d.id === id);
+  if (index !== -1) { data.debts[index] = { ...data.debts[index], ...req.body }; saveDb(data); return res.json({ success: true }); }
+  res.status(404).json({ success: false });
+});
+app.delete('/api/debts/:id', (req, res) => {
+  const data = readDb();
+  data.debts = data.debts.filter(d => d.id !== parseInt(req.params.id));
+  saveDb(data);
+  res.json({ success: true });
+});
+
+// Capital
+app.get('/api/capital', (req, res) => res.json(readDb().capital));
+app.post('/api/capital', (req, res) => {
+  const data = readDb();
+  const entry = { ...req.body, id: Date.now() };
+  data.capital.push(entry);
+  saveDb(data);
+  res.json(entry);
+});
+
+// Preorders
+app.get('/api/preorders', (req, res) => res.json(readDb().preorders));
+app.post('/api/preorders', (req, res) => {
+  const data = readDb();
+  const entry = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };
+  data.preorders.push(entry);
+  saveDb(data);
+  res.json(entry);
+});
+app.put('/api/preorders/:id', (req, res) => {
+  const data = readDb();
+  const id = parseInt(req.params.id);
+  const index = data.preorders.findIndex(p => p.id === id);
+  if (index !== -1) { data.preorders[index] = { ...data.preorders[index], ...req.body }; saveDb(data); return res.json({ success: true }); }
+  res.status(404).json({ success: false });
+});
+app.delete('/api/preorders/:id', (req, res) => {
+  const data = readDb();
+  data.preorders = data.preorders.filter(p => p.id !== parseInt(req.params.id));
   saveDb(data);
   res.json({ success: true });
 });
@@ -176,10 +274,14 @@ app.post('/api/service/notify-preorder', async (req, res) => {
   const result = await notifyPreorderInternal(req.body);
   res.json(result);
 });
+app.post('/api/service/send-report', async (req, res) => {
+  const result = await sendReportInternal(req.body);
+  res.json(result);
+});
 
-// --- DANA PROCESS LOGIC (Adapted from localServer.ts) ---
+// --- DANA PROCESSING LOGIC ---
 
-async function processDanaText(text: string): Promise<boolean> {
+async function processDanaText(text: string, docId?: string): Promise<boolean> {
   const cleanText = text.replace(/[\r\n\t]/g, ' ').trim();
   const keywordsMatch = [...cleanText.matchAll(/(?:Rp|IDR|sebesar|sejumlah|nominal)[:\. ]*(\d[\d\.,]*)/gi)];
   const senderMatch = [...cleanText.matchAll(/dari ([a-zA-Z0-9 ]+)/gi)];
@@ -189,6 +291,32 @@ async function processDanaText(text: string): Promise<boolean> {
   for (const m of keywordsMatch) {
     const val = parseFloat(m[1].replace(/[\.,]/g, ''));
     if (val >= 1 && val < 500000000) if (!amounts.includes(val)) amounts.push(val);
+  }
+
+  // --- DEDUPLICATION CHECK (10 Seconds Window) ---
+  const now = new Date();
+  const isDuplicate = amounts.length > 0 && danaLogs.some(log => {
+      const logTime = new Date(log.timestamp);
+      const diffSeconds = (now.getTime() - logTime.getTime()) / 1000;
+      // Cek apakah sudah ada nominal yang sama dalam status success ATAU pending
+      return (log.status === 'success' || log.status === 'pending') && 
+             log.parsed === amounts[0] && 
+             diffSeconds < 10;
+  });
+
+  const logEntry = addDanaLog({
+    timestamp: now.toISOString(),
+    source: 'firebase',
+    rawContent: cleanText.substring(0, 200),
+    parsed: amounts.length > 0 ? amounts[0] : null,
+    status: isDuplicate ? 'duplicate' : 'pending',
+    docId,
+  });
+
+  if (isDuplicate) {
+    console.log(`[DEDUPLICATE] Skipping duplicate transaction for Rp ${amounts[0]}`);
+    io.emit('server:dana-log-update', { id: logEntry.id, status: 'duplicate' });
+    return false;
   }
 
   if (amounts.length > 0) {
@@ -204,42 +332,27 @@ async function processDanaText(text: string): Promise<boolean> {
       io.emit('db:wallet-status-updated', { type: 'wallet' });
       await notifyQRISInternal(newEntry);
     }
+    // Update log status to success
+    const idx = danaLogs.findIndex(l => l.id === logEntry.id);
+    if (idx !== -1) danaLogs[idx].status = 'success';
+    io.emit('server:dana-log-update', { id: logEntry.id, status: 'success' });
     return true;
   }
+
+  // Update log status to failed
+  const idx = danaLogs.findIndex(l => l.id === logEntry.id);
+  if (idx !== -1) danaLogs[idx].status = 'failed';
+  io.emit('server:dana-log-update', { id: logEntry.id, status: 'failed' });
   return false;
 }
 
-// Separate listener for MacroDroid (Keep it simple)
-const danaServer = http.createServer(async (req, res) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  const url = new URL(req.url || '/', `http://localhost`);
-  if (url.pathname === '/auto-dana') {
-    let text = url.searchParams.get('text') || '';
-    if (req.method === 'POST') {
-      let body = '';
-      req.on('data', chunk => body += chunk.toString());
-      req.on('end', async () => {
-        try {
-          const data = JSON.parse(body);
-          const ok = await processDanaText(data.text || '');
-          res.end(JSON.stringify({ success: ok }));
-        } catch { res.end(JSON.stringify({ success: false })); }
-      });
-    } else {
-      const ok = await processDanaText(text);
-      res.end(JSON.stringify({ success: ok }));
-    }
-  } else {
-    res.end('Server Active');
-  }
-});
-
-// START EVERYTHING
+// --- START EVERYTHING ---
 server.listen(PORT, () => {
   console.log(`[SERVER] Backend running at http://localhost:${PORT}`);
+  console.log(`[SERVER] Mode: Firebase-only (ngrok removed)`);
   initWhatsApp();
-  
-  // Firebase listener
+
+  // Firebase QRIS status listener
   listenToFirebaseUpdates((id, status) => {
     const numericId = parseInt(id);
     if (!isNaN(numericId)) {
@@ -248,25 +361,9 @@ server.listen(PORT, () => {
     }
   });
 
-  listenDanaIncoming(async (text) => {
-    console.log('[FIREBASE] Dana incoming:', text);
-    await processDanaText(text);
+  // Firebase DANA incoming listener (replaces ngrok tunnel completely)
+  listenDanaIncoming(async (text, docId) => {
+    console.log('[FIREBASE] Dana incoming:', text.substring(0, 80));
+    await processDanaText(text, docId);
   });
 });
-
-danaServer.listen(DANA_PORT, '0.0.0.0', () => {
-  console.log(`[DANA SERVER] Listening for MacroDroid at port ${DANA_PORT}`);
-  startNgrok(DANA_PORT);
-});
-
-async function startNgrok(port: number) {
-  try {
-    await ngrok.authtoken("3BohzXQtGshNCeN9NIBqTK1oHo7_XFewrFDtxLuLkyyZb7eE");
-    const listener = await ngrok.forward({
-      addr: port, proto: 'http', domain: 'apogeal-kenny-preactively.ngrok-free.dev'
-    });
-    console.log(`[TUNNEL] >> URL PUBLIK: ${listener.url()}`);
-  } catch (err: any) {
-    console.error('[TUNNEL] Ngrok Error:', err.message);
-  }
-}

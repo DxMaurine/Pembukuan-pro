@@ -10,7 +10,7 @@ interface StockManagerProps {
   setShowStockModal: (val: boolean) => void;
   handleAddStockItem: (e?: React.FormEvent) => void;
   handleDeleteStockItem: (id: number) => void;
-  sendStockToTelegram: () => void;
+  sendStockToOwner: () => void;
 }
 
 const StockManager: React.FC<StockManagerProps> = ({
@@ -21,7 +21,7 @@ const StockManager: React.FC<StockManagerProps> = ({
   setShowStockModal,
   handleAddStockItem,
   handleDeleteStockItem,
-  sendStockToTelegram,
+  sendStockToOwner,
 }) => {
   return (
     <div className="flex flex-col gap-8 animate-fade-in">
@@ -31,8 +31,8 @@ const StockManager: React.FC<StockManagerProps> = ({
           <p className="text-muted dark:text-muted mt-1">Daftar barang yang harus segera dibeli/restok.</p>
         </div>
         <div className="flex gap-4">
-          <button className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10" onClick={sendStockToTelegram}>
-            <Send size={18} /> Kirim ke Telegram
+          <button className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10" onClick={sendStockToOwner}>
+            <Send size={18} /> Kirim ke Owner
           </button>
           <button className="btn btn-primary" onClick={() => setShowStockModal(true)}>
             <Package size={18} /> + Tambah Barang
@@ -91,7 +91,7 @@ const StockManager: React.FC<StockManagerProps> = ({
                   <label className="block mb-2 text-[10px] font-black uppercase tracking-widest text-muted opacity-80">Nama Barang</label>
                   <input
                     type="text"
-                    className="form-input py-4 text-lg font-black"
+                    className="form-input py-4 text-lg font-normal"
                     placeholder="Contoh: Kertas A4, Tinta Printer..."
                     autoFocus
                     required

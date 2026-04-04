@@ -11,7 +11,7 @@ interface ReportsViewProps {
   endDate: string;
   setEndDate: (val: string) => void;
   applyMonthFilter: (m: number, y: number) => void;
-  sendToTelegram: () => void;
+  sendToOwner: () => void;
   transactions: any[];
   currentPage: number;
   setCurrentPage: React.Dispatch<React.SetStateAction<number>>;
@@ -27,7 +27,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
   endDate,
   setEndDate,
   applyMonthFilter,
-  sendToTelegram,
+  sendToOwner,
   transactions,
   currentPage,
   setCurrentPage,
@@ -44,8 +44,8 @@ const ReportsView: React.FC<ReportsViewProps> = ({
           <h1 className="text-3xl font-semibold">Laporan Keuangan</h1>
           <p className="text-slate-500 dark:text-text-muted mt-1">Review data per periode dan ekspor laporan.</p>
         </div>
-        <button className="btn btn-primary" onClick={sendToTelegram}>
-          <Send size={18} /> Kirim Laporan ke Telegram
+        <button className="btn btn-primary" onClick={sendToOwner}>
+          <Send size={18} /> Kirim Laporan ke Owner
         </button>
       </header>
 

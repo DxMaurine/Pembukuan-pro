@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   History,
@@ -12,7 +12,7 @@ import {
   Sun,
   Moon,
   LogOut,
-  MessageCircle
+  ServerCog,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -35,6 +35,26 @@ const Sidebar: React.FC<SidebarProps> = ({
   setIsLoggedIn,
   setLoginInput,
 }) => {
+  const [serverOnline, setServerOnline] = useState<boolean | null>(null);
+
+  // Ping server every 10s to update indicator
+  useEffect(() => {
+    const checkServer = async () => {
+      try {
+        const res = await fetch('http://localhost:3000/api/status', {
+          signal: AbortSignal.timeout(2500),
+        });
+        setServerOnline(res.ok);
+      } catch {
+        setServerOnline(false);
+      }
+    };
+
+    checkServer();
+    const interval = setInterval(checkServer, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   const navGroups = [
     {
       title: 'Main Menu',
@@ -61,7 +81,12 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'System',
       items: [
-        { id: 'whatsapp', icon: MessageCircle, label: 'WhatsApp Manager' },
+        {
+          id: 'serverhub',
+          icon: ServerCog,
+          label: 'Server Hub',
+          badge: serverOnline === null ? 'checking' : serverOnline ? 'online' : 'offline',
+        },
         { id: 'reports', icon: FileText, label: 'Laporan PDF' },
         { id: 'settings', icon: Settings, label: 'Pengaturan App' },
       ]
@@ -81,7 +106,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   return (
-    <aside className="w-[280px] bg-white dark:bg-bg-dark border-r border-slate-200 dark:border-white/5 flex flex-col shrink-0 z-20 overflow-hidden">
+    <aside className="w-[280px] bg-text-dark dark:bg-bg-dark border-r border-slate-200 dark:border-white/5 flex flex-col shrink-0 z-20 overflow-hidden">
       <div className="p-8 mb-4">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/20">
@@ -91,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <h2 className="text-xl Font-bold tracking-tight text-muted/90 leading-none uppercase">{storeName}</h2>
             <div className="flex items-center gap-1.5 mt-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[10px] Font-bold uppercase tracking-widest text-muted opacity-60">Admin Pro v1.0</span>
+              <span className="text-[10px] Font-bold uppercase tracking-widest text-muted opacity-60">Admin Pro v3.0.1</span>
             </div>
           </div>
         </div>
@@ -102,8 +127,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           <div key={idx} className="space-y-4 pt-1">
             <h3 className="px-4 text-[10px] Font-bold uppercase tracking-[0.2em] text-muted opacity-40 mb-2">{group.title}</h3>
             <div className="space-y-1">
-              {group.items.map((item) => {
+              {group.items.map((item: any) => {
                 const isActive = activeTab === item.id;
+                const isServerHub = item.id === 'serverhub';
                 return (
                   <button
                     key={item.id}
@@ -117,9 +143,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <div className={`absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full bg-primary transition-all duration-500 ${isActive ? 'h-6' : 'h-0'}`}></div>
 
                     <item.icon size={20} className={`transition-transform duration-300 group-hover:scale-110 ${isActive ? 'text-primary' : 'opacity-70 group-hover:opacity-100'}`} />
-                    <span className="relative z-10">{item.label}</span>
+                    <span className="relative z-10 flex-1 text-left">{item.label}</span>
 
-                    {isActive && (
+                    {/* Server Hub online/offline badge */}
+                    {isServerHub && item.badge && (
+                      <span className={`relative z-10 w-2 h-2 rounded-full transition-all ${item.badge === 'online'
+                        ? 'bg-emerald-400 shadow-[0_0_6px_2px_rgba(52,211,153,0.5)]'
+                        : item.badge === 'offline'
+                          ? 'bg-rose-500 shadow-[0_0_6px_2px_rgba(244,63,94,0.5)]'
+                          : 'bg-amber-400 animate-pulse'
+                        }`} />
+                    )}
+
+                    {isActive && !isServerHub && (
                       <div className="absolute right-4 w-1.5 h-1.5 rounded-full bg-primary shadow-lg shadow-primary/50 animate-pulse"></div>
                     )}
                   </button>
@@ -142,22 +178,22 @@ const Sidebar: React.FC<SidebarProps> = ({
             ) : (
               <Sun size={20} className="text-orange-500 group-hover:scale-110 transition-transform" />
             )}
-            <span className="text-[9px] Font-bold uppercase tracking-widest text-muted">Theme</span>
+            <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Theme</span>
           </button>
 
           <button
             onClick={handleLogout}
-            className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-rose-500/30 transition-all group"
+            className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-blue-500/20 dark:bg-blue-500/20 border border-slate-200 dark:border-white/5 hover:border-rose-500/30 transition-all group"
             title="Keluar"
           >
             <LogOut size={20} className="text-rose-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[9px] Font-bold uppercase tracking-widest text-muted">Logout</span>
+            <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Keluar</span>
           </button>
         </div>
 
         <div className="text-center pt-2">
           <p className="text-[9px] text-muted opacity-40 Font-bold uppercase tracking-[0.3em]">
-            Harmony Interface v1.0.0
+            Harmony Interface v3.0.1
           </p>
         </div>
       </div>

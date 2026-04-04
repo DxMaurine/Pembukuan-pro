@@ -23,12 +23,13 @@ import DebtManager from './components/debts/DebtManager';
 import WalletManager from './components/wallet/WalletManager';
 import CapitalManager from './components/capital/CapitalManager';
 import PreorderManager from './components/preorder';
-import WhatsAppManager from './components/whatsapp/WhatsAppManager';
+// WhatsAppManager will be imported inside ServerHub
+import ServerHub from './components/serverhub/ServerHub';
 
 const { api } = window as any;
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'capital' | 'stock' | 'reports' | 'settings' | 'whatsapp'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'capital' | 'stock' | 'reports' | 'settings' | 'serverhub'>('dashboard');
   const [storeName, setStoreName] = useState('Pembukuan Toko');
   const [summary, setSummary] = useState<Summary>({ totalIncome: 0, totalExpense: 0, balance: 0 });
   const [prevSummary, setPrevSummary] = useState<Summary>({ totalIncome: 0, totalExpense: 0, balance: 0 });
@@ -40,6 +41,7 @@ const App: React.FC = () => {
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [newStockItem, setNewStockItem] = useState('');
   const [showStockModal, setShowStockModal] = useState(false);
+  const [serverOffline, setServerOffline] = useState(false);
 
   // Authentication State
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -192,42 +194,63 @@ const App: React.FC = () => {
       setIsAuthLoading(false);
       return;
     }
-    const s = await api.getSummary({ startDate, endDate });
-    const t = await api.getTransactions({ startDate, endDate });
-    const st = await api.getStock();
-    const set: Settings = await api.getSettings();
-    const dbDebts = await api.getDebts();
-    const dbWallet = await api.getWallet();
-    const dbCapital = await api.getCapital();
-    const dbPreorders = await api.getPreorders();
 
-    // Fetch Previous Month Comparison
-    const currentStart = new Date(startDate);
-    const prevMonthStart = new Date(currentStart.getFullYear(), currentStart.getMonth() - 1, 1);
-    const prevMonthEnd = new Date(currentStart.getFullYear(), currentStart.getMonth(), 0);
-    const prevS = await api.getSummary({
-      startDate: getLocalDate(prevMonthStart),
-      endDate: getLocalDate(prevMonthEnd)
-    });
+    try {
+      const [s, t, st, set, dbDebts, dbWallet, dbCapital, dbPreorders] = await Promise.all([
+        api.getSummary({ startDate, endDate }),
+        api.getTransactions({ startDate, endDate }),
+        api.getStock(),
+        api.getSettings(),
+        api.getDebts(),
+        api.getWallet(),
+        api.getCapital(),
+        api.getPreorders(),
+      ]);
 
-    setSummary(s);
-    setPrevSummary(prevS);
-    setTransactions(t);
-    setDebts(dbDebts);
-    setWalletEntries(dbWallet);
-    setCapitalData(dbCapital);
-    setPreorders(dbPreorders);
-    setReportPage(1);
-    setTransacPage(1);
-    setStockItems(st);
-    if (set.storeName) setStoreName(set.storeName);
-    setSavedPassword(set.password || '0000');
+      // Fetch Previous Month Comparison
+      const currentStart = new Date(startDate);
+      const prevMonthStart = new Date(currentStart.getFullYear(), currentStart.getMonth() - 1, 1);
+      const prevMonthEnd = new Date(currentStart.getFullYear(), currentStart.getMonth(), 0);
+      const prevS = await api.getSummary({
+        startDate: getLocalDate(prevMonthStart),
+        endDate: getLocalDate(prevMonthEnd)
+      });
+
+      setSummary(s);
+      setPrevSummary(prevS);
+      setTransactions(t);
+      setDebts(dbDebts);
+      setWalletEntries(dbWallet);
+      setCapitalData(dbCapital);
+      setPreorders(dbPreorders);
+      setReportPage(1);
+      setTransacPage(1);
+      setStockItems(st);
+      if (set.storeName) setStoreName(set.storeName);
+      const pin = set.password || '0000';
+      setSavedPassword(pin);
+      localStorage.setItem('cachedPin', pin);
+      if (set.storeName) localStorage.setItem('cachedStoreName', set.storeName);
+      setServerOffline(false); // Server kembali online
+    } catch (err: any) {
+      console.error('[APP] loadData gagal — server mungkin offline:', err?.message);
+      setServerOffline(true);
+    }
     setIsAuthLoading(false);
   };
+
 
   useEffect(() => { 
     if (isLoggedIn) {
       loadData(); 
+
+      // Auto-retry setiap 15 detik saat server offline
+      const retryInterval = setInterval(() => {
+        if (serverOffline) {
+          console.log('[APP] Mencoba reconnect ke server...');
+          loadData();
+        }
+      }, 15000);
 
       // Listener global untuk refresh data saat ada dana masuk otomatis
       if (api.onWalletStatusUpdated) {
@@ -235,8 +258,9 @@ const App: React.FC = () => {
           console.log('[APP] Mendeteksi update data, me-refresh...');
           loadData();
         });
-        return () => removeListener();
+        return () => { removeListener(); clearInterval(retryInterval); };
       }
+      return () => clearInterval(retryInterval);
     } else {
       // Safety check for non-electron environments
       if (typeof api === 'undefined') {
@@ -247,9 +271,20 @@ const App: React.FC = () => {
       // Small fetch just for settings to get store name and PIN
       api.getSettings().then((set: Settings) => {
         if (set.storeName) setStoreName(set.storeName);
-        setSavedPassword(set.password || '0000');
+        const pin = set.password || '0000';
+        setSavedPassword(pin);
+        // Cache PIN locally so login still works when server is offline
+        localStorage.setItem('cachedPin', pin);
+        if (set.storeName) localStorage.setItem('cachedStoreName', set.storeName);
         setIsAuthLoading(false);
-      }).catch(() => setIsAuthLoading(false));
+      }).catch(() => {
+        // Server offline — use cached PIN from localStorage
+        const cachedPin = localStorage.getItem('cachedPin') || '0000';
+        const cachedName = localStorage.getItem('cachedStoreName');
+        setSavedPassword(cachedPin);
+        if (cachedName) setStoreName(cachedName);
+        setIsAuthLoading(false);
+      });
     }
     return () => {};
   }, [isLoggedIn, startDate, endDate]);
@@ -330,13 +365,14 @@ const App: React.FC = () => {
     if (result.isConfirmed) { await api.deleteStock(id); loadData(); }
   };
 
-  const sendToTelegram = async () => {
+  const sendToOwner = async () => {
     try {
       const pdfBase64 = await generateProfessionalPDF(storeName, filterMonth, filterYear, transactions, theme);
       await api.sendReport({
         pdfData: pdfBase64,
         summary: summary,
-        filename: `laporan_${filterMonth + 1}_${filterYear}.pdf`
+        filename: `laporan_${filterMonth + 1}_${filterYear}.pdf`,
+        caption: `📑 *LAPORAN BULANAN ${months[filterMonth].toUpperCase()} ${filterYear}*`
       });
       Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err: any) {
@@ -344,7 +380,7 @@ const App: React.FC = () => {
     }
   };
 
-  const sendStockToTelegram = async () => {
+  const sendStockToOwner = async () => {
     try {
       if (stockItems.length === 0) {
         Swal.fire({ title: 'Info', text: 'Daftar barang habis kosong.', icon: 'info', timer: 2000, showConfirmButton: false });
@@ -354,7 +390,7 @@ const App: React.FC = () => {
       await api.sendReport({
         pdfData: pdfBase64,
         summary: {},
-        caption: `⚠️ BARANG HABIS - ${storeName}`,
+        caption: `📦 *LAPORAN BARANG HABIS / OPNAME*`,
         filename: 'barang_habis.pdf'
       });
       Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1500, showConfirmButton: false });
@@ -394,7 +430,16 @@ const App: React.FC = () => {
             setLoginInput={setLoginInput}
           />
 
-          <main className="flex-1 overflow-y-auto p-8 bg-transparent relative animate-fade-in z-0">
+          <main className="flex-1 overflow-y-auto bg-transparent relative animate-fade-in z-0 flex flex-col">
+            {/* Server Offline Banner */}
+            {serverOffline && (
+              <div className="flex items-center gap-3 px-6 py-2.5 bg-amber-500/10 border-b border-amber-500/20 text-xs font-semibold text-amber-400 shrink-0">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" />
+                <span>Server backend offline — data tidak dapat dimuat. Jalankan <code className="font-mono bg-black/20 px-1 py-0.5 rounded">npm run server:dev</code></span>
+                <button onClick={() => loadData()} className="ml-auto text-amber-400 hover:text-amber-300 underline underline-offset-2">Coba Lagi</button>
+              </div>
+            )}
+            <div className="flex-1 overflow-y-auto p-8">
             {activeTab === 'dashboard' && (
               <Overview
                 summary={summary}
@@ -503,12 +548,14 @@ const App: React.FC = () => {
                 setShowStockModal={setShowStockModal}
                 handleAddStockItem={handleAddStockItem}
                 handleDeleteStockItem={handleDeleteStockItem}
-                sendStockToTelegram={sendStockToTelegram}
+                sendStockToOwner={sendStockToOwner}
               />
             )}
 
-            {activeTab === 'whatsapp' && (
-              <WhatsAppManager api={api} />
+
+
+            {activeTab === 'serverhub' && (
+              <ServerHub api={api} />
             )}
 
             {activeTab === 'reports' && (
@@ -520,7 +567,7 @@ const App: React.FC = () => {
                 endDate={endDate}
                 setEndDate={setEndDate}
                 applyMonthFilter={applyMonthFilter}
-                sendToTelegram={sendToTelegram}
+                sendToOwner={sendToOwner}
                 transactions={transactions}
                 currentPage={reportPage}
                 setCurrentPage={setReportPage}
@@ -559,10 +606,11 @@ const App: React.FC = () => {
                     </button>
                   </div>
 
-                  <button className="btn btn-primary w-full mt-4" onClick={async () => { await api.saveSettings({ password: newPassword }); setSavedPassword(newPassword); setNewPassword(''); Swal.fire('Berhasil!', '', 'success'); }}>Update PIN</button>
+                  <button className="btn btn-primary w-full mt-4" onClick={async () => { await api.saveSettings({ password: newPassword }); setSavedPassword(newPassword); localStorage.setItem('cachedPin', newPassword); setNewPassword(''); Swal.fire('Berhasil!', '', 'success'); }}>Update PIN</button>
                 </div>
               </div>
             )}
+            </div>
           </main>
         </div>
       )}

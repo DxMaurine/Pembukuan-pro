@@ -3,7 +3,7 @@ import { syncQRISToFirebase, updateFirebaseQRISStatus } from './firebase';
 import fs from 'fs';
 import path from 'path';
 import { sendInternalMessage } from './whatsapp';
-import { readDb } from '../db';
+import { readDb } from '../database';
 
 const BOT_TOKEN = '8398912567:AAG8AjzEemIHzna9jEq4nEPV-3Kx6pEpTJs';
 const CHAT_ID = '7978582093';
@@ -14,7 +14,7 @@ console.log('[TELEGRAM] >> Bot aktif di Server!');
 
 export async function notifyQRISInternal(entry: any) {
   try {
-    const message = `🔔 *NOTIFIKASI QRIS BARU*\n\n📝 Deskripsi: ${entry.description}\n💰 Nominal: Rp ${entry.amount.toLocaleString('id-ID')}\n📅 Tanggal: ${entry.date}\n\nSilahkan konfirmasi jika dana sudah masuk.`;
+    const message = `🔔 *NOTIFIKASI QRIS MASUK*\n\n📝 Deskripsi: ${entry.description}\n💰 Nominal: Rp ${entry.amount.toLocaleString('id-ID')}\n📅 Tanggal: ${entry.date}\n\n👤 *Status: MENUNGGU VERIFIKASI*\nSilahkan konfirmasi jika dana sudah masuk.`;
 
     const options = {
       parse_mode: 'Markdown',
@@ -41,13 +41,28 @@ export async function notifyQRISInternal(entry: any) {
 
 export async function notifyPreorderInternal(entry: any) {
   try {
-    const message = `📋 *PESANAN PREORDER BARU*\n\n👤 Pelanggan: ${entry.customerName}\n🛠️ Layanan: ${entry.serviceName}\n💰 Total: Rp ${entry.totalAmount.toLocaleString('id-ID')}\n💳 DP: Rp ${entry.downPayment.toLocaleString('id-ID')}\n💸 Sisa: Rp ${entry.remainingAmount.toLocaleString('id-ID')}\n📅 Deadline: ${entry.dueDate}\n\n📝 Catatan: ${entry.notes || '-'}`;
+    const message = `📋 *PESANAN PREORDER BARU*\n\n👤 Pelanggan: ${entry.customerName}\n🛠️ Layanan: ${entry.serviceName}\n💰 Total: Rp ${entry.totalAmount.toLocaleString('id-ID')}\n💳 DP: Rp ${entry.downPayment.toLocaleString('id-ID')}\n💸 Sisa: Rp ${entry.remainingAmount.toLocaleString('id-ID')}\n📅 Deadline: ${entry.dueDate}\n\n📝 Catatan: ${entry.notes || '-'}\n\n👤 *Status: TERCATAT DI SISTEM*\nMohon segera diproses, terima kasih!`;
 
     await bot.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
     return { success: true };
   } catch (error: any) {
     console.error('[TELEGRAM] Preorder Notify Error:', error.message);
     return { success: false };
+  }
+}
+
+export async function sendReportInternal(data: { pdfData: string; filename: string; caption: string }) {
+  try {
+    const { pdfData, filename, caption } = data;
+    // Convert base64 to Buffer
+    const buffer = Buffer.from(pdfData.split(',')[1] || pdfData, 'base64');
+    
+    await bot.sendDocument(CHAT_ID, buffer, { caption }, { filename, contentType: 'application/pdf' });
+    console.log('[TELEGRAM] Report terkirim:', filename);
+    return { success: true };
+  } catch (error: any) {
+    console.error('[TELEGRAM] Send Report Error:', error.message);
+    return { success: false, error: error.message };
   }
 }
 

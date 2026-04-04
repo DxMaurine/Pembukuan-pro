@@ -6,3 +6,5 @@ out/
 logs/
 .DS_Store
 *.tsbuildinfo
+server/db.json
+server/wa-auth/

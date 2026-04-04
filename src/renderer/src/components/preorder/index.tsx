@@ -78,7 +78,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
         await api.updatePreorder({ ...payload, id: editingId });
       } else {
         const newOrder = await api.addPreorder(payload);
-        // Kirim notifikasi Telegram untuk pesanan baru
+        // Kirim notifikasi ke Owner untuk pesanan baru
         await api.notifyPreorder({
           ...newOrder,
           totalAmount: total,

@@ -43,7 +43,7 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
       await api.sendReport({
         pdfData: pdfBase64,
         filename: `laporan_hutang_${new Date().getTime()}.pdf`,
-        caption: `📋 LAPORAN HUTANG PIUTANG - ${storeName}`
+        caption: `📋 *LAPORAN DAFTAR HUTANG PIUTANG*`
       });
       Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err: any) {
@@ -133,7 +133,7 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
         </div>
         <div className="flex gap-4">
           <button className="btn btn-secondary border-slate-300 dark:border-white/10" onClick={sendDebtReport}>
-            <Send size={18} /> Kirim ke Telegram
+            <Send size={18} /> Kirim ke Owner
           </button>
           <button className="btn btn-primary" onClick={() => setShowModal(true)}>
             <Plus size={18} /> Tambah Catatan

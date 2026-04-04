@@ -41,7 +41,7 @@ const Timeline: React.FC<TimelineProps> = ({
     <div className="flex flex-col gap-4">
       <div className="flex justify-between items-center px-2">
         <h3 className="text-xl font-bold">Rincian Transaksi ({transactions.length})</h3>
-        <div className="text-xs text-muted dark:text-muted font-medium bg-slate-100 dark:bg-white/5 px-2 py-1 rounded-md uppercase tracking-widest">
+        <div className="text-xs text-muted dark:text-muted font-medium bg-blue-100 dark:bg-white/5 px-2 py-1 rounded-md uppercase tracking-widest">
           Timeline View
         </div>
       </div>

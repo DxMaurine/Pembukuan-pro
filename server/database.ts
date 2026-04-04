@@ -79,7 +79,7 @@ const defaultData: Data = {
   settings: { password: '0000', storeName: 'DM FOTOCOPY' } 
 };
 
-const dbPath = path.join(__dirname, 'db.json');
+const dbPath = process.env.DB_PATH || path.join(__dirname, 'db.json');
 
 export function readDb(): Data {
   if (!fs.existsSync(dbPath)) {
