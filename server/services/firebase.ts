@@ -83,13 +83,13 @@ export async function listenDanaIncoming(onDana: (text: string, docId: string) =
     return onSnapshot(q, (snapshot) => {
       snapshot.docChanges().forEach(async (change) => {
         try {
-          if (change.type === "added") {
-            const data = change.doc.data();
-            if (!data.processed) {
-              onDana(data.text, change.doc.id);
-              await setDoc(doc(db, "auto_dana_incoming", change.doc.id), 
-                { processed: true }, { merge: true });
-            }
+          const data = change.doc.data();
+          console.log(`[FIREBASE] Detect: ${change.type} | ID: ${change.doc.id} | Processed: ${data.processed}`);
+          
+          if ((change.type === "added" || change.type === "modified") && !data.processed) {
+            onDana(data.text, change.doc.id);
+            await setDoc(doc(db, "auto_dana_incoming", change.doc.id), 
+              { processed: true }, { merge: true });
           }
         } catch (err) {
           console.error("[FIREBASE-ERROR] Gagal memproses dokumen:", change.doc.id, err);

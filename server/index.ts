@@ -290,7 +290,18 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
   const amounts: number[] = [];
   for (const m of keywordsMatch) {
     const val = parseFloat(m[1].replace(/[\.,]/g, ''));
-    if (val >= 1 && val < 500000000) if (!amounts.includes(val)) amounts.push(val);
+    if (val >= 1 && val < 500000000) {
+      if (!amounts.includes(val)) amounts.push(val);
+    }
+  }
+
+  // Fallback: If no keywords match, try to find any number that looks like an amount
+  if (amounts.length === 0) {
+    const fallbackMatch = [...cleanText.matchAll(/(\d[\d\.,]{3,})/g)];
+    for (const f of fallbackMatch) {
+      const val = parseFloat(f[1].replace(/[\.,]/g, ''));
+      if (val >= 100 && val < 5000000) amounts.push(val);
+    }
   }
 
   // --- DEDUPLICATION CHECK (10 Seconds Window) ---
@@ -307,11 +318,15 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
   const logEntry = addDanaLog({
     timestamp: now.toISOString(),
     source: 'firebase',
-    rawContent: cleanText.substring(0, 200),
+    rawContent: cleanText, // Tampilkan teks lengkap agar kita bisa analisa
     parsed: amounts.length > 0 ? amounts[0] : null,
-    status: isDuplicate ? 'duplicate' : 'pending',
+    status: isDuplicate ? 'duplicate' : (amounts.length > 0 ? 'success' : 'failed'),
     docId,
   });
+
+  if (amounts.length === 0) {
+    console.log(`[FIREBASE-WARN] Gagal mendeteksi nominal di teks: "${cleanText}"`);
+  }
 
   if (isDuplicate) {
     console.log(`[DEDUPLICATE] Skipping duplicate transaction for Rp ${amounts[0]}`);
@@ -374,6 +389,13 @@ server.on('error', (err: any) => {
 
   // Firebase DANA incoming listener (replaces ngrok tunnel completely)
   listenDanaIncoming(async (text, docId) => {
-    console.log('[FIREBASE] Dana incoming:', text.substring(0, 80));
-    await processDanaText(text, docId);
+    console.log('[FIREBASE] Dana incoming:', text ? text.substring(0, 80) : 'EMPTY');
+    await processDanaText(text || '', docId);
   }).catch(err => console.error("[FIREBASE-FATAL] Gagal inisialisasi Dana listener:", err));
+
+  // --- HEARTBEAT ---
+  setInterval(() => {
+    const time = new Date().toLocaleTimeString();
+    console.log(`[SERVER-HEARTBEAT] ${time} - Server is listening for Firebase documents...`);
+    io.emit('server:log', `[HEARTBEAT] ${time} - Listener is still active.`);
+  }, 30000);
