@@ -15,6 +15,7 @@ function startServer(): void {
     const serverPath = join(serverDir, 'dist', 'index.js')
     const userDataPath = app.getPath('userData')
     const dbPath = join(userDataPath, 'db.json')
+    const waAuthPath = join(userDataPath, 'wa-auth')
     const logsDir = join(userDataPath, 'logs')
     const logPath = join(logsDir, 'server.log')
 
@@ -42,6 +43,7 @@ function startServer(): void {
         env: { 
           ...process.env, 
           DB_PATH: dbPath,
+          WA_AUTH_PATH: waAuthPath,
           PORT: '3000'
         }
       })

@@ -14,7 +14,7 @@ try {
 }
 
 const logger = pino({ level: 'silent' });
-const AUTH_PATH = path.join(__dirname, '..', 'wa-auth');
+const AUTH_PATH = process.env.WA_AUTH_PATH || path.join(__dirname, '..', 'wa-auth');
 
 let sock: any = null;
 let qrCode: string | null = null;
