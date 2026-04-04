@@ -45,7 +45,7 @@ function addDanaLog(log: Omit<DanaLog, 'id'>) {
 // --- SOCKET.IO ---
 io.on('connection', (socket) => {
   console.log('[SOCKET] Client connected:', socket.id);
-  
+
   // Send initial data to newly connected clients
   socket.emit('wa:status-update', getWhatsAppStatus());
   socket.emit('server:dana-logs-history', danaLogs);
@@ -296,12 +296,12 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
   // --- DEDUPLICATION CHECK (10 Seconds Window) ---
   const now = new Date();
   const isDuplicate = amounts.length > 0 && danaLogs.some(log => {
-      const logTime = new Date(log.timestamp);
-      const diffSeconds = (now.getTime() - logTime.getTime()) / 1000;
-      // Cek apakah sudah ada nominal yang sama dalam status success ATAU pending
-      return (log.status === 'success' || log.status === 'pending') && 
-             log.parsed === amounts[0] && 
-             diffSeconds < 10;
+    const logTime = new Date(log.timestamp);
+    const diffSeconds = (now.getTime() - logTime.getTime()) / 1000;
+    // Cek apakah sudah ada nominal yang sama dalam status success ATAU pending
+    return (log.status === 'success' || log.status === 'pending') &&
+      log.parsed === amounts[0] &&
+      diffSeconds < 10;
   });
 
   const logEntry = addDanaLog({

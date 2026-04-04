@@ -1,57 +1,37 @@
 {
-  "transactions": [],
-  "stock": [],
-  "debts": [],
-  "wallet": [
+  "transactions": [
     {
-      "amount": 3,
-      "description": "",
-      "date": "2026-04-04",
-      "status": "received",
-      "type": "qris",
-      "id": 1775312792288
+      "type": "expense",
+      "amount": 0,
+      "items": [
+        {
+          "name": "LIBUR / TOKO TUTUP",
+          "amount": 0
+        }
+      ],
+      "description": "LIBUR tgl 1",
+      "category": "Libur",
+      "date": "2026-04-01",
+      "id": 1775325644786
     },
     {
-      "type": "qris",
-      "amount": 1000,
-      "description": "[AUTO-BAYAR KOPI] 23.15.06",
-      "date": "2026-04-04",
-      "status": "received",
-      "id": 1775319306298
-    },
-    {
-      "type": "qris",
-      "amount": 10,
-      "description": "[AUTO-GOPAY BERHASIL DITERIMA DANA BISNIS] 23.17.03",
-      "date": "2026-04-04",
-      "status": "received",
-      "id": 1775319423438
-    },
-    {
-      "type": "qris",
-      "amount": 5,
-      "description": "[AUTO-GOPAY BERHASIL DITERIMA DANA BISNIS] 23.22.39",
-      "date": "2026-04-04",
-      "status": "received",
-      "id": 1775319759196
-    },
-    {
-      "type": "qris",
-      "amount": 3,
-      "description": "[AUTO-GOPAY BERHASIL DITERIMA DANA BISNIS] 23.33.54",
-      "date": "2026-04-04",
-      "status": "received",
-      "id": 1775320434716
-    },
-    {
-      "type": "qris",
-      "amount": 2,
-      "description": "[AUTO-GOPAY BERHASIL DITERIMA DANA BISNIS] 23.40.01",
-      "date": "2026-04-04",
-      "status": "received",
-      "id": 1775320801144
+      "type": "expense",
+      "amount": 0,
+      "items": [
+        {
+          "name": "LIBUR / TOKO TUTUP",
+          "amount": 0
+        }
+      ],
+      "description": "LIBUR tgl 2",
+      "category": "Libur",
+      "date": "2026-04-02",
+      "id": 1775325644787
     }
   ],
+  "stock": [],
+  "debts": [],
+  "wallet": [],
   "capital": [],
   "preorders": [],
   "settings": {

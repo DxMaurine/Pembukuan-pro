@@ -56,7 +56,7 @@ export async function sendReportInternal(data: { pdfData: string; filename: stri
     const { pdfData, filename, caption } = data;
     // Convert base64 to Buffer
     const buffer = Buffer.from(pdfData.split(',')[1] || pdfData, 'base64');
-    
+
     await bot.sendDocument(CHAT_ID, buffer, { caption }, { filename, contentType: 'application/pdf' });
     console.log('[TELEGRAM] Report terkirim:', filename);
     return { success: true };
@@ -73,7 +73,7 @@ bot.on('callback_query', async (query) => {
     const entryId = parseInt(data.split(':')[1]);
 
     await updateFirebaseQRISStatus(entryId.toString(), 'received');
-    
+
     // NOTIFIKASI BACKEND: Di sini kita perlu memberitahu server untuk update lokal & emit socket
     // Kita akan mengekspor function ini agar bisa dipanggil di index.ts atau sebaliknya
     processConfirmation(entryId, query);
@@ -114,7 +114,7 @@ async function processConfirmation(entryId: number, query: TelegramBot.CallbackQ
     } catch (e) {
       console.error('[TELEGRAM] Error sending WA to cashier:', e);
     }
-    
+
     bot.answerCallbackQuery(query.id, { text: 'Konfirmasi QRIS Berhasil!' });
   }
 }
