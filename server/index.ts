@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import ngrok from '@ngrok/ngrok';
 
-import * as db from './db';
+import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal } from './db';
 import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus } from './services/firebase';
 import { notifyQRISInternal, notifyPreorderInternal, setStatusUpdateCallback } from './services/telegram';
 import { initWhatsApp, getWhatsAppStatus, logoutWhatsApp, sendInternalMessage, setWhatsAppCallbacks } from './services/whatsapp';
@@ -44,7 +44,7 @@ setWhatsAppCallbacks(
 
 // Setup Telegram Callback to update DB and UI
 setStatusUpdateCallback((id, status) => {
-  const success = db.updateWalletStatusLocal(id, status as any);
+  const success = updateWalletStatusLocal(id, status as any);
   if (success) {
     io.emit('db:wallet-status-updated', { id, status });
   }
@@ -55,7 +55,7 @@ setStatusUpdateCallback((id, status) => {
 // Transactions
 app.get('/api/transactions', (req, res) => {
   const filters = req.query;
-  const data = db.readDb();
+  const data = readDb();
   let list = data.transactions;
   if (filters.type) list = list.filter((t) => t.type === filters.type);
   if (filters.startDate) list = list.filter((t) => t.date.split('T')[0] >= (filters.startDate as string));
@@ -64,47 +64,47 @@ app.get('/api/transactions', (req, res) => {
 });
 
 app.post('/api/transactions', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   const newTransaction = { ...req.body, id: Date.now(), date: req.body.date || new Date().toISOString() };
   data.transactions.push(newTransaction);
-  db.saveDb(data);
+  saveDb(data);
   res.json(newTransaction);
 });
 
 app.post('/api/transactions/batch', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   const newTransactions = req.body.map((t: any, idx: number) => ({
     ...t, id: Date.now() + idx, date: t.date || new Date().toISOString()
   }));
   data.transactions.push(...newTransactions);
-  db.saveDb(data);
+  saveDb(data);
   res.json({ success: true, count: newTransactions.length });
 });
 
 app.put('/api/transactions/:id', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   const id = parseInt(req.params.id);
   const index = data.transactions.findIndex(t => t.id === id);
   if (index !== -1) {
     data.transactions[index] = { ...data.transactions[index], ...req.body };
-    db.saveDb(data);
+    saveDb(data);
     return res.json({ success: true });
   }
   res.status(404).json({ success: false, error: 'Not found' });
 });
 
 app.delete('/api/transactions/:id', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   const id = parseInt(req.params.id);
   data.transactions = data.transactions.filter(t => t.id !== id);
-  db.saveDb(data);
+  saveDb(data);
   res.json({ success: true });
 });
 
 // Stock
-app.get('/api/stock', (req, res) => res.json(db.readDb().stock));
+app.get('/api/stock', (req, res) => res.json(readDb().stock));
 app.post('/api/stock', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   const { id, ...rest } = req.body;
   if (id) {
     const index = data.stock.findIndex(s => s.id === id);
@@ -112,21 +112,21 @@ app.post('/api/stock', (req, res) => {
   } else {
     data.stock.push({ ...rest, id: Date.now() });
   }
-  db.saveDb(data);
+  saveDb(data);
   res.json({ success: true });
 });
 app.delete('/api/stock/:id', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   const id = parseInt(req.params.id);
   data.stock = data.stock.filter(s => s.id !== id);
-  db.saveDb(data);
+  saveDb(data);
   res.json({ success: true });
 });
 
 // Summary
 app.get('/api/summary', (req, res) => {
   const { startDate, endDate } = req.query;
-  const data = db.readDb();
+  const data = readDb();
   let list = data.transactions;
   if (startDate) list = list.filter(t => t.date.split('T')[0] >= (startDate as string));
   if (endDate) list = list.filter(t => t.date.split('T')[0] <= (endDate as string));
@@ -136,25 +136,24 @@ app.get('/api/summary', (req, res) => {
 });
 
 // Settings, Debt, Wallet, Capital, Preorders... (Simplified for now)
-app.get('/api/settings', (req, res) => res.json({ password: '0000', storeName: 'DM FOTOCOPY', ...db.readDb().settings }));
+app.get('/api/settings', (req, res) => res.json({ password: '0000', storeName: 'DM FOTOCOPY', ...readDb().settings }));
 app.post('/api/settings', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   data.settings = { ...data.settings, ...req.body };
-  db.saveDb(data);
+  saveDb(data);
   res.json({ success: true });
 });
 
 // Wallet
-app.get('/api/wallet', (req, res) => res.json(db.readDb().wallet));
 app.post('/api/wallet', (req, res) => {
-  const entry = db.addWalletEntryInternal(req.body);
+  const entry = addWalletEntryInternal(req.body);
   io.emit('db:wallet-status-updated', { type: 'wallet' });
   res.json(entry);
 });
 app.delete('/api/wallet/:id', (req, res) => {
-  const data = db.readDb();
+  const data = readDb();
   data.wallet = data.wallet.filter(w => w.id !== parseInt(req.params.id));
-  db.saveDb(data);
+  saveDb(data);
   res.json({ success: true });
 });
 
@@ -195,7 +194,7 @@ async function processDanaText(text: string): Promise<boolean> {
   if (amounts.length > 0) {
     const dateStr = new Date().toISOString().split('T')[0];
     for (const amount of amounts) {
-      const newEntry = db.addWalletEntryInternal({
+      const newEntry = addWalletEntryInternal({
         type: 'qris',
         amount: amount,
         description: `[AUTO-${sender.toUpperCase()}] ${new Date().toLocaleTimeString('id-ID')}`,
@@ -238,14 +237,13 @@ const danaServer = http.createServer(async (req, res) => {
 // START EVERYTHING
 server.listen(PORT, () => {
   console.log(`[SERVER] Backend running at http://localhost:${PORT}`);
-  db.initDb();
   initWhatsApp();
   
   // Firebase listener
   listenToFirebaseUpdates((id, status) => {
     const numericId = parseInt(id);
     if (!isNaN(numericId)) {
-      const success = db.updateWalletStatusLocal(numericId, status as any);
+      const success = updateWalletStatusLocal(numericId, status as any);
       if (success) io.emit('db:wallet-status-updated', { id: numericId, status });
     }
   });
