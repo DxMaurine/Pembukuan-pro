@@ -1,37 +1,17 @@
 {
-  "transactions": [
-    {
-      "type": "expense",
-      "amount": 0,
-      "items": [
-        {
-          "name": "LIBUR / TOKO TUTUP",
-          "amount": 0
-        }
-      ],
-      "description": "LIBUR tgl 1",
-      "category": "Libur",
-      "date": "2026-04-01",
-      "id": 1775325644786
-    },
-    {
-      "type": "expense",
-      "amount": 0,
-      "items": [
-        {
-          "name": "LIBUR / TOKO TUTUP",
-          "amount": 0
-        }
-      ],
-      "description": "LIBUR tgl 2",
-      "category": "Libur",
-      "date": "2026-04-02",
-      "id": 1775325644787
-    }
-  ],
+  "transactions": [],
   "stock": [],
   "debts": [],
-  "wallet": [],
+  "wallet": [
+    {
+      "amount": 10000,
+      "description": "",
+      "date": "2026-04-04",
+      "status": "pending",
+      "type": "saving",
+      "id": 1775335139369
+    }
+  ],
   "capital": [],
   "preorders": [],
   "settings": {

@@ -1,4 +1,4 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import axios from 'axios'
 import { io } from 'socket.io-client'
@@ -81,6 +81,14 @@ const api = {
   onWaStatusUpdate: (callback: (data: { status: string, pushName?: string }) => void) => {
     socket.on('wa:status-update', callback)
     return () => socket.off('wa:status-update', callback)
+  },
+  
+  // --- Server Control IPC ---
+  serverManualStart: () => ipcRenderer.send('server:manual-start'),
+  onServerLog: (callback: (data: string) => void) => {
+    const listener = (_event: any, data: string) => callback(data)
+    ipcRenderer.on('server:log', listener)
+    return () => ipcRenderer.removeListener('server:log', listener)
   }
 }
 
