@@ -52,13 +52,11 @@ export function listenToFirebaseUpdates(onUpdate: (id: string, status: string) =
 
 export function listenDanaIncoming(onDana: (text: string, docId: string) => void) {
   const q = collection(db, "auto_dana_incoming");
-  console.log("[FIREBASE] Listener Dana/Gopay Aktif (Versi Stabil)...");
   return onSnapshot(q, (snapshot) => {
     snapshot.docChanges().forEach(async (change) => {
       if ((change.type === "added" || change.type === "modified")) {
         const data = change.doc.data();
         if (!data.processed) {
-          console.log(`[FIREBASE] Menangkap Pesan Baru: ${data.text ? data.text.substring(0, 50) : 'Tanpa Teks'}`);
           onDana(data.text || '', change.doc.id);
           await setDoc(doc(db, "auto_dana_incoming", change.doc.id), 
             { processed: true }, { merge: true });

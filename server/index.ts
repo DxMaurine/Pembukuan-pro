@@ -290,16 +290,16 @@ async function processDanaText(text: string, docId?: string): Promise<boolean> {
   const amounts: number[] = [];
   for (const m of keywordsMatch) {
     const val = parseFloat(m[1].replace(/[\.,]/g, ''));
-    if (val >= 100 && val < 500000000) {
+    if (val >= 1 && val < 500000000) {
       if (!amounts.includes(val)) amounts.push(val);
     }
   }
 
   if (amounts.length === 0) {
-    const fallbackMatch = [...cleanText.matchAll(/(\d[\d\.,]{3,})/g)];
+    const fallbackMatch = [...cleanText.matchAll(/(\d[\d\.,]{1,})/g)];
     for (const f of fallbackMatch) {
       const val = parseFloat(f[1].replace(/[\.,]/g, ''));
-      if (val >= 100 && val < 5000000) amounts.push(val);
+      if (val >= 1 && val < 5000000) amounts.push(val);
     }
   }
 
