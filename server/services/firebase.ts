@@ -1,4 +1,5 @@
-let firebaseCache: any = null;
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, onSnapshot, collection } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAobTZcu_KxyjZImpskRrnXpdY7fZMioGA",
@@ -9,30 +10,11 @@ const firebaseConfig = {
   appId: "1:109867212877:web:3d62060af177980cc2fec4"
 };
 
-async function getFirebase() {
-  if (firebaseCache) return firebaseCache;
-  
-  try {
-    console.log("[FIREBASE] Menginisialisasi Firebase SDK via Dynamic Import...");
-    // Use eval import to bypass CJS transformation
-    const { initializeApp } = await (eval('import("firebase/app")') as Promise<any>);
-    const fStore = await (eval('import("firebase/firestore")') as Promise<any>);
-    
-    const app = initializeApp(firebaseConfig);
-    const db = fStore.getFirestore(app);
-    
-    firebaseCache = { db, ...fStore };
-    console.log("[FIREBASE] SDK Berhasil dimuat & Firestore Terkoneksi!");
-    return firebaseCache;
-  } catch (error) {
-    console.error("[FIREBASE-FATAL] Gagal mengimpor Firebase SDK:", error);
-    throw error;
-  }
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
 export async function syncQRISToFirebase(entry: any) {
   try {
-    const { db, doc, setDoc } = await getFirebase();
     await setDoc(doc(db, "qris_notifications", entry.id.toString()), {
       ...entry,
       updatedAt: new Date().toISOString()
@@ -45,7 +27,6 @@ export async function syncQRISToFirebase(entry: any) {
 
 export async function updateFirebaseQRISStatus(id: string, status: string) {
   try {
-    const { db, doc, setDoc } = await getFirebase();
     const docRef = doc(db, "qris_notifications", id);
     await setDoc(docRef, { 
       status, 
@@ -57,46 +38,32 @@ export async function updateFirebaseQRISStatus(id: string, status: string) {
   }
 }
 
-export async function listenToFirebaseUpdates(onUpdate: (id: string, status: string) => void) {
-  try {
-    const { db, collection, onSnapshot } = await getFirebase();
-    const q = collection(db, "qris_notifications");
-    console.log("[FIREBASE] Memulai Listener QRIS Updates...");
-    return onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === "modified") {
-          const data = change.doc.data();
-          onUpdate(change.doc.id, data.status);
-        }
-      });
-    }, (error) => console.error("[FIREBASE-ERROR] QRIS Listener:", error));
-  } catch (error) {
-    console.error("[FIREBASE-FATAL] Gagal memulai QRIS listener:", error);
-  }
+export function listenToFirebaseUpdates(onUpdate: (id: string, status: string) => void) {
+  const q = collection(db, "qris_notifications");
+  return onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach((change) => {
+      if (change.type === "modified") {
+        const data = change.doc.data();
+        onUpdate(change.doc.id, data.status);
+      }
+    });
+  });
 }
 
-export async function listenDanaIncoming(onDana: (text: string, docId: string) => void) {
-  try {
-    const { db, collection, onSnapshot, doc, setDoc } = await getFirebase();
-    const q = collection(db, "auto_dana_incoming");
-    console.log("[FIREBASE] Memulai Listener Dana/Gopay Incoming...");
-    return onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach(async (change) => {
-        try {
-          const data = change.doc.data();
-          console.log(`[FIREBASE] Detect: ${change.type} | ID: ${change.doc.id} | Processed: ${data.processed}`);
-          
-          if ((change.type === "added" || change.type === "modified") && !data.processed) {
-            onDana(data.text, change.doc.id);
-            await setDoc(doc(db, "auto_dana_incoming", change.doc.id), 
-              { processed: true }, { merge: true });
-          }
-        } catch (err) {
-          console.error("[FIREBASE-ERROR] Gagal memproses dokumen:", change.doc.id, err);
+export function listenDanaIncoming(onDana: (text: string, docId: string) => void) {
+  const q = collection(db, "auto_dana_incoming");
+  console.log("[FIREBASE] Listener Dana/Gopay Aktif (Versi Stabil)...");
+  return onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach(async (change) => {
+      if ((change.type === "added" || change.type === "modified")) {
+        const data = change.doc.data();
+        if (!data.processed) {
+          console.log(`[FIREBASE] Menangkap Pesan Baru: ${data.text ? data.text.substring(0, 50) : 'Tanpa Teks'}`);
+          onDana(data.text || '', change.doc.id);
+          await setDoc(doc(db, "auto_dana_incoming", change.doc.id), 
+            { processed: true }, { merge: true });
         }
-      });
-    }, (error) => console.error("[FIREBASE-ERROR] Dana Listener:", error));
-  } catch (error) {
-    console.error("[FIREBASE-FATAL] Gagal memulai Dana listener:", error);
-  }
+      }
+    });
+  });
 }
