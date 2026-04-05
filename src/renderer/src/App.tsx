@@ -354,12 +354,12 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAddStockItem = async (e?: React.FormEvent) => {
+  const handleAddStockItem = async (e?: React.FormEvent, shouldClose: boolean = true) => {
     if (e) e.preventDefault();
     if (!newStockItem.trim()) return;
     await api.updateStock({ name: newStockItem.trim(), dateAdded: new Date().toISOString() });
     setNewStockItem('');
-    setShowStockModal(false);
+    if (shouldClose) setShowStockModal(false);
     loadData();
   };
 

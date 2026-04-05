@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Send, Trash2, X } from 'lucide-react';
+import { Package, Send, Trash2, X, Plus } from 'lucide-react';
 
 interface StockManagerProps {
   stockItems: any[];
@@ -8,7 +8,7 @@ interface StockManagerProps {
   setNewStockItem: (val: string) => void;
   showStockModal: boolean;
   setShowStockModal: (val: boolean) => void;
-  handleAddStockItem: (e?: React.FormEvent) => void;
+  handleAddStockItem: (e?: React.FormEvent, shouldClose?: boolean) => void;
   handleDeleteStockItem: (id: number) => void;
   sendStockToOwner: () => void;
 }
@@ -23,48 +23,100 @@ const StockManager: React.FC<StockManagerProps> = ({
   handleDeleteStockItem,
   sendStockToOwner,
 }) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleAddStockItem(undefined, false);
+    }
+  };
+
   return (
-    <div className="flex flex-col gap-8 animate-fade-in">
-      <header className="flex justify-between items-center">
+    <div className="flex flex-col gap-8 animate-fade-in pb-20">
+      <header className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-semibold">Barang Habis</h1>
-          <p className="text-muted dark:text-muted mt-1">Daftar barang yang harus segera dibeli/restok.</p>
+          <h1 className="text-3xl font-semibold">Stock Hub</h1>
+          <p className="text-muted dark:text-muted mt-1 uppercase tracking-widest font-black text-[10px] opacity-60">Pencatatan Barang Habis & Opname</p>
         </div>
         <div className="flex gap-4">
           <button className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10" onClick={sendStockToOwner}>
             <Send size={18} /> Kirim ke Owner
           </button>
           <button className="btn btn-primary" onClick={() => setShowStockModal(true)}>
-            <Package size={18} /> + Tambah Barang
+            <Package size={18} /> + Tambah Manual
           </button>
         </div>
       </header>
 
-      <div className="glass-card flex flex-col gap-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {stockItems.length === 0 ? (
-            <div className="col-span-full py-12 text-center opacity-50 flex flex-col items-center gap-3">
-              <Package size={48} />
-              <p className="font-bold text-sm tracking-tight text-muted uppercase">Belum ada daftar barang habis.</p>
-            </div>
-          ) : (
-            stockItems.map((item) => (
-              <div key={item.id} className="glass-card flex justify-between items-center group hover:scale-[1.02] transition-transform p-5 border-l-4 border-primary">
-                <div className="flex flex-col">
-                  <span className="font-black text-black dark:text-white uppercase tracking-tight">{item.name}</span>
-                  <span className="text-[10px] text-muted dark:text-muted uppercase font-bold tracking-widest mt-1 opacity-70">
-                    Dicatat: {new Date(item.dateAdded).toLocaleDateString('id-ID')}
-                  </span>
-                </div>
-                <button
-                  className="btn btn-danger p-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={() => handleDeleteStockItem(item.id)}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            ))
-          )}
+      {/* Excel Style Grid Container */}
+      <div className="glass-card p-0 overflow-hidden border-none shadow-2xl">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
+                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60 w-16">No.</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60">Nama Barang</th>
+                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60 w-48">Tanggal Dicatat</th>
+                <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60 w-24">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-200 dark:divide-white/5">
+              {/* Quick Add Row (Excel Mode) */}
+              <tr className="bg-primary/5 dark:bg-primary/10 group">
+                <td className="px-6 py-4 text-center">
+                  <div className="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
+                    <Plus size={14} strokeWidth={3} />
+                  </div>
+                </td>
+                <td className="px-4 py-2" colSpan={2}>
+                  <input
+                    type="text"
+                    className="w-full bg-transparent border-none outline-none py-3 px-2 font-bold text-lg placeholder:text-primary/30 placeholder:font-normal"
+                    placeholder="Ketik nama barang + tekan ENTER untuk tambah cepat..."
+                    value={newStockItem}
+                    onChange={(e) => setNewStockItem(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                  />
+                </td>
+                <td className="px-6 py-4 text-center">
+                   <span className="text-[9px] font-black text-primary uppercase tracking-tighter animate-pulse">ENTER MODE</span>
+                </td>
+              </tr>
+
+              {/* Data Rows */}
+              {stockItems.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="py-20 text-center opacity-30">
+                    <div className="flex flex-col items-center gap-4">
+                      <Package size={48} strokeWidth={1} />
+                      <p className="font-bold text-xs uppercase tracking-[0.3em]">Belum ada data barang</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                stockItems.map((item, index) => (
+                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+                    <td className="px-6 py-5 text-sm font-mono opacity-40">{index + 1}</td>
+                    <td className="px-6 py-5">
+                      <span className="font-bold text-lg uppercase tracking-tight group-hover:text-primary transition-colors italic">{item.name}</span>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold opacity-80 uppercase tracking-wider">{new Date(item.dateAdded).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                        <span className="text-[10px] opacity-40 font-mono italic">{new Date(item.dateAdded).toLocaleTimeString('id-ID')}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-5 text-center">
+                      <button
+                        className="p-2.5 rounded-xl bg-danger/10 text-danger opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-white"
+                        onClick={() => handleDeleteStockItem(item.id)}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -82,7 +134,7 @@ const StockManager: React.FC<StockManagerProps> = ({
               <div className="mb-8">
                 <h2 className="text-2xl font-bold flex items-center gap-4">
                   <div className="p-3 bg-primary/20 rounded-2xl text-primary"><Package size={24} /></div>
-                  Tambah Barang
+                  Tambah Barang Manual
                 </h2>
               </div>
 
