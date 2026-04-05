@@ -66,7 +66,7 @@ export type Data = {
   wallet: WalletEntry[];
   capital: Capital[];
   preorders: Preorder[];
-  settings: Record<string, string>;
+  settings: Record<string, any>;
 }
 
 const defaultData: Data = { 
@@ -76,7 +76,7 @@ const defaultData: Data = {
   wallet: [], 
   capital: [], 
   preorders: [],
-  settings: { password: '0000', storeName: 'DM FOTOCOPY' } 
+  settings: { password: '0000', storeName: 'DM FOTOCOPY', autoConfirm: false } 
 };
 
 const dbPath = process.env.DB_PATH || path.join(__dirname, 'db.json');

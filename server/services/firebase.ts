@@ -57,19 +57,12 @@ export function listenDanaIncoming(onDana: (text: string, docId: string) => void
       if ((change.type === "added" || change.type === "modified")) {
         const data = change.doc.data();
         
-        // Hanya proses dan log jika belum pernah diproses
         if (!data.processed) {
-          console.log(`[FIREBASE-WATCH] Data Baru Terdeteksi (${change.type}): ${change.doc.id}`);
-          console.log(`[FIREBASE-WATCH] Pesan:`, data.text);
-          
           onDana(data.text || '', change.doc.id);
           
-          // Tandai sebagai sudah diproses di Firebase
           await setDoc(doc(db, "auto_dana_incoming", change.doc.id), 
             { processed: true }, { merge: true });
         }
-        // Catatan: Dokumen yang sudah diproses (processed: true) sengaja tidak dilog 
-        // agar terminal tidak penuh saat startup.
       }
     });
   });

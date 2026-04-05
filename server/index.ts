@@ -74,7 +74,6 @@ setStatusUpdateCallback((id, status) => {
 
 // Server status
 app.get('/api/status', (req, res) => {
-  console.log('[API] Status check requested');
   res.json({ online: true, port: PORT, mode: 'firebase', logsCount: danaLogs.length, timestamp: new Date().toISOString() });
 });
 
@@ -397,21 +396,27 @@ async function processDanaText(text: string, docId?: string) {
   }
 
   if (amounts.length > 0) {
-    // Gunakan tanggal lokal (WIB) agar tidak melompat ke hari sebelumnya saat pagi hari (UTC)
-    const nowLocal = new Date();
-    const dateStr = nowLocal.getFullYear() + '-' + 
-                    String(nowLocal.getMonth() + 1).padStart(2, '0') + '-' + 
-                    String(nowLocal.getDate()).padStart(2, '0');
+    const dbData = readDb();
+    const isAutoConf = dbData.settings?.autoConfirm === true;
+
+    const dateStr = new Date().toISOString().split('T')[0];
     for (const amount of amounts) {
       const newEntry = addWalletEntryInternal({
         type: 'qris',
         amount: amount,
         description: `[AUTO-${sender.toUpperCase()}] ${new Date().toLocaleTimeString('id-ID')}`,
         date: dateStr,
-        status: 'pending'
+        status: isAutoConf ? 'received' : 'pending'
       });
+
       io.emit('db:wallet-status-updated', { type: 'wallet' });
-      await notifyQRISInternal(newEntry);
+      await notifyQRISInternal(newEntry, isAutoConf);
+
+      // Kirim Notifikasi WA ke Kasir jika Auto-Pilot Aktif
+      if (isAutoConf && dbData.settings?.cashierNumber) {
+        const waMsg = `🔔 *NOTIFIKASI AUTO-PILOT*\n\n✅ Dana Masuk: Rp ${amount.toLocaleString('id-ID')}\n📝 Keterangan: ${newEntry.description}\n\n👤 *Status: TERVERIFIKASI OTOMATIS*\n_Aplikasi DM PRO v3.0.1_`;
+        await sendInternalMessage(waMsg, dbData.settings.cashierNumber);
+      }
     }
     const idx = danaLogs.findIndex(l => l.id === logEntry.id);
     if (idx !== -1) danaLogs[idx].status = 'success';
@@ -434,6 +439,7 @@ server.listen(PORT, () => {
 server.on('error', (err: any) => {
   if (err.code === 'EADDRINUSE') {
     console.error(`[ERROR] Port ${PORT} sudah dipakai! Pastikan tidak ada terminal dev atau aplikasi lain yang sedang berjalan.`);
+    process.exit(1); 
   } else {
     console.error('[SERVER-ERROR]', err);
   }
@@ -452,10 +458,8 @@ listenToFirebaseUpdates((id, status) => {
 });
 
 // Firebase DANA incoming listener
-console.log('[FIREBASE] Menghubungkan ke koleksi auto_dana_incoming...');
 listenDanaIncoming(async (text, docId) => {
   console.log('[FIREBASE-WATCH] Data Baru Terdeteksi dari HP!', docId);
-  console.log('[FIREBASE-WATCH] Isi Pesan:', text ? text.substring(0, 100) : 'KOSONG');
   await processDanaText(text || '', docId);
 });
 console.log('[FIREBASE] Listener Dana/Gopay Aktif (Menunggu Notifikasi)');

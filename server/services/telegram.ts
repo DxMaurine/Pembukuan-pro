@@ -12,20 +12,24 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
 console.log('[TELEGRAM] >> Bot aktif di Server!');
 
-export async function notifyQRISInternal(entry: any) {
+export async function notifyQRISInternal(entry: any, autoConfirm: boolean = false) {
   try {
-    const message = `🔔 *NOTIFIKASI QRIS MASUK*\n\n📝 Deskripsi: ${entry.description}\n💰 Nominal: Rp ${entry.amount.toLocaleString('id-ID')}\n📅 Tanggal: ${entry.date}\n\n👤 *Status: MENUNGGU VERIFIKASI*\nSilahkan konfirmasi jika dana sudah masuk.`;
+    const statusText = autoConfirm ? '✅ *STATUS: TERVERIFIKASI (AUTO)*' : '👤 *Status: MENUNGGU VERIFIKASI*\nSilahkan konfirmasi jika dana sudah masuk.';
+    const message = `🔔 *NOTIFIKASI QRIS MASUK*\n\n📝 Deskripsi: ${entry.description}\n💰 Nominal: Rp ${entry.amount.toLocaleString('id-ID')}\n📅 Tanggal: ${entry.date}\n\n${statusText}`;
 
-    const options = {
-      parse_mode: 'Markdown',
-      reply_markup: {
+    const options: any = {
+      parse_mode: 'Markdown'
+    };
+
+    if (!autoConfirm) {
+      options.reply_markup = {
         inline_keyboard: [
           [
             { text: '✅ DITERIMA', callback_data: `qris_received:${entry.id}` }
           ]
         ]
-      }
-    };
+      };
+    }
 
     syncQRISToFirebase({ ...entry, status: 'pending' }).catch((e: any) =>
       console.warn('[FIREBASE] Sync gagal:', e?.message)

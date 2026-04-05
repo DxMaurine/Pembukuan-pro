@@ -56,4 +56,5 @@ export interface Settings {
   password?: string;
   cashierNumber?: string;
   ownerNumber?: string;
+  autoConfirm?: boolean;
 }

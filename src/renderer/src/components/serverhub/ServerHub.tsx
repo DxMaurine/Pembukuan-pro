@@ -212,8 +212,8 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
       setServerLogs(prev => [...prev, data].slice(-100));
     });
 
-    return () => { 
-      socketRef.current?.disconnect(); 
+    return () => {
+      socketRef.current?.disconnect();
       removeLogListener();
     };
   }, []);
@@ -275,8 +275,8 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
             key={tab.id}
             onClick={() => setActiveSubTab(tab.id as any)}
             className={`flex items-center gap-3 px-6 py-3 rounded-2xl text-[11px] font-bold transition-all duration-300 ${activeSubTab === tab.id
-                ? 'bg-white dark:bg-primary text-primary dark:text-white shadow-xl scale-105'
-                : 'text-text-muted hover:text-text-main'
+              ? 'bg-white dark:bg-primary text-primary dark:text-white shadow-xl scale-105'
+              : 'text-text-muted hover:text-text-main'
               }`}
           >
             <tab.icon size={16} className={`${activeSubTab === tab.id ? 'opacity-100' : 'opacity-40'}`} />
@@ -388,10 +388,10 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
                   <h4 className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4">Traffic Summary</h4>
                   <div className="space-y-4">
                     {[
-                       { label: 'Success', count: stats.success, color: 'bg-emerald-500', total: stats.total },
-                       { label: 'Failed', count: stats.failed, color: 'bg-rose-500', total: stats.total },
-                       { label: 'Duplicate', count: stats.duplicate, color: 'bg-orange-500', total: stats.total },
-                       { label: 'Pending', count: stats.pending, color: 'bg-amber-500', total: stats.total },
+                      { label: 'Success', count: stats.success, color: 'bg-emerald-500', total: stats.total },
+                      { label: 'Failed', count: stats.failed, color: 'bg-rose-500', total: stats.total },
+                      { label: 'Duplicate', count: stats.duplicate, color: 'bg-orange-500', total: stats.total },
+                      { label: 'Pending', count: stats.pending, color: 'bg-amber-500', total: stats.total },
                     ].map(stat => (
                       <div key={stat.label}>
                         <div className="flex justify-between text-[10px] font-bold text-text-muted uppercase mb-1.5">
@@ -492,51 +492,51 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
 
         {activeSubTab === 'server-log' && (
           <div className="animate-fade-in flex flex-col h-full pb-20">
-             <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-xl font-bold text-text-main flex items-center gap-3">
-                    <Terminal className="text-rose-500" size={24} />
-                    Backend Terminal Monitor
-                  </h2>
-                  <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">Live Server Output & Debugging Console</p>
-                </div>
-                <button 
-                  onClick={() => {
-                    setServerLogs(["[UI] Memicu startup server secara manual..."]);
-                    api.serverManualStart();
-                  }}
-                  className="btn btn-primary px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg shadow-primary/20 group uppercase text-[10px] tracking-widest font-bold"
-                >
-                  <Zap size={16} className="group-hover:scale-125 transition-transform" />
-                  Jalankan Server
-                </button>
-             </div>
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-text-main flex items-center gap-3">
+                  <Terminal className="text-rose-500" size={24} />
+                  Backend Terminal Monitor
+                </h2>
+                <p className="text-[10px] text-text-muted font-bold uppercase tracking-widest mt-1">Live Server Output & Debugging Console</p>
+              </div>
+              <button
+                onClick={() => {
+                  setServerLogs(["[UI] Memicu startup server secara manual..."]);
+                  api.serverManualStart();
+                }}
+                className="btn btn-primary px-6 py-3 rounded-2xl flex items-center gap-2 shadow-lg shadow-primary/20 group uppercase text-[10px] tracking-widest font-bold"
+              >
+                <Zap size={16} className="group-hover:scale-125 transition-transform" />
+                Check Server
+              </button>
+            </div>
 
-             <div className="flex-1 bg-black/90 rounded-[32px] p-8 font-mono text-xs border border-white/5 shadow-2xl relative overflow-hidden group">
-                {/* Scanline effect */}
-                <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.02),rgba(0,255,0,0.01),rgba(0,0,255,0.02))] bg-[length:100%_4px,3px_100%] z-10 opacity-30" />
-                
-                <div className="h-full overflow-y-auto custom-scrollbar-dark pr-4 space-y-1.5 relative z-20">
-                  {serverLogs.length === 0 ? (
-                    <div className="text-slate-600 flex flex-col items-center justify-center h-full opacity-50">
-                      <Terminal size={40} className="mb-4" />
-                      <p className="uppercase tracking-[0.3em] font-bold">Waiting for server output...</p>
+            <div className="flex-1 bg-black/90 rounded-[32px] p-8 font-mono text-xs border border-white/5 shadow-2xl relative overflow-hidden group">
+              {/* Scanline effect */}
+              <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%),linear-gradient(90deg,rgba(255,0,0,0.02),rgba(0,255,0,0.01),rgba(0,0,255,0.02))] bg-[length:100%_4px,3px_100%] z-10 opacity-30" />
+
+              <div className="h-full overflow-y-auto custom-scrollbar-dark pr-4 space-y-1.5 relative z-20">
+                {serverLogs.length === 0 ? (
+                  <div className="text-slate-600 flex flex-col items-center justify-center h-full opacity-50">
+                    <Terminal size={40} className="mb-4" />
+                    <p className="uppercase tracking-[0.3em] font-bold">Waiting for server output...</p>
+                  </div>
+                ) : (
+                  serverLogs.map((log, i) => (
+                    <div key={i} className={`break-all leading-relaxed ${log.includes('[ERROR]') ? 'text-rose-400' : 'text-emerald-400/90'}`}>
+                      <span className="text-white/20 mr-2 select-none">[{i.toString().padStart(3, '0')}]</span>
+                      {log}
                     </div>
-                  ) : (
-                    serverLogs.map((log, i) => (
-                      <div key={i} className={`break-all leading-relaxed ${log.includes('[ERROR]') ? 'text-rose-400' : 'text-emerald-400/90'}`}>
-                        <span className="text-white/20 mr-2 select-none">[{i.toString().padStart(3, '0')}]</span>
-                        {log}
-                      </div>
-                    ))
-                  )}
-                  <div id="terminal-bottom" />
-                </div>
-             </div>
-             
-             <p className="mt-4 text-[10px] text-text-muted font-bold tracking-widest uppercase opacity-40 text-center">
-               Note: Terminal ini merekam output langsung dari proses Node.js utama backend.
-             </p>
+                  ))
+                )}
+                <div id="terminal-bottom" />
+              </div>
+            </div>
+
+            <p className="mt-4 text-[10px] text-text-muted font-bold tracking-widest uppercase opacity-40 text-center">
+              Note: Terminal ini merekam output langsung dari proses Node.js utama backend.
+            </p>
           </div>
         )}
       </div>

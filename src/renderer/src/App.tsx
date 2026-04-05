@@ -50,6 +50,7 @@ const App: React.FC = () => {
   const [loginInput, setLoginInput] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [showPIN, setShowPIN] = useState(false);
+  const [autoConfirm, setAutoConfirm] = useState(false);
 
   // Theme support
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -227,6 +228,7 @@ const App: React.FC = () => {
       setTransacPage(1);
       setStockItems(st);
       if (set.storeName) setStoreName(set.storeName);
+      if (set.autoConfirm !== undefined) setAutoConfirm(set.autoConfirm);
       const pin = set.password || '0000';
       setSavedPassword(pin);
       localStorage.setItem('cachedPin', pin);
@@ -271,6 +273,7 @@ const App: React.FC = () => {
       // Small fetch just for settings to get store name and PIN
       api.getSettings().then((set: Settings) => {
         if (set.storeName) setStoreName(set.storeName);
+        if (set.autoConfirm !== undefined) setAutoConfirm(set.autoConfirm);
         const pin = set.password || '0000';
         setSavedPassword(pin);
         // Cache PIN locally so login still works when server is offline
@@ -577,36 +580,119 @@ const App: React.FC = () => {
             )}
 
             {activeTab === 'settings' && (
-              <div className="flex flex-col gap-8 max-w-[500px]">
-                <header><h1 className="text-3xl font-semibold">Pengaturan</h1></header>
-                <div className="glass-card">
-                  <h3 className="text-lg font-bold mb-1">Informasi Toko</h3>
-                  <p className="text-xs text-muted dark:text-muted/50 mb-4 italic">Nama ini akan muncul di header aplikasi dan laporan PDF Anda.</p>
-                  <input type="text" className="form-input" value={storeName} onChange={(e) => setStoreName(e.target.value)} />
-                  <button className="btn btn-primary w-full mt-4" onClick={async () => { await api.saveSettings({ storeName }); Swal.fire('Berhasil!', '', 'success'); }}>Simpan</button>
-                </div>
-                <div className="glass-card">
-                  <h3 className="text-lg font-bold mb-1">Security PIN</h3>
-                  <p className="text-xs text-muted dark:text-muted/50 mb-4 italic">Gunakan PIN untuk membatasi akses masuk ke data pembukuan Anda.</p>
-                  
-                  <div className="relative group">
-                    <input 
-                      type={showPIN ? 'text' : 'password'} 
-                      className="form-input pr-12" 
-                      value={newPassword} 
-                      onChange={(e) => setNewPassword(e.target.value)} 
-                      placeholder="PIN Baru" 
-                    />
+              <div className="flex flex-col gap-10 animate-fade-in pb-20">
+                <header className="mb-2">
+                  <h1 className="text-3xl font-semibold">Pengaturan Sistem</h1>
+                  <p className="text-sm text-text-muted mt-1 uppercase tracking-widest font-bold opacity-60">Konfigurasi & Keamanan Aplikasi</p>
+                </header>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                  {/* Left: Store Info */}
+                  <div className="glass-card flex flex-col h-full">
+                    <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                      🏢 Informasi Toko
+                    </h3>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Identitas Visual Laporan</p>
+                    
+                    <div className="space-y-4 flex-1">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Nama Toko / Bisnis:</label>
+                        <input type="text" className="form-input w-full text-lg font-bold" value={storeName} onChange={(e) => setStoreName(e.target.value)} />
+                        <p className="text-[11px] text-text-muted italic ml-1 opacity-50">*Nama ini akan muncul di header & PDF.</p>
+                      </div>
+                    </div>
+
                     <button 
-                      type="button"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                      onClick={() => setShowPIN(!showPIN)}
+                      className="btn btn-primary w-full py-4 mt-8 rounded-2xl font-bold uppercase tracking-[0.15em] shadow-lg shadow-primary/20" 
+                      onClick={async () => { await api.saveSettings({ storeName }); Swal.fire('Berhasil!', 'Nama toko diperbarui.', 'success'); }}
                     >
-                      {showPIN ? <EyeOff size={18} /> : <Eye size={18} />}
+                      Simpan Nama Toko
                     </button>
                   </div>
 
-                  <button className="btn btn-primary w-full mt-4" onClick={async () => { await api.saveSettings({ password: newPassword }); setSavedPassword(newPassword); localStorage.setItem('cachedPin', newPassword); setNewPassword(''); Swal.fire('Berhasil!', '', 'success'); }}>Update PIN</button>
+                  {/* Right: Auto-Pilot */}
+                  <div className="glass-card flex flex-col h-full border-primary/20 dark:bg-primary/5">
+                    <div className="flex justify-between items-start mb-1">
+                      <h3 className="text-xl font-bold flex items-center gap-2">
+                        🚀 Mode Auto-Pilot
+                        {autoConfirm && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
+                      </h3>
+                      <button 
+                        onClick={async () => {
+                          const newVal = !autoConfirm;
+                          setAutoConfirm(newVal);
+                          await api.saveSettings({ autoConfirm: newVal });
+                          Swal.fire({
+                            title: newVal ? 'Auto-Pilot AKTIF' : 'Mode Manual AKTIF',
+                            icon: 'info',
+                            timer: 2000,
+                            showConfirmButton: false
+                          });
+                        }}
+                        className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${autoConfirm ? 'bg-primary' : 'bg-slate-200 dark:bg-white/10'}`}
+                      >
+                        <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoConfirm ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Otomasi Konfirmasi QRIS</p>
+
+                    <div className="flex-1 space-y-4">
+                      <div className={`p-5 rounded-3xl border transition-all ${autoConfirm ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
+                        <h4 className={`text-xs font-bold uppercase tracking-widest mb-2 ${autoConfirm ? 'text-emerald-600' : 'text-amber-600'}`}>
+                          {autoConfirm ? '✓ STATUS: OTOMATIS AKTIF' : '⚠ STATUS: MANUAL (AMAN)'}
+                        </h4>
+                        <p className="text-[11px] leading-relaxed font-medium text-text-muted italic">
+                          {autoConfirm 
+                            ? "Sistem akan langsung menyetujui setiap uang masuk tanpa konfirmasi manual. Sangat direkomendasikan saat transaksi sedang ramai agar antrean lancar."
+                            : "Sistem akan mencatat uang masuk sebagai 'Pending'. Bapak wajib menekan tombol 'DITERIMA' di Telegram sebagai langkah verifikasi ganda."}
+                        </p>
+                      </div>
+                      
+                      <div className="p-4 bg-bg-surface/50 rounded-2xl border border-border/50">
+                        <p className="text-[10px] font-bold text-text-muted leading-tight">
+                          *Pilihan mode ini berlaku untuk semua notifikasi QRIS & DANA yang masuk ke sistem.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-[0.5fr_0.5fr] gap-8">
+                  {/* Security PIN */}
+                  <div className="glass-card">
+                    <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                       🔒 Security PIN
+                    </h3>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Akses Masuk & Privasi Data</p>
+                    
+                    <div className="relative group mb-6">
+                      <input 
+                        type={showPIN ? 'text' : 'password'} 
+                        className="form-input w-full pr-12 py-3.5" 
+                        value={newPassword} 
+                        onChange={(e) => setNewPassword(e.target.value)} 
+                        placeholder="Masukkan PIN Baru" 
+                      />
+                      <button 
+                        type="button"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                        onClick={() => setShowPIN(!showPIN)}
+                      >
+                        {showPIN ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+
+                    <button 
+                      className="btn btn-primary w-full py-4 rounded-2xl font-bold uppercase tracking-[0.15em]" 
+                      onClick={async () => { await api.saveSettings({ password: newPassword }); setSavedPassword(newPassword); localStorage.setItem('cachedPin', newPassword); setNewPassword(''); Swal.fire('Berhasil!', 'PIN Keamanan diperbarui.', 'success'); }}
+                    >
+                      Update PIN Kemanan
+                    </button>
+                  </div>
+                  <div className="hidden lg:block p-8 border-2 border-dashed border-border/20 rounded-3xl flex flex-col items-center justify-center text-center opacity-30">
+                     <p className="text-xs font-bold uppercase tracking-widest">DM PRO V3.0.1</p>
+                     <p className="text-[10px] font-medium">Harmony Interface System</p>
+                  </div>
                 </div>
               </div>
             )}
