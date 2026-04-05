@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Wallet, QrCode, Plus, Trash2, TrendingUp, PiggyBank, ArrowUpRight, Send, X, Pencil, CheckCircle2, Clock } from 'lucide-react';
+import { Wallet, Plus, Trash2, Pencil, QrCode, X, Send, TrendingUp, PiggyBank, ArrowUpRight, CheckCircle2, Clock } from 'lucide-react';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
 import { generateWalletPDF } from '../../utils/pdf';
 import Swal from 'sweetalert2';
@@ -132,8 +132,10 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
     <div className="flex flex-col gap-8 animate-fade-in">
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-semibold">Wallet & QRIS</h1>
-          <p className="text-muted dark:text-muted mt-1">Pantau tabungan harian dan pemasukan lewat QRIS.</p>
+          <h1 className="text-3xl font-semibold flex items-center gap-3">
+            <QrCode className="text-primary" size={32} /> Wallet & QRIS
+          </h1>
+          <p className="text-muted dark:text-muted mt-1">Pantau saldo digital dan transaksi QR code.</p>
         </div>
         <div className="flex items-center gap-4">
           <button onClick={sendWalletReport} className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 flex items-center gap-2">

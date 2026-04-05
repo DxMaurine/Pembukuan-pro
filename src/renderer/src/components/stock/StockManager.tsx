@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Send, Trash2, X, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Package, Send, Trash2, X, Plus, AlertCircle, Archive, CheckCircle2 } from 'lucide-react';
 
 interface StockManagerProps {
   stockItems: any[];
@@ -37,7 +37,9 @@ const StockManager: React.FC<StockManagerProps> = ({
     <div className="flex flex-col gap-8 animate-fade-in pb-20">
       <header className="flex justify-between items-end">
         <div>
-          <h1 className="text-3xl font-semibold">Stock Hub</h1>
+          <h1 className="text-3xl font-semibold flex items-center gap-3">
+            <Archive className="text-primary" size={32} /> Stock Hub
+          </h1>
           <p className="text-muted dark:text-muted mt-1 uppercase tracking-widest Font_bold text-[10px] opacity-60">Pencatatan Barang Habis & Opname</p>
         </div>
         <div className="flex gap-4">

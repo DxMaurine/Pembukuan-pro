@@ -64,8 +64,8 @@ const Overview: React.FC<OverviewProps> = ({
     <div className="flex flex-col gap-8">
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-             Ringkasan Bisnis
+          <h1 className="text-3xl font-bold flex items-center gap-3 text-slate-800 dark:text-white">
+            <TrendingUp className="text-primary" size={32} /> Ringkasan Bisnis
           </h1>
           <p className="text-muted dark:text-muted mt-1 font-bold text-[10px] uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-4 py-1.5 rounded-full border border-slate-200 dark:border-white/10 inline-block shadow-inner">
             {months[filterMonth]} {filterYear}

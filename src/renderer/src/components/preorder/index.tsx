@@ -199,7 +199,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-semibold flex items-center gap-3">
-             <ShoppingBag className="text-primary" size={32} /> Management Preorder
+             <ShoppingBag className="text-primary" size={32} /> Manajemen Pesanan
           </h1>
           <p className="text-muted dark:text-muted mt-1 italic text-sm opacity-60">Pencatatan antrian cetak & jasa percetakan.</p>
         </div>

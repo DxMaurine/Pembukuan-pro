@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
-import { Eye, EyeOff, Plus } from 'lucide-react';
+import { Eye, EyeOff, Plus, History, Settings2 } from 'lucide-react';
 
 // Types
 import { Transaction, StockItem, Summary, Settings } from './types';
@@ -574,7 +574,9 @@ const App: React.FC = () => {
                 <div className="flex flex-col gap-8">
                   <header className="flex justify-between items-center">
                     <div>
-                      <h1 className="text-3xl font-semibold">Semua Transaksi</h1>
+                      <h1 className="text-3xl font-semibold flex items-center gap-3">
+                        <History className="text-primary" size={32} /> Semua Transaksi
+                      </h1>
                       <p className="text-muted dark:text-muted mt-1">Cari dan kelola histori keuangan Anda.</p>
                     </div>
                     <div className="flex gap-4">
@@ -706,7 +708,9 @@ const App: React.FC = () => {
               {activeTab === 'settings' && (
                 <div className="flex flex-col gap-10 animate-fade-in pb-20">
                   <header className="mb-2">
-                    <h1 className="text-3xl font-semibold">Pengaturan Sistem</h1>
+                    <h1 className="text-3xl font-semibold flex items-center gap-3">
+                      <Settings2 className="text-primary" size={32} /> Pengaturan Sistem
+                    </h1>
                     <p className="text-sm text-text-muted mt-1 uppercase tracking-widest font-bold opacity-60">Konfigurasi & Keamanan Aplikasi</p>
                   </header>
 

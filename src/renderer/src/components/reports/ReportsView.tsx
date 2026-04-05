@@ -1,5 +1,5 @@
 import React from 'react';
-import { Send } from 'lucide-react';
+import { Send, FileText } from 'lucide-react';
 import Timeline from '../transactions/Timeline';
 import { months, getYearOptions } from '../../utils/dateUtils';
 
@@ -40,7 +40,9 @@ const ReportsView: React.FC<ReportsViewProps> = ({
     <div className="flex flex-col gap-8">
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-semibold">Laporan Keuangan</h1>
+          <h1 className="text-3xl font-semibold flex items-center gap-3">
+            <FileText className="text-primary" size={32} /> Laporan Keuangan
+          </h1>
           <p className="text-slate-500 dark:text-text-muted mt-1">Review data per periode dan ekspor laporan.</p>
         </div>
         <button className="btn btn-primary" onClick={sendToOwner}>

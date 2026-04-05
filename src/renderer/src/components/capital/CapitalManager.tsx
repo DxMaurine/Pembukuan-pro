@@ -60,7 +60,9 @@ const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, 
     <div className="flex flex-col gap-8 animate-fade-in">
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-semibold">Modal Toko</h1>
+          <h1 className="text-3xl font-semibold flex items-center gap-3">
+            <Coins className="text-primary" size={32} /> Modal Toko
+          </h1>
           <p className="text-muted dark:text-muted mt-1">Kelola saldo awal operasional setiap bulan.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Trash2, CheckCircle, AlertCircle, Search, CreditCard, Send, X, Pencil } from 'lucide-react';
+import { Plus, Search, Trash2, Pencil, Users, Send, CreditCard, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
 import { generateDebtPDF } from '../../utils/pdf';
 import Swal from 'sweetalert2';
@@ -128,8 +128,10 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
     <div className="flex flex-col gap-8 animate-fade-in">
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-semibold">Hutang Piutang</h1>
-          <p className="text-muted dark:text-muted mt-1">Kelola catatan hutang ke suplier dan piutang pelanggan.</p>
+          <h1 className="text-3xl font-semibold flex items-center gap-3">
+            <Users className="text-primary" size={32} /> Hutang Piutang
+          </h1>
+          <p className="text-muted dark:text-muted mt-1">Kelola data pinjaman dan penagihan pelanggan.</p>
         </div>
         <div className="flex gap-4">
           <button className="btn btn-secondary border-slate-300 dark:border-white/10" onClick={sendDebtReport}>
