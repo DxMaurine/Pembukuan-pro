@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Send, Trash2, X, Plus } from 'lucide-react';
+import { Package, Send, Trash2, X, Plus, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface StockManagerProps {
   stockItems: any[];
@@ -11,6 +11,8 @@ interface StockManagerProps {
   handleAddStockItem: (e?: React.FormEvent, shouldClose?: boolean) => void;
   handleDeleteStockItem: (id: number) => void;
   sendStockToOwner: () => void;
+  isStockUrgent: boolean;
+  setIsStockUrgent: (val: boolean) => void;
 }
 
 const StockManager: React.FC<StockManagerProps> = ({
@@ -22,6 +24,8 @@ const StockManager: React.FC<StockManagerProps> = ({
   handleAddStockItem,
   handleDeleteStockItem,
   sendStockToOwner,
+  isStockUrgent,
+  setIsStockUrgent,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
@@ -34,13 +38,13 @@ const StockManager: React.FC<StockManagerProps> = ({
       <header className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-semibold">Stock Hub</h1>
-          <p className="text-muted dark:text-muted mt-1 uppercase tracking-widest font-black text-[10px] opacity-60">Pencatatan Barang Habis & Opname</p>
+          <p className="text-muted dark:text-muted mt-1 uppercase tracking-widest Font_bold text-[10px] opacity-60">Pencatatan Barang Habis & Opname</p>
         </div>
         <div className="flex gap-4">
           <button className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10" onClick={sendStockToOwner}>
             <Send size={18} /> Kirim ke Owner
           </button>
-          <button className="btn btn-primary" onClick={() => setShowStockModal(true)}>
+          <button className="btn btn-primary" onClick={() => { setIsStockUrgent(false); setShowStockModal(true); }}>
             <Package size={18} /> + Tambah Manual
           </button>
         </div>
@@ -52,32 +56,49 @@ const StockManager: React.FC<StockManagerProps> = ({
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
-                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60 w-16">No.</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60">Nama Barang</th>
-                <th className="px-6 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60 w-48">Tanggal Dicatat</th>
-                <th className="px-6 py-4 text-center text-[10px] font-black uppercase tracking-[0.2em] text-muted opacity-60 w-24">Aksi</th>
+                <th className="px-6 py-4 text-left text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60 w-16">No.</th>
+                <th className="px-6 py-4 text-left text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60">Nama Barang</th>
+                <th className="px-6 py-4 text-left text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60 w-48">Tanggal Dicatat</th>
+                <th className="px-6 py-4 text-center text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60 w-24">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/5">
               {/* Quick Add Row (Excel Mode) */}
-              <tr className="bg-primary/5 dark:bg-primary/10 group">
+              <tr className={`${isStockUrgent ? 'bg-rose-500/5 dark:bg-rose-500/10' : 'bg-primary/5 dark:bg-primary/10'} transition-colors group`}>
                 <td className="px-6 py-4 text-center">
-                  <div className="w-6 h-6 rounded-lg bg-primary/20 text-primary flex items-center justify-center">
-                    <Plus size={14} strokeWidth={3} />
-                  </div>
+                  <button 
+                    onClick={() => setIsStockUrgent(!isStockUrgent)}
+                    className={`w-8 h-8 rounded-xl transition-all flex items-center justify-center ${
+                      isStockUrgent 
+                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-110' 
+                        : 'bg-primary/20 text-primary hover:bg-primary/30'
+                    }`}
+                    title={isStockUrgent ? "Status: MENDESAK" : "Klik untuk tandai MENDESAK"}
+                  >
+                    {isStockUrgent ? <AlertCircle size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}
+                  </button>
                 </td>
                 <td className="px-4 py-2" colSpan={2}>
-                  <input
-                    type="text"
-                    className="w-full bg-transparent border-none outline-none py-3 px-2 font-bold text-lg placeholder:text-primary/30 placeholder:font-normal"
-                    placeholder="Ketik nama barang + tekan ENTER untuk tambah cepat..."
-                    value={newStockItem}
-                    onChange={(e) => setNewStockItem(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                  />
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="text"
+                      className="w-full bg-transparent border-none outline-none py-3 px-2 font-bold text-lg placeholder:text-primary/30 placeholder:font-normal"
+                      placeholder={isStockUrgent ? "Ketik BARANG MENDESAK..." : "Ketik nama barang + tekan ENTER..."}
+                      value={newStockItem}
+                      onChange={(e) => setNewStockItem(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                    />
+                    {isStockUrgent && (
+                      <span className="flex items-center gap-1 px-3 py-1 bg-rose-500 text-white text-[10px] font-black rounded-full animate-pulse whitespace-nowrap">
+                        🚨 MENDESAK
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4 text-center">
-                   <span className="text-[9px] font-black text-primary uppercase tracking-tighter animate-pulse">ENTER MODE</span>
+                   <span className={`text-[9px] Font_bold uppercase tracking-tighter ${isStockUrgent ? 'text-rose-500' : 'text-primary opacity-40'}`}>
+                     {isStockUrgent ? 'URGENT MODE' : 'ENTER MODE'}
+                   </span>
                 </td>
               </tr>
 
@@ -92,11 +113,35 @@ const StockManager: React.FC<StockManagerProps> = ({
                   </td>
                 </tr>
               ) : (
-                stockItems.map((item, index) => (
-                  <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
-                    <td className="px-6 py-5 text-sm font-mono opacity-40">{index + 1}</td>
+                [...stockItems].reverse().map((item, index) => (
+                  <tr 
+                    key={item.id} 
+                    className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group ${
+                      item.isUrgent ? 'bg-rose-500/[0.03] dark:bg-rose-500/[0.06]' : ''
+                    }`}
+                  >
+                    <td className="px-6 py-5 text-sm font-mono opacity-40 text-center">
+                      {item.isUrgent ? (
+                        <div className="w-6 h-6 bg-rose-500/20 text-rose-500 rounded-lg flex items-center justify-center mx-auto shadow-sm shadow-rose-500/10">
+                          <AlertCircle size={14} strokeWidth={3} />
+                        </div>
+                      ) : (
+                        stockItems.length - index
+                      )}
+                    </td>
                     <td className="px-6 py-5">
-                      <span className="font-bold text-lg uppercase tracking-tight group-hover:text-primary transition-colors italic">{item.name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className={`font-bold text-lg uppercase tracking-tight transition-colors italic ${
+                          item.isUrgent ? 'text-rose-600 dark:text-rose-400' : 'group-hover:text-primary'
+                        }`}>
+                          {item.name}
+                        </span>
+                        {item.isUrgent && (
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[9px] font-black rounded-lg border border-rose-200 dark:border-rose-500/30">
+                             PENANGANAN CEPAT
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-5">
                       <div className="flex flex-col">
@@ -139,18 +184,45 @@ const StockManager: React.FC<StockManagerProps> = ({
               </div>
 
               <form onSubmit={handleAddStockItem} className="space-y-6">
-                <div>
-                  <label className="block mb-2 text-[10px] font-black uppercase tracking-widest text-muted opacity-80">Nama Barang</label>
-                  <input
-                    type="text"
-                    className="form-input py-4 text-lg font-normal"
-                    placeholder="Contoh: Kertas A4, Tinta Printer..."
-                    autoFocus
-                    required
-                    value={newStockItem}
-                    onChange={(e) => setNewStockItem(e.target.value)}
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block mb-2 text-[10px] Font_bold uppercase tracking-widest text-muted opacity-80">Nama Barang</label>
+                    <input
+                      type="text"
+                      className="form-input py-4 text-lg font-normal"
+                      placeholder="Contoh: Kertas A4, Tinta Printer..."
+                      autoFocus
+                      required
+                      value={newStockItem}
+                      onChange={(e) => setNewStockItem(e.target.value)}
+                    />
+                  </div>
+
+                  <div 
+                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
+                      isStockUrgent 
+                      ? 'bg-rose-50 border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/30' 
+                      : 'bg-slate-50 border-slate-200 dark:bg-white/5 dark:border-white/10'
+                    }`}
+                    onClick={() => setIsStockUrgent(!isStockUrgent)}
+                  >
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                      isStockUrgent ? 'bg-rose-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-muted'
+                    }`}>
+                      <AlertCircle size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-bold">Tandai MENDESAK</p>
+                      <p className="text-[10px] text-muted italic">Prioritas tinggi untuk segera dibeli.</p>
+                    </div>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                      isStockUrgent ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-300 dark:border-white/20'
+                    }`}>
+                      {isStockUrgent && <CheckCircle2 size={14} strokeWidth={3} />}
+                    </div>
+                  </div>
                 </div>
+
                 <button type="submit" className="btn btn-primary w-full justify-center py-5 rounded-2x font-bold text-md shadow-lg shadow-primary/20">
                   Simpan ke Daftar
                 </button>

@@ -45,7 +45,17 @@ export async function notifyQRISInternal(entry: any, autoConfirm: boolean = fals
 
 export async function notifyPreorderInternal(entry: any) {
   try {
-    const message = `📋 *PESANAN PREORDER BARU*\n\n👤 Pelanggan: ${entry.customerName}\n🛠️ Layanan: ${entry.serviceName}\n💰 Total: Rp ${entry.totalAmount.toLocaleString('id-ID')}\n💳 DP: Rp ${entry.downPayment.toLocaleString('id-ID')}\n💸 Sisa: Rp ${entry.remainingAmount.toLocaleString('id-ID')}\n📅 Deadline: ${entry.dueDate}\n\n📝 Catatan: ${entry.notes || '-'}\n\n👤 *Status: TERCATAT DI SISTEM*\nMohon segera diproses, terima kasih!`;
+    let itemsDetail = '';
+    if (entry.items && entry.items.length > 0) {
+      itemsDetail = '\n📦 *DETAIL ITEM:*\n' + entry.items.map((item: any, idx: number) => {
+        const sizeInfo = item.isBanner ? ` (${item.p}x${item.l}m)` : '';
+        const materialInfo = item.bahan ? ` [${item.bahan}]` : '';
+        const notesInfo = item.notes ? `\n   └ 📝 _Catatan: ${item.notes}_` : '';
+        return `${idx + 1}. *${item.name}*${materialInfo}${sizeInfo} x${item.qty}${notesInfo}`;
+      }).join('\n') + '\n';
+    }
+
+    const message = `📋 *PESANAN PREORDER BARU*\n\n👤 Pelanggan: ${entry.customerName}\n🛠️ Layanan: ${entry.serviceName}\n${itemsDetail}\n💰 Total: Rp ${entry.totalAmount.toLocaleString('id-ID')}\n💳 DP: Rp ${entry.downPayment.toLocaleString('id-ID')}\n💸 Sisa: Rp ${entry.remainingAmount.toLocaleString('id-ID')}\n📅 Deadline: ${entry.dueDate}\n\n👤 *Status: TERCATAT DI SISTEM*\nMohon segera diproses, terima kasih!`;
 
     await bot.sendMessage(CHAT_ID, message, { parse_mode: 'Markdown' });
     return { success: true };

@@ -61,7 +61,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
         { id: 'preorder', icon: ShoppingBag, label: 'Preorder' },
-        { id: 'transactions', icon: History, label: 'Riwayat Transaksi' },
       ]
     },
     {
@@ -88,6 +87,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           badge: serverOnline === null ? 'checking' : serverOnline ? 'online' : 'offline',
         },
         { id: 'reports', icon: FileText, label: 'Laporan PDF' },
+        { id: 'transactions', icon: History, label: 'Riwayat Transaksi' },
         { id: 'settings', icon: Settings, label: 'Pengaturan App' },
       ]
     }
@@ -116,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <h2 className="text-xl Font-bold tracking-tight text-muted/90 leading-none uppercase">{storeName}</h2>
             <div className="flex items-center gap-1.5 mt-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[10px] Font-bold uppercase tracking-widest text-muted opacity-60">Admin Pro v3.1.2</span>
+              <span className="text-[10px] Font-bold uppercase tracking-widest text-muted opacity-60">Admin Pro v3.1.5</span>
             </div>
           </div>
         </div>
@@ -193,7 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <div className="text-center pt-2">
           <p className="text-[9px] text-muted opacity-40 Font-bold uppercase tracking-[0.3em]">
-            Harmony Interface v3.1.2
+            Harmony Interface v3.1.5
           </p>
         </div>
       </div>

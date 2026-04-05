@@ -40,6 +40,7 @@ const App: React.FC = () => {
   const [preorders, setPreorders] = useState<any[]>([]);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [newStockItem, setNewStockItem] = useState('');
+  const [isStockUrgent, setIsStockUrgent] = useState(false);
   const [showStockModal, setShowStockModal] = useState(false);
   const [serverOffline, setServerOffline] = useState(false);
 
@@ -111,6 +112,27 @@ const App: React.FC = () => {
   const [transacPage, setTransacPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [transacFilterType, setTransacFilterType] = useState<'all' | 'income' | 'expense'>('all');
+  const [moduleFilter, setModuleFilter] = useState<'all' | 'preorder' | 'debt' | 'wallet' | 'capital' | 'manual'>('all');
+
+  const colorPresets = [
+    { name: 'Rose', primary: '#f43f5e', active: '#e11d48' },
+    { name: 'Blue', primary: '#3b82f6', active: '#2563eb' },
+    { name: 'Emerald', primary: '#10b981', active: '#059669' },
+    { name: 'Amber', primary: '#f59e0b', active: '#d97706' },
+    { name: 'Violet', primary: '#8b5cf6', active: '#7c3aed' },
+    { name: 'Sky', primary: '#0ea5e9', active: '#0284c7' },
+  ];
+
+  const [accentColor, setAccentColor] = useState(() => {
+    return localStorage.getItem('accentColor') || '#f43f5e';
+  });
+
+  useEffect(() => {
+    const preset = colorPresets.find(p => p.primary === accentColor) || colorPresets[0];
+    document.documentElement.style.setProperty('--primary', preset.primary);
+    document.documentElement.style.setProperty('--primary-active', preset.active);
+    localStorage.setItem('accentColor', preset.primary);
+  }, [accentColor]);
 
   // Form States
   const [showModal, setShowModal] = useState(false);
@@ -314,6 +336,89 @@ const App: React.FC = () => {
     return Array.from(dataMap.values());
   }, [transactions, startDate, endDate]);
 
+  // Unified System-Wide Activities
+  const unifiedActivities = useMemo(() => {
+    const list: any[] = [];
+
+    // 1. Manual Transactions
+    transactions.forEach(t => list.push({ ...t, source: 'manual' }));
+
+    // 2. Preorders (Income events)
+    preorders.forEach(p => {
+      // DP Activity
+      if (p.downPayment > 0) {
+        list.push({
+          id: `pre-dp-${p.id}`,
+          type: 'income',
+          amount: p.downPayment,
+          description: `DP Preorder: ${p.customerName} (#${p.id})`,
+          category: 'Preorder',
+          date: p.createdAt,
+          source: 'preorder'
+        });
+      }
+      // If completed, add balance payment activity (simulated based on status)
+      if (p.status === 'completed' && p.remainingAmount > 0) {
+        list.push({
+          id: `pre-done-${p.id}`,
+          type: 'income',
+          amount: p.remainingAmount,
+          description: `Pelunasan Preorder: ${p.customerName} (#${p.id})`,
+          category: 'Preorder',
+          date: p.dueDate, // Assume paid on due date if completed
+          source: 'preorder'
+        });
+      }
+    });
+
+    // 3. Debts (Piutang)
+    debts.forEach(d => {
+      list.push({
+        id: `debt-${d.id}`,
+        type: d.type === 'receivable' ? 'income' : 'expense',
+        amount: d.amount,
+        description: `${d.type === 'receivable' ? 'Piutang' : 'Hutang'}: ${d.name} (${d.status})`,
+        category: 'Piutang',
+        date: d.date,
+        source: 'debt'
+      });
+    });
+
+    // 4. Wallet & QRIS
+    walletEntries.forEach(w => {
+      list.push({
+        id: `wallet-${w.id}`,
+        type: 'income',
+        amount: w.amount,
+        description: `QRIS/DANA: ${w.description || 'Penerimaan Digital'}`,
+        category: 'QRIS',
+        date: w.date,
+        source: 'wallet'
+      });
+    });
+
+    // 5. Capital (Modal)
+    capitalData.forEach(c => {
+      list.push({
+        id: `cap-${c.id}`,
+        type: c.type === 'injection' ? 'income' : 'expense',
+        amount: c.amount,
+        description: `${c.type === 'injection' ? 'Injeksi' : 'Tarik'} Modal: ${c.description}`,
+        category: 'Modal Toko',
+        date: c.date,
+        source: 'capital'
+      });
+    });
+
+    // Filter Logic
+    return list.filter(a => {
+      const matchSearch = (a.description.toLowerCase().includes(searchTerm.toLowerCase()) || a.category?.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchType = (transacFilterType === 'all' || a.type === transacFilterType);
+      const matchModule = (moduleFilter === 'all' || a.source === moduleFilter);
+      return matchSearch && matchType && matchModule;
+    }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [transactions, preorders, debts, walletEntries, capitalData, searchTerm, transacFilterType, moduleFilter]);
+
   const handleAddTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -357,8 +462,9 @@ const App: React.FC = () => {
   const handleAddStockItem = async (e?: React.FormEvent, shouldClose: boolean = true) => {
     if (e) e.preventDefault();
     if (!newStockItem.trim()) return;
-    await api.updateStock({ name: newStockItem.trim(), dateAdded: new Date().toISOString() });
+    await api.updateStock({ name: newStockItem.trim(), dateAdded: new Date().toISOString(), isUrgent: isStockUrgent });
     setNewStockItem('');
+    setIsStockUrgent(false);
     if (shouldClose) setShowStockModal(false);
     loadData();
   };
@@ -487,28 +593,45 @@ const App: React.FC = () => {
                         <input id="main-search" type="text" className="bg-transparent border-none outline-none py-3.5 w-full font-medium text-muted dark:text-muted placeholder-muted dark:placeholder-text-muted" placeholder="Cari deskripsi atau kategori..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                       </div>
                     </div>
-                    <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1.5 rounded-xl border border-slate-200/50 dark:border-border/50">
-                      {['all', 'income', 'expense'].map((type: any) => (
-                        <button
-                          key={type}
-                          onClick={() => setTransacFilterType(type)}
-                          className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${transacFilterType === type
-                              ? 'bg-white dark:bg-primary text-primary dark:text-white shadow-md scale-105'
-                              : 'text-slate-500 hover:text-slate-700 dark:text-text-muted'
-                            }`}
-                        >
-                          {type.toUpperCase()}
-                        </button>
-                      ))}
+                    
+                    <div className="flex flex-wrap gap-3">
+                      <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1 rounded-xl border border-slate-200/50 dark:border-border/50">
+                        {['all', 'income', 'expense'].map((type: any) => (
+                          <button
+                            key={type}
+                            onClick={() => setTransacFilterType(type)}
+                            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${transacFilterType === type
+                                ? 'bg-primary text-white shadow-md'
+                                : 'text-slate-500 hover:text-slate-700 dark:text-text-muted'
+                              }`}
+                          >
+                            {type.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+
+                      <select 
+                        className="bg-slate-100 dark:bg-bg-dark/40 px-4 py-2 rounded-xl border border-slate-200/50 dark:border-border/50 text-xs font-bold outline-none cursor-pointer"
+                        value={moduleFilter}
+                        onChange={(e) => setModuleFilter(e.target.value as any)}
+                      >
+                        <option value="all">SEMUA MODUL</option>
+                        <option value="manual">TRANSAKSI MANUAL</option>
+                        <option value="preorder">PREORDER</option>
+                        <option value="debt">HUTANG PIUTANG</option>
+                        <option value="wallet">WALLET / QRIS</option>
+                        <option value="capital">MODAL TOKO</option>
+                      </select>
                     </div>
                   </div>
 
                   <Timeline
-                    transactions={transactions.filter(t => (t.description.toLowerCase().includes(searchTerm.toLowerCase()) || t.category?.toLowerCase().includes(searchTerm.toLowerCase())) && (transacFilterType === 'all' || t.type === transacFilterType))}
+                    transactions={unifiedActivities}
                     currentPage={transacPage}
                     setCurrentPage={setTransacPage}
                     handleEditClick={handleEditClick}
                     handleDeleteTransaction={handleDeleteTransaction}
+                    isViewOnly={true}
                   />
                 </div>
               )}
@@ -551,6 +674,8 @@ const App: React.FC = () => {
                   handleAddStockItem={handleAddStockItem}
                   handleDeleteStockItem={handleDeleteStockItem}
                   sendStockToOwner={sendStockToOwner}
+                  isStockUrgent={isStockUrgent}
+                  setIsStockUrgent={setIsStockUrgent}
                 />
               )}
 
@@ -688,8 +813,30 @@ const App: React.FC = () => {
                         Update PIN Kemanan
                       </button>
                     </div>
+                    <div className="glass-card">
+                      <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
+                        🎨 Warna Aksen Toko
+                      </h3>
+                      <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Personalisasi Visual Brand</p>
+
+                      <div className="flex flex-wrap gap-4 mb-4">
+                        {colorPresets.map((preset) => (
+                          <button
+                            key={preset.name}
+                            onClick={() => setAccentColor(preset.primary)}
+                            className={`w-12 h-12 rounded-2xl transition-all duration-300 border-4 ${accentColor === preset.primary
+                                ? 'border-primary scale-110 shadow-lg shadow-primary/20'
+                                : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'
+                              }`}
+                            style={{ backgroundColor: preset.primary }}
+                            title={preset.name}
+                          />
+                        ))}
+                      </div>
+                      <p className="text-[11px] text-text-muted font-medium italic opacity-50">*Klik warna untuk merubah aksen seluruh aplikasi.</p>
+                    </div>
                     <div className="hidden lg:block p-8 border-2 border-dashed border-border/20 rounded-3xl flex flex-col items-center justify-center text-center opacity-30">
-                      <p className="text-xs font-bold uppercase tracking-widest">DM PRO V3.1.2</p>
+                      <p className="text-xs font-bold uppercase tracking-widest">DM PRO V3.1.5</p>
                       <p className="text-[10px] font-medium">Harmony Interface System</p>
                     </div>
                   </div>

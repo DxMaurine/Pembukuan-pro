@@ -1,13 +1,16 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+:root {
+  --primary: #f43f5e;
+  --primary-active: #e11d48;
+}
+
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  --color-primary: #f43f5e;
-  /* Rose 500 - more vibrant theme color */
-  --color-primary-hover: #e11d48;
-  /* Rose 600 */
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-active);
   --color-secondary: #ec4899;
   --color-success: #10b981;
   --color-danger: #ef4444;

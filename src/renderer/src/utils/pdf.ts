@@ -279,3 +279,147 @@ export const generateWalletPDF = async (
 
   return doc.output('datauristring').split(',')[1];
 };
+
+export const generatePreorderInvoicePDF = async (
+  storeName: string,
+  preorder: any,
+  theme: 'light' | 'dark'
+) => {
+  const doc = new jsPDF();
+  const primaryColor = theme === 'dark' ? [0, 162, 255] : [244, 63, 94];
+  const successColor = [16, 185, 129]; // Emerald-500
+
+  // 1. Header Block
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.rect(0, 0, 210, 45, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.text("NOTA PESANAN", 14, 22);
+  
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(storeName.toUpperCase(), 14, 32);
+  doc.text("INVOICE OFFICIAL - PREORDER SYSTEM", 14, 37);
+
+  // Invoice Details (Right Side)
+  doc.setFont("helvetica", "bold");
+  doc.text(`INV-${preorder.id}`, 196, 22, { align: 'right' });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text(`Tgl Pesan: ${new Date(preorder.createdAt).toLocaleDateString('id-ID')}`, 196, 30, { align: 'right' });
+  doc.text(`Deadline: ${preorder.dueDate}`, 196, 35, { align: 'right' });
+  doc.text(`Tgl Cetak: ${new Date().toLocaleString('id-ID')}`, 196, 40, { align: 'right' });
+
+  // 2. Customer Section
+  doc.setTextColor(40, 40, 40);
+  doc.setFontSize(11);
+  doc.setFont("helvetica", "bold");
+  doc.text("DITUJUKAN KEPADA:", 14, 60);
+  
+  doc.setFontSize(14);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text(preorder.customerName.toUpperCase(), 14, 68);
+  
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setLineWidth(0.5);
+  doc.line(14, 72, 100, 72);
+
+  // 3. Items Table
+  const tableData = (preorder.items || []).map((item: any, idx: number) => {
+    const dimension = item.isBanner ? `${item.p}x${item.l}m` : 'Unit/Pcs';
+    const itemName = item.notes ? `${item.name}\n(Catatan: ${item.notes})` : item.name;
+    
+    return [
+      idx + 1,
+      { content: itemName, styles: { fontStyle: item.notes ? 'italic' : 'normal' } },
+      item.bahan || '-',
+      dimension,
+      `Rp ${formatIDR(item.price)}`,
+      item.qty,
+      `Rp ${formatIDR(item.total)}`
+    ];
+  });
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: 80,
+    head: [['No', 'Item / Pekerjaan', 'Bahan', 'Ukuran', 'Harga', 'Qty', 'Total']],
+    body: tableData,
+    styles: { fontSize: 9, cellPadding: 5, overflow: 'linebreak' },
+    headStyles: {
+      fillColor: primaryColor,
+      textColor: [255, 255, 255],
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    columnStyles: {
+      0: { halign: 'center' },
+      4: { halign: 'right' },
+      5: { halign: 'center' },
+      6: { halign: 'right', fontStyle: 'bold' }
+    }
+  });
+
+  const finalY = (doc as any).lastAutoTable.finalY || 150;
+
+  // 4. Financial Summary Right
+  const summaryX = 130;
+  doc.setFontSize(10);
+  
+  // Total
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text("Total Biaya:", summaryX, finalY + 15);
+  doc.setTextColor(40, 40, 40);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Rp ${formatIDR(preorder.totalAmount)}`, 196, finalY + 15, { align: 'right' });
+
+  // DP
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(100, 100, 100);
+  doc.text("Down Payment (DP):", summaryX, finalY + 22);
+  doc.setTextColor(successColor[0], successColor[1], successColor[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text(`Rp ${formatIDR(preorder.downPayment)}`, 196, finalY + 22, { align: 'right' });
+
+  // Balance (Highlight box)
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(summaryX - 5, finalY + 28, 71, 15, 2, 2, 'F');
+  
+  doc.setFontSize(11);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.text("SISA PELUNASAN:", summaryX, finalY + 38);
+  doc.setFontSize(12);
+  doc.text(`Rp ${formatIDR(preorder.remainingAmount)}`, 196, finalY + 38, { align: 'right' });
+
+  // 5. Signature / Terms (Left Side)
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "italic");
+  doc.text("* Barang yang sudah dicetak tidak dapat ditukar/dikembalikan.", 14, finalY + 15);
+  doc.text("* Mohon simpan nota ini sebagai bukti pengambilan barang.", 14, finalY + 20);
+
+  doc.setFont("helvetica", "normal");
+  doc.text("Hormat Kami,", 35, finalY + 35, { align: 'center' });
+  doc.text("( _________________ )", 35, finalY + 55, { align: 'center' });
+  doc.text("Kasir / Admin", 35, finalY + 60, { align: 'center' });
+
+  // 6. Footer (Global)
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(180, 180, 180);
+    doc.text(`Invoice ini diterbitkan secara otomatis oleh Sistem Pembukuan Digital ${storeName} - Halaman ${i} dari ${pageCount}`, 105, 285, { align: 'center' });
+  }
+
+  const pdfData = doc.output('datauristring').split(',')[1];
+  const link = document.createElement('a');
+  link.href = `data:application/pdf;base64,${pdfData}`;
+  link.download = `Invoice_${preorder.customerName}_${preorder.id}.pdf`;
+  link.click();
+  
+  return pdfData;
+};
