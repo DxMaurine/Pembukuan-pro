@@ -301,6 +301,17 @@ app.post('/api/service/send-report', async (req, res) => {
   res.json(result);
 });
 
+app.post('/api/service/notify-preorder', async (req, res) => {
+  await notifyPreorderInternal(req.body);
+  res.json({ success: true });
+});
+
+app.post('/api/service/notify-qris', async (req, res) => {
+  const { entry, auto } = req.body;
+  await notifyQRISInternal(entry, auto);
+  res.json({ success: true });
+});
+
 // Settings
 app.get('/api/settings', (req, res) => {
   const data = readDb();
@@ -414,7 +425,7 @@ async function processDanaText(text: string, docId?: string) {
 
       // Kirim Notifikasi WA ke Kasir jika Auto-Pilot Aktif
       if (isAutoConf && dbData.settings?.cashierNumber) {
-        const waMsg = `🔔 *NOTIFIKASI AUTO-PILOT*\n\n✅ Dana Masuk: Rp ${amount.toLocaleString('id-ID')}\n📝 Keterangan: ${newEntry.description}\n\n👤 *Status: TERVERIFIKASI OTOMATIS*\n_Aplikasi DM PRO v3.0.1_`;
+        const waMsg = `🔔 *NOTIFIKASI AUTO-PILOT*\n\n✅ Dana Masuk: Rp ${amount.toLocaleString('id-ID')}\n📝 Keterangan: ${newEntry.description}\n\n👤 *Status: TERVERIFIKASI OTOMATIS*\n_Aplikasi DM PRO v3.1.2_`;
         await sendInternalMessage(waMsg, dbData.settings.cashierNumber);
       }
     }

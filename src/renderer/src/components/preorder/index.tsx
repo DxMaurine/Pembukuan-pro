@@ -77,14 +77,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       if (editingId) {
         await api.updatePreorder({ ...payload, id: editingId });
       } else {
-        const newOrder = await api.addPreorder(payload);
-        // Kirim notifikasi ke Owner untuk pesanan baru
-        await api.notifyPreorder({
-          ...newOrder,
-          totalAmount: total,
-          downPayment: dp,
-          remainingAmount: total - dp
-        });
+        await api.addPreorder(payload);
       }
       
       setShowModal(false);
