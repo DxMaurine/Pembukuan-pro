@@ -1,15 +1,26 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import { fork, ChildProcess } from 'child_process'
+import { fork, ChildProcess, execSync } from 'child_process'
 import fs from 'fs'
 
 let serverProcess: ChildProcess | null = null
 let mainWindow: BrowserWindow | null = null
 
+function killPort(port: number): void {
+  try {
+    const cmd = process.platform === 'win32' 
+      ? `npx kill-port ${port}` 
+      : `lsof -ti:${port} | xargs kill -9`
+    execSync(cmd)
+    console.log(`[MAIN] Port ${port} cleaned up.`)
+  } catch (e) {
+    // Silently ignore if port is not in use
+  }
+}
+
 function startServer(): void {
-  // In production, the server is in resources/server/dist/index.js
-  // In dev, the server is run separately by concurrently
+  // In production, the server is a bundled file in resources/server/dist/index.js
   if (!is.dev) {
     const serverDir = join(process.resourcesPath, 'server')
     const serverPath = join(serverDir, 'dist', 'index.js')
@@ -123,6 +134,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Clean up port 3000 before starting to avoid zombie processes
+  if (!is.dev) killPort(3000)
+
   // Spawn the backend server first
   startServer()
 
