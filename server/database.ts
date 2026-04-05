@@ -88,7 +88,9 @@ export function readDb(): Data {
   }
   try {
     const raw = fs.readFileSync(dbPath, 'utf-8');
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    // Masukkan default data jika ada key yang hilang (penting untuk migrasi versi)
+    return { ...defaultData, ...data };
   } catch (e) {
     console.error('Error reading DB:', e);
     return defaultData;

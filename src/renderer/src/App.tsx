@@ -222,8 +222,8 @@ const App: React.FC = () => {
       setTransactions(t);
       setDebts(dbDebts);
       setWalletEntries(dbWallet);
-      setCapitalData(dbCapital);
-      setPreorders(dbPreorders);
+      setCapitalData(dbCapital || []);
+      setPreorders(dbPreorders || []);
       setReportPage(1);
       setTransacPage(1);
       setStockItems(st);
