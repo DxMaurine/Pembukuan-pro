@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Coins, Plus, Calendar, TrendingUp, History, Info, X, Pencil } from 'lucide-react';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
-import { months } from '../../utils/dateUtils';
+import { months, getYearOptions } from '../../utils/dateUtils';
 import Swal from 'sweetalert2';
 
 interface Capital {
@@ -30,7 +30,7 @@ const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, 
   });
 
   const currentMonthCapital = capitalData.find(c => c.month === today.getMonth() && c.year === today.getFullYear());
-  const yearOptions = Array.from({ length: 2030 - (today.getFullYear() - 2) + 1 }, (_, i) => today.getFullYear() - 2 + i);
+  const yearOptions = getYearOptions();
 
   const handleSaveCapital = async (e: React.FormEvent) => {
     e.preventDefault();

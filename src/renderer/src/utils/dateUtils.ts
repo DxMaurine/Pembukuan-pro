@@ -15,3 +15,10 @@ export const formatFullDate = (dateStr: string) => {
     year: 'numeric' 
   })
 }
+
+export const getYearOptions = () => {
+  const currentYear = new Date().getFullYear();
+  const startYear = 2023; // Base start year for the app
+  const endYear = currentYear + 20; // 20 years into the future
+  return Array.from({ length: endYear - startYear + 1 }, (_, i) => startYear + i);
+};

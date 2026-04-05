@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { formatIDR } from '../../utils/formatters';
+import { getYearOptions } from '../../utils/dateUtils';
 
 interface OverviewProps {
   summary: { totalIncome: number; totalExpense: number; balance: number };
@@ -36,8 +37,7 @@ const Overview: React.FC<OverviewProps> = ({
     'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
     'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
   ];
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 2037 - (currentYear - 2) + 1 }, (_, i) => currentYear - 2 + i);
+  const yearOptions = getYearOptions();
   const renderTrend = (current: number, previous: number, isExpense = false) => {
     // Basic Difference Calculation
     const diff = previous !== 0 ? ((current - previous) / previous) * 100 : 0;

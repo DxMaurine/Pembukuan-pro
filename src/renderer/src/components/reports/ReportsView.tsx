@@ -1,7 +1,7 @@
 import React from 'react';
 import { Send } from 'lucide-react';
 import Timeline from '../transactions/Timeline';
-import { months } from '../../utils/dateUtils';
+import { months, getYearOptions } from '../../utils/dateUtils';
 
 interface ReportsViewProps {
   filterMonth: number;
@@ -34,8 +34,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
   handleEditClick,
   handleDeleteTransaction,
 }) => {
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 2037 - (currentYear - 2) + 1 }, (_, i) => currentYear - 2 + i);
+  const yearOptions = getYearOptions();
 
   return (
     <div className="flex flex-col gap-8">

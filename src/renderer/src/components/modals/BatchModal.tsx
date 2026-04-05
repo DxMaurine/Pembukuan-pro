@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, History, Info, Plus, Trash2, Coffee } from 'lucide-react';
-import { months } from '../../utils/dateUtils';
+import { months, getYearOptions } from '../../utils/dateUtils';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
 
 interface BatchModalProps {
@@ -32,8 +32,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
 }) => {
   if (!showBatchModal) return null;
 
-  const currentYear = new Date().getFullYear();
-  const yearOptions = Array.from({ length: 2037 - (currentYear - 2) + 1 }, (_, i) => currentYear - 2 + i);
+  const yearOptions = getYearOptions();
 
   const addBatchExpenseItem = () => {
     const current = batchData[currentDay] || { income: '', expenseItems: [] };
