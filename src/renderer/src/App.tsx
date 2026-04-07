@@ -282,7 +282,7 @@ const App: React.FC = () => {
           console.log('[APP] Mendeteksi update data, me-refresh...');
           loadData();
         });
-        
+
         const removeMobile = api.onMobileInput ? api.onMobileInput((data: any) => {
           console.log('[APP] Mendeteksi input mobile baru!');
           Swal.fire({
@@ -297,24 +297,24 @@ const App: React.FC = () => {
             iconColor: '#f43f5e'
           });
           loadData();
-        }) : () => {};
+        }) : () => { };
 
         const removeStockUpdate = api.onStockUpdated ? api.onStockUpdated(() => {
           console.log('[APP] Mendeteksi update stok dari mobile...');
           loadData();
-        }) : () => {};
+        }) : () => { };
 
         const removeStockDelete = api.onStockDeleted ? api.onStockDeleted(() => {
           console.log('[APP] Mendeteksi penghapusan stok dari mobile...');
           loadData();
-        }) : () => {};
+        }) : () => { };
 
-        return () => { 
-          removeWallet(); 
+        return () => {
+          removeWallet();
           removeMobile();
           removeStockUpdate();
           removeStockDelete();
-          clearInterval(retryInterval); 
+          clearInterval(retryInterval);
         };
       }
       return () => clearInterval(retryInterval);
@@ -633,7 +633,7 @@ const App: React.FC = () => {
                         <input id="main-search" type="text" className="bg-transparent border-none outline-none py-3.5 w-full font-medium text-muted dark:text-muted placeholder-muted dark:placeholder-text-muted" placeholder="Cari deskripsi atau kategori..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                       </div>
                     </div>
-                    
+
                     <div className="flex flex-wrap gap-3">
                       <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1 rounded-xl border border-slate-200/50 dark:border-border/50">
                         {['all', 'income', 'expense'].map((type: any) => (
@@ -641,8 +641,8 @@ const App: React.FC = () => {
                             key={type}
                             onClick={() => setTransacFilterType(type)}
                             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${transacFilterType === type
-                                ? 'bg-primary text-white shadow-md'
-                                : 'text-slate-500 hover:text-slate-700 dark:text-text-muted'
+                              ? 'bg-primary text-white shadow-md'
+                              : 'text-slate-500 hover:text-slate-700 dark:text-text-muted'
                               }`}
                           >
                             {type.toUpperCase()}
@@ -650,7 +650,7 @@ const App: React.FC = () => {
                         ))}
                       </div>
 
-                      <select 
+                      <select
                         className="bg-slate-100 dark:bg-bg-dark/40 px-4 py-2 rounded-xl border border-slate-200/50 dark:border-border/50 text-xs font-bold outline-none cursor-pointer"
                         value={moduleFilter}
                         onChange={(e) => setModuleFilter(e.target.value as any)}
@@ -868,8 +868,8 @@ const App: React.FC = () => {
                             key={preset.name}
                             onClick={() => setAccentColor(preset.primary)}
                             className={`w-12 h-12 rounded-2xl transition-all duration-300 border-4 ${accentColor === preset.primary
-                                ? 'border-primary scale-110 shadow-lg shadow-primary/20'
-                                : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'
+                              ? 'border-primary scale-110 shadow-lg shadow-primary/20'
+                              : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'
                               }`}
                             style={{ backgroundColor: preset.primary }}
                             title={preset.name}
