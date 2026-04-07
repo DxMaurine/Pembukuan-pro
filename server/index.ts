@@ -66,8 +66,8 @@ app.use(bodyParser.json({ limit: '50mb' }));
 
 // API Endpoints
 app.post('/api/reset-data', (req, res) => {
-  const { range } = req.body;
-  const success = clearTransactions(range as any);
+  const { range, modules, startDate, endDate } = req.body;
+  const success = clearTransactions(range as any, modules, startDate, endDate);
   
   recalculateAndSync();
   res.json({ success });

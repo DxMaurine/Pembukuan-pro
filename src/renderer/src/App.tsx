@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
-import { Eye, EyeOff, Plus, History, Settings2 } from 'lucide-react';
+import { Eye, EyeOff, Plus, History, Settings2, Store, Shield, Zap, Palette, Trash2, Info, Filter, FileText, Wallet, Handshake, ShoppingBag, Package } from 'lucide-react';
 
 // Types
 import { Transaction, StockItem, Summary, Settings } from './types';
@@ -52,6 +52,10 @@ const App: React.FC = () => {
   const [newPassword, setNewPassword] = useState('');
   const [showPIN, setShowPIN] = useState(false);
   const [autoConfirm, setAutoConfirm] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<'identity' | 'security' | 'automation' | 'visual' | 'maintenance' | 'about'>('identity');
+  const [resetStart, setResetStart] = useState(getLocalDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
+  const [resetEnd, setResetEnd] = useState(getLocalDate(new Date()));
+  const [selectedModules, setSelectedModules] = useState(['transactions', 'wallet', 'debts', 'preorders', 'stock']);
 
   // Theme support
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -642,7 +646,7 @@ const App: React.FC = () => {
                             onClick={() => setTransacFilterType(type)}
                             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${transacFilterType === type
                               ? 'bg-primary text-white shadow-md'
-                              : 'text-slate-500 hover:text-slate-700 dark:text-text-muted'
+                              : 'text-slate-500 hover:text-slate-700 dark:text-muted'
                               }`}
                           >
                             {type.toUpperCase()}
@@ -745,199 +749,420 @@ const App: React.FC = () => {
               )}
 
               {activeTab === 'settings' && (
-                <div className="flex flex-col gap-10 animate-fade-in pb-20">
-                  <header className="mb-2">
+                <div className="flex flex-col gap-8 animate-fade-in pb-20">
+                  <header>
                     <h1 className="text-3xl font-semibold flex items-center gap-3">
                       <Settings2 className="text-primary" size={32} /> Pengaturan Sistem
                     </h1>
-                    <p className="text-sm text-text-muted mt-1 uppercase tracking-widest font-bold opacity-60">Konfigurasi & Keamanan Aplikasi</p>
+                    <p className="text-sm text-muted mt-1 uppercase tracking-widest font-bold opacity-60">Konfigurasi Harmony Interface System</p>
                   </header>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    {/* Left: Store Info */}
-                    <div className="glass-card flex flex-col h-full">
-                      <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                        🏢 Informasi Toko
-                      </h3>
-                      <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Identitas Visual Laporan</p>
-
-                      <div className="space-y-4 flex-1">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-text-muted ml-1">Nama Toko / Bisnis:</label>
-                          <input type="text" className="form-input w-full text-lg font-bold" value={storeName} onChange={(e) => setStoreName(e.target.value)} />
-                          <p className="text-[11px] text-text-muted italic ml-1 opacity-50">*Nama ini akan muncul di header & PDF.</p>
-                        </div>
-                      </div>
-
+                  {/* Horizontal Tab Navigation */}
+                  <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 self-start">
+                    {[
+                      { id: 'identity', label: 'Identitas', icon: Store },
+                      { id: 'security', label: 'Keamanan', icon: Shield },
+                      { id: 'automation', label: 'Otomasi', icon: Zap },
+                      { id: 'visual', label: 'Visual', icon: Palette },
+                      { id: 'maintenance', label: 'Pemeliharaan', icon: Trash2 },
+                      { id: 'about', label: 'Tentang', icon: Info },
+                    ].map((cat) => (
                       <button
-                        className="btn btn-primary w-full py-4 mt-8 rounded-2xl font-bold uppercase tracking-[0.15em] shadow-lg shadow-primary/20"
-                        onClick={async () => { await api.saveSettings({ storeName }); Swal.fire('Berhasil!', 'Nama toko diperbarui.', 'success'); }}
+                        key={cat.id}
+                        onClick={() => setSettingsTab(cat.id as any)}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${settingsTab === cat.id
+                          ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
+                          : 'text-slate-500 hover:text-slate-800 dark:text-muted dark:hover:text-white hover:bg-white dark:hover:bg-white/5'
+                          }`}
                       >
-                        Simpan Nama Toko
+                        <cat.icon size={16} />
+                        {cat.label.toUpperCase()}
                       </button>
-                    </div>
-
-                    {/* Right: Auto-Pilot */}
-                    <div className="glass-card flex flex-col h-full border-primary/20 dark:bg-primary/5">
-                      <div className="flex justify-between items-start mb-1">
-                        <h3 className="text-xl font-bold flex items-center gap-2">
-                          🚀 Mode Auto-Pilot
-                          {autoConfirm && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
-                        </h3>
-                        <button
-                          onClick={async () => {
-                            const newVal = !autoConfirm;
-                            setAutoConfirm(newVal);
-                            await api.saveSettings({ autoConfirm: newVal });
-                            Swal.fire({
-                              title: newVal ? 'Auto-Pilot AKTIF' : 'Mode Manual AKTIF',
-                              icon: 'info',
-                              timer: 2000,
-                              showConfirmButton: false
-                            });
-                          }}
-                          className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${autoConfirm ? 'bg-primary' : 'bg-slate-200 dark:bg-white/10'}`}
-                        >
-                          <span className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoConfirm ? 'translate-x-5' : 'translate-x-0'}`} />
-                        </button>
-                      </div>
-                      <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Otomasi Konfirmasi QRIS</p>
-
-                      <div className="flex-1 space-y-4">
-                        <div className={`p-5 rounded-3xl border transition-all ${autoConfirm ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'}`}>
-                          <h4 className={`text-xs font-bold uppercase tracking-widest mb-2 ${autoConfirm ? 'text-emerald-600' : 'text-amber-600'}`}>
-                            {autoConfirm ? '✓ STATUS: OTOMATIS AKTIF' : '⚠ STATUS: MANUAL (AMAN)'}
-                          </h4>
-                          <p className="text-[11px] leading-relaxed font-medium text-text-muted italic">
-                            {autoConfirm
-                              ? "Sistem akan langsung menyetujui setiap uang masuk tanpa konfirmasi manual. Sangat direkomendasikan saat transaksi sedang ramai agar antrean lancar."
-                              : "Sistem akan mencatat uang masuk sebagai 'Pending'. Bapak wajib menekan tombol 'DITERIMA' di Telegram sebagai langkah verifikasi ganda."}
-                          </p>
-                        </div>
-
-                        <div className="p-4 bg-bg-surface/50 rounded-2xl border border-border/50">
-                          <p className="text-[10px] font-bold text-text-muted leading-tight">
-                            *Pilihan mode ini berlaku untuk semua notifikasi QRIS & DANA yang masuk ke sistem.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-[0.5fr_0.5fr] gap-8">
-                    {/* Security PIN */}
-                    <div className="glass-card">
-                      <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                        🔒 Security PIN
-                      </h3>
-                      <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Akses Masuk & Privasi Data</p>
+                  {/* Settings Content Area */}
+                  <div className="mt-2 animate-scale-up">
+                    {settingsTab === 'identity' && (
+                      <div className="glass-card max-w-2xl">
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="p-3 bg-primary/10 rounded-2xl text-primary">
+                            <Store size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold">Profil & Identitas</h3>
+                            <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Detail visual unit bisnis Anda</p>
+                          </div>
+                        </div>
 
-                      <div className="relative group mb-6">
-                        <input
-                          type={showPIN ? 'text' : 'password'}
-                          className="form-input w-full pr-12 py-3.5"
-                          value={newPassword}
-                          onChange={(e) => setNewPassword(e.target.value)}
-                          placeholder="Masukkan PIN Baru"
-                        />
-                        <button
-                          type="button"
-                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
-                          onClick={() => setShowPIN(!showPIN)}
-                        >
-                          {showPIN ? <EyeOff size={18} /> : <Eye size={18} />}
-                        </button>
+                        <div className="space-y-6">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-1">Nama Toko / Bisnis:</label>
+                            <div className="flex gap-3">
+                              <input
+                                type="text"
+                                className="form-input text-lg font-bold flex-1"
+                                value={storeName}
+                                onChange={(e) => setStoreName(e.target.value)}
+                              />
+                              <button
+                                className="btn btn-primary px-6 py-3 font-bold uppercase tracking-widest text-[10px]"
+                                onClick={async () => {
+                                  await api.saveSettings({ storeName });
+                                  Swal.fire({ title: 'Berhasil!', text: 'Identitas toko diperbarui.', icon: 'success', timer: 1500, showConfirmButton: false });
+                                }}
+                              >
+                                Simpan
+                              </button>
+                            </div>
+                            <p className="text-[11px] text-muted italic ml-1 opacity-50">Nama ini akan tercetak pada laporan PDF dan header aplikasi.</p>
+                          </div>
+                        </div>
                       </div>
+                    )}
 
-                      <button
-                        className="btn btn-primary w-full py-4 rounded-2xl font-bold uppercase tracking-[0.15em]"
-                        onClick={async () => { await api.saveSettings({ password: newPassword }); setSavedPassword(newPassword); localStorage.setItem('cachedPin', newPassword); setNewPassword(''); Swal.fire('Berhasil!', 'PIN Keamanan diperbarui.', 'success'); }}
-                      >
-                        Update PIN Kemanan
-                      </button>
-                    </div>
-                    <div className="glass-card">
-                      <h3 className="text-xl font-bold mb-1 flex items-center gap-2">
-                        🎨 Warna Aksen Toko
-                      </h3>
-                      <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Personalisasi Visual Brand</p>
+                    {settingsTab === 'security' && (
+                      <div className="glass-card max-w-md">
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-500">
+                            <Shield size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold">Keamanan Sistem</h3>
+                            <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Proteksi akses data sensitif</p>
+                          </div>
+                        </div>
 
-                      <div className="flex flex-wrap gap-4 mb-4">
-                        {colorPresets.map((preset) => (
+                        <div className="space-y-6">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-1">PIN Keamanan Baru:</label>
+                            <div className="relative">
+                              <input
+                                type={showPIN ? 'text' : 'password'}
+                                className="form-input w-full pr-12 py-3.5 text-center tracking-[0.5em] text-xl font-mono font-bold"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                placeholder="****"
+                                maxLength={4}
+                              />
+                              <button
+                                type="button"
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-primary transition-colors"
+                                onClick={() => setShowPIN(!showPIN)}
+                              >
+                                {showPIN ? <EyeOff size={18} /> : <Eye size={18} />}
+                              </button>
+                            </div>
+                          </div>
+
                           <button
-                            key={preset.name}
-                            onClick={() => setAccentColor(preset.primary)}
-                            className={`w-12 h-12 rounded-2xl transition-all duration-300 border-4 ${accentColor === preset.primary
-                              ? 'border-primary scale-110 shadow-lg shadow-primary/20'
-                              : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'
-                              }`}
-                            style={{ backgroundColor: preset.primary }}
-                            title={preset.name}
-                          />
-                        ))}
+                            className="btn btn-primary w-full py-4 rounded-2xl font-bold uppercase tracking-[0.15em] shadow-lg shadow-primary/20"
+                            onClick={async () => {
+                              if (newPassword.length < 4) {
+                                Swal.fire('Error', 'PIN harus 4 digit.', 'error');
+                                return;
+                              }
+                              await api.saveSettings({ password: newPassword });
+                              setSavedPassword(newPassword);
+                              localStorage.setItem('cachedPin', newPassword);
+                              setNewPassword('');
+                              Swal.fire('Berhasil!', 'PIN Keamanan diperbarui.', 'success');
+                            }}
+                          >
+                            Update PIN Kemanan
+                          </button>
+                        </div>
                       </div>
-                      <p className="text-[11px] text-text-muted font-medium italic opacity-50">*Klik warna untuk merubah aksen seluruh aplikasi.</p>
-                    </div>
-                  </div>
+                    )}
 
-                  {/* Version Footer */}
-                  <div className="mt-12 pt-8 border-t border-border/10 flex justify-center">
-                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-20">DM PRO V3.1.6-Lite • Harmony Interface System</p>
-                  </div>
+                    {settingsTab === 'automation' && (
+                      <div className="glass-card max-w-2xl border-primary/20 dark:bg-primary/5">
+                        <div className="flex justify-between items-start mb-8">
+                          <div className="flex items-center gap-4">
+                            <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-500">
+                              <Zap size={24} />
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-bold">Otomasi Mode</h3>
+                              <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Status: {autoConfirm ? 'AUTO-PILOT' : 'MANUAL CONTROL'}</p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={async () => {
+                              const newVal = !autoConfirm;
+                              setAutoConfirm(newVal);
+                              await api.saveSettings({ autoConfirm: newVal });
+                              Swal.fire({
+                                title: newVal ? 'Auto-Pilot AKTIF' : 'Mode Manual AKTIF',
+                                icon: 'info',
+                                timer: 2000,
+                                showConfirmButton: false
+                              });
+                            }}
+                            className={`relative inline-flex h-8 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${autoConfirm ? 'bg-primary' : 'bg-slate-300 dark:bg-white/10'}`}
+                          >
+                            <span className={`pointer-events-none inline-block h-7 w-7 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${autoConfirm ? 'translate-x-6' : 'translate-x-0'}`} />
+                          </button>
+                        </div>
 
-                  {/* RESET DATA SECTION */}
-                  <div className="glass-card flex flex-col border-rose-500/20 bg-rose-500/5 mt-8">
-                    <h3 className="text-xl font-bold mb-1 flex items-center gap-2 text-rose-500">
-                      ⚠️ Area Berbahaya (Reset Data)
-                    </h3>
-                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Gunakan fitur ini hanya untuk membersihkan data testing / masal.</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className={`p-5 rounded-3xl border transition-all ${autoConfirm ? 'bg-emerald-500/10 border-emerald-500/20' : 'opacity-40 border-dashed border-slate-300 dark:border-white/10'}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              {autoConfirm ? <Zap className="text-emerald-500" size={16} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />}
+                              <h4 className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-400">Mode Auto-Pilot</h4>
+                            </div>
+                            <p className="text-[11px] leading-relaxed font-medium text-muted">
+                              Sistem akan menyetujui setiap uang masuk tanpa konfirmasi manual. Cocok saat transaksi sedang ramai.
+                            </p>
+                          </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <button
-                        onClick={async () => {
-                          const res = await Swal.fire({ title: 'Reset Hari Ini?', text: 'Semua transaksi tanggal ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
-                          if (res.isConfirmed) {
-                            await api.resetData({ range: 'day' });
-                            loadData();
-                            Swal.fire('Berhasil!', 'Data hari ini dibersihkan.', 'success');
-                          }
-                        }}
-                        className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
-                      >
-                        <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">🧹 Reset Hari Ini</h4>
-                        <p className="text-[10px] text-text-muted leading-tight">Bersihkan salah input hari ini.</p>
-                      </button>
+                          <div className={`p-5 rounded-3xl border transition-all ${!autoConfirm ? 'bg-amber-500/10 border-amber-500/20' : 'opacity-40 border-dashed border-slate-300 dark:border-white/10'}`}>
+                            <div className="flex items-center gap-2 mb-2">
+                              {!autoConfirm ? <Shield className="text-amber-500" size={16} /> : <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />}
+                              <h4 className="text-xs font-bold uppercase tracking-widest text-amber-600 dark:text-amber-400">Mode Manual</h4>
+                            </div>
+                            <p className="text-[11px] leading-relaxed font-medium text-muted">
+                              Sistem mencatat sebagai 'Pending'. Wajib diverifikasi via Telegram dengan menekan tombol 'DITERIMA'.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
-                      <button
-                        onClick={async () => {
-                          const res = await Swal.fire({ title: 'Reset Bulan Ini?', text: 'Semua transaksi bulan ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
-                          if (res.isConfirmed) {
-                            await api.resetData({ range: 'month' });
-                            loadData();
-                            Swal.fire('Berhasil!', 'Data bulan ini dibersihkan.', 'success');
-                          }
-                        }}
-                        className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
-                      >
-                        <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">📅 Reset Bulan Ini</h4>
-                        <p className="text-[10px] text-text-muted leading-tight">Mulai pembukuan baru bulan ini.</p>
-                      </button>
+                    {settingsTab === 'visual' && (
+                      <div className="glass-card max-w-2xl">
+                        <div className="flex items-center gap-4 mb-8">
+                          <div className="p-3 bg-violet-500/10 rounded-2xl text-violet-500">
+                            <Palette size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold">Tema & Visual</h3>
+                            <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Personalisasi warna aplikasi</p>
+                          </div>
+                        </div>
 
-                      <button
-                        onClick={async () => {
-                          const res = await Swal.fire({ title: 'TOTAL WIPE-OUT?', text: 'SEMUA DATA (Stok, Transaksi, Hutang, QRIS) AKAN HILANG PERMANEN!', icon: 'error', showCancelButton: true, confirmButtonText: 'YA, RESET TOTAL!' });
-                          if (res.isConfirmed) {
-                            await api.resetData({ range: 'all' });
-                            loadData();
-                            Swal.fire('Data Bersih!', 'Sistem kembali ke kondisi awal.', 'success');
-                          }
-                        }}
-                        className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500 hover:text-white transition-all text-left"
-                      >
-                        <h4 className="text-xs font-bold uppercase tracking-widest mb-1">🔥 Reset Seluruh Data</h4>
-                        <p className="text-[10px] opacity-70 leading-tight italic">Hanya untuk install ulang / ganti pemilik.</p>
-                      </button>
-                    </div>
+                        <div className="space-y-6">
+                          <div className="space-y-4">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-1">Warna Aksen Aplikasi:</label>
+                            <div className="flex flex-wrap gap-4">
+                              {colorPresets.map((preset) => (
+                                <button
+                                  key={preset.name}
+                                  onClick={() => setAccentColor(preset.primary)}
+                                  className={`group relative w-14 h-14 rounded-2xl transition-all duration-300 border-4 flex items-center justify-center ${accentColor === preset.primary
+                                    ? 'border-primary scale-110 shadow-lg shadow-primary/20'
+                                    : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 bg-slate-100 dark:bg-white/5'
+                                    }`}
+                                  style={{ backgroundColor: preset.primary }}
+                                >
+                                  {accentColor === preset.primary && <div className="w-2 h-2 rounded-full bg-white animate-ping" />}
+                                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity uppercase">{preset.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="pt-8">
+                            <p className="text-[11px] text-muted font-medium italic opacity-50">*Perubahan warna akan langsung diterapkan ke seluruh elemen UI.</p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {settingsTab === 'maintenance' && (
+                      <div className="flex flex-col gap-8 animate-fade-in pb-20">
+                        {/* Filtered Reset Section */}
+                        <div className="glass-card border-amber-500/20 bg-amber-500/5">
+                          <div className="flex justify-between items-start mb-6">
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-500">
+                                <Filter size={24} />
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400">🛡️ Filter Pembersihan Data</h3>
+                                <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Reset Periode Khusus dengan Checklist</p>
+                              </div>
+                            </div>
+
+                            {/* Guarded Global Reset */}
+                            <button
+                              onClick={async () => {
+                                const { value: pin } = await Swal.fire({
+                                  title: 'Verifikasi Keamanan',
+                                  text: 'Masukkan PIN untuk Reset Total Seluruh Sistem',
+                                  input: 'password',
+                                  inputAttributes: {
+                                    autocapitalize: 'off',
+                                    autocorrect: 'off'
+                                  },
+                                  inputPlaceholder: '****',
+                                  showCancelButton: true,
+                                  confirmButtonColor: '#f43f5e',
+                                  confirmButtonText: 'Verifikasi PIN'
+                                });
+
+                                if (pin === savedPassword) {
+                                  const res = await Swal.fire({
+                                    title: 'TOTAL WIPE-OUT?',
+                                    text: 'SEMUA DATA (Stok, Transaksi, Hutang, Hub) AKAN HILANG PERMANEN!',
+                                    icon: 'error',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#f43f5e',
+                                    confirmButtonText: 'YA, RESET TOTAL!'
+                                  });
+                                  if (res.isConfirmed) {
+                                    await api.resetData({ range: 'all' });
+                                    loadData();
+                                    Swal.fire('Data Bersih!', 'Sistem kembali ke kondisi awal.', 'success');
+                                  }
+                                } else if (pin) {
+                                  Swal.fire('Gagal', 'PIN yang Anda masukkan salah.', 'error');
+                                }
+                              }}
+                              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-600 dark:text-rose-400 hover:text-white text-[10px] font-bold uppercase tracking-widest transition-all border border-rose-500/20 group"
+                            >
+                              <Trash2 size={14} className="group-hover:animate-bounce" /> 🔥 Reset Total
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            {/* Left: Date Selection */}
+                            <div className="space-y-4 p-5 bg-white dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm">
+                              <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-primary">1. Tentukan Periode</h4>
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-0.5">Dari Tanggal:</label>
+                                  <input type="date" className="form-input w-full font-bold text-xs" value={resetStart} onChange={(e) => setResetStart(e.target.value)} />
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-0.5">Sampai Tanggal:</label>
+                                  <input type="date" className="form-input w-full font-bold text-xs" value={resetEnd} onChange={(e) => setResetEnd(e.target.value)} />
+                                </div>
+                              </div>
+                              <p className="text-[10px] text-muted italic opacity-60 mt-2">*Hanya data di dalam rentang ini yang akan diproses.</p>
+                            </div>
+
+                            {/* Right: Modules Checklist */}
+                            <div className="space-y-4 p-5 bg-white dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm">
+                              <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">2. Pilih Modul Data</h4>
+                                <button 
+                                  onClick={() => setSelectedModules(['transactions', 'wallet', 'debts', 'preorders', 'stock'])}
+                                  className="text-[9px] font-bold uppercase text-primary hover:underline"
+                                >
+                                  Pilih Semua
+                                </button>
+                              </div>
+                              <div className="grid grid-cols-2 gap-3">
+                                {[
+                                  { id: 'transactions', label: 'Transaksi Manual', icon: FileText },
+                                  { id: 'wallet', label: 'Wallet & QRIS', icon: Wallet },
+                                  { id: 'debts', label: 'Hutang/Piutang', icon: Handshake },
+                                  { id: 'preorders', label: 'Riwayat Pesanan', icon: ShoppingBag },
+                                  { id: 'stock', label: 'Riwayat Stok', icon: Package },
+                                ].map((mod) => (
+                                  <label key={mod.id} className={`flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all border ${selectedModules.includes(mod.id) ? 'bg-primary/5 border-primary/20 text-primary' : 'bg-slate-50 dark:bg-white/5 border-transparent opacity-60 hover:opacity-100 hover:border-slate-200 dark:hover:border-white/10'}`}>
+                                    <input
+                                      type="checkbox"
+                                      className="w-4 h-4 rounded text-primary focus:ring-primary border-slate-300"
+                                      checked={selectedModules.includes(mod.id)}
+                                      onChange={(e) => {
+                                        if (e.target.checked) setSelectedModules([...selectedModules, mod.id]);
+                                        else setSelectedModules(selectedModules.filter(m => m !== mod.id));
+                                      }}
+                                    />
+                                    <span className="text-[10px] font-bold uppercase tracking-tight flex items-center gap-2">
+                                      <mod.icon size={14} className="opacity-70" />
+                                      {mod.label}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-10 flex justify-center">
+                            <button
+                              onClick={async () => {
+                                if (selectedModules.length === 0) {
+                                  Swal.fire('Opps!', 'Pilih minimal satu jenis data yang ingin dihapus.', 'info');
+                                  return;
+                                }
+                                const res = await Swal.fire({
+                                  title: 'Konfirmasi Pembersihan',
+                                  html: `
+                                    <div class="text-left p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
+                                      <p class="text-sm mb-4">Apakah Bapak yakin ingin menghapus data dengan kriteria berikut?</p>
+                                      <div class="space-y-3">
+                                        <div class="flex justify-between border-b border-dashed border-slate-200 pb-2">
+                                          <span class="text-xs font-bold text-muted">PERIODE:</span>
+                                          <span class="text-xs font-bold text-rose-500">${resetStart} s/d ${resetEnd}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                          <span class="text-xs font-bold text-muted">MODUL TERPILIH:</span>
+                                          <span class="text-xs font-bold text-amber-600">${selectedModules.length} Modul</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <p class="text-[10px] text-rose-500 font-bold uppercase mt-4 italic">⚠️ DATA TIDAK DAPAT DIKEMBALIKAN!</p>
+                                  `,
+                                  icon: 'warning',
+                                  showCancelButton: true,
+                                  confirmButtonColor: '#f59e0b',
+                                  confirmButtonText: 'Iya, Hapus Data!',
+                                  cancelButtonText: 'Batal'
+                                });
+
+                                if (res.isConfirmed) {
+                                  const result = await api.resetData({ range: 'custom', modules: selectedModules, startDate: resetStart, endDate: resetEnd });
+                                  if (result.success) {
+                                    loadData();
+                                    Swal.fire({ title: 'Dibersihkan!', text: 'Data periode terpilih berhasil dihapus.', icon: 'success', timer: 2000, showConfirmButton: false });
+                                  } else {
+                                    Swal.fire('Gagal!', 'Terjadi kesalahan sistem.', 'error');
+                                  }
+                                }
+                              }}
+                              className="btn bg-amber-500 hover:bg-amber-600 text-white px-12 py-4 rounded-2xl font-bold uppercase tracking-[0.15em] shadow-xl shadow-amber-500/20 flex items-center gap-3 transition-all active:scale-95 group"
+                            >
+                              <Trash2 size={20} className="group-hover:rotate-12 transition-transform" /> 
+                              Bersihkan Data Terpilih
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {settingsTab === 'about' && (
+                      <div className="glass-card max-w-2xl flex flex-col items-center text-center py-12">
+                        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 animate-pulse">
+                          <Settings2 size={48} />
+                        </div>
+                        <h2 className="title-gradient text-3xl font-black mb-2">DM POS LITE</h2>
+                        <p className="text-[11px] font-bold uppercase tracking-[0.4em] opacity-40 mb-8">Harmony Interface System</p>
+
+                        <div className="space-y-2 mb-10">
+                          <div className="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest">
+                            Version 3.1.6-Lite Stable
+                          </div>
+                          <p className="text-xs text-muted font-medium italic">"Elevating bookkeeping to an art form."</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-8 w-full max-w-sm">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted uppercase tracking-widest">Platform</p>
+                            <p className="text-sm font-bold">Electron Desktop</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted uppercase tracking-widest">Database</p>
+                            <p className="text-sm font-bold">SQLite JSON Storage</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-12 pt-8 border-t border-border/10 w-full">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-30">© 2026 PICCAART STUDIO • ALL RIGHTS RESERVED</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

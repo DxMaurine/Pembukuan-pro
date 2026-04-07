@@ -147,12 +147,22 @@ export async function initDb() {
     }
 }
 
-export function clearTransactions(range: 'day' | 'month' | 'year' | 'all') {
+export function clearTransactions(range: 'day' | 'month' | 'year' | 'all' | 'custom', modules: string[] = ['transactions'], startDate?: string, endDate?: string) {
     const data = readDb();
     const now = new Date();
     const today = now.toISOString().split('T')[0];
     const thisMonth = today.substring(0, 7); // YYYY-MM
     const thisYear = today.substring(0, 4);   // YYYY
+
+    const isResetTarget = (itemDate: string) => {
+        if (!itemDate) return false;
+        const d = itemDate.split('T')[0];
+        if (range === 'day') return d === today;
+        if (range === 'month') return d.substring(0, 7) === thisMonth;
+        if (range === 'year') return d.substring(0, 4) === thisYear;
+        if (range === 'custom' && startDate && endDate) return d >= startDate && d <= endDate;
+        return false;
+    };
 
     if (range === 'all') {
         data.transactions = [];
@@ -161,13 +171,11 @@ export function clearTransactions(range: 'day' | 'month' | 'year' | 'all') {
         data.preorders = [];
         data.stock = [];
     } else {
-        data.transactions = data.transactions.filter(t => {
-            const tDate = t.date.split('T')[0];
-            if (range === 'day') return tDate !== today;
-            if (range === 'month') return tDate.substring(0, 7) !== thisMonth;
-            if (range === 'year') return tDate.substring(0, 4) !== thisYear;
-            return true;
-        });
+        if (modules.includes('transactions')) data.transactions = data.transactions.filter(t => !isResetTarget(t.date));
+        if (modules.includes('wallet')) data.wallet = data.wallet.filter(w => !isResetTarget(w.date));
+        if (modules.includes('debts')) data.debts = data.debts.filter(d => !isResetTarget(d.date));
+        if (modules.includes('preorders')) data.preorders = data.preorders.filter(p => !isResetTarget(p.createdAt));
+        if (modules.includes('stock')) data.stock = data.stock.filter(s => !isResetTarget(s.dateAdded || ''));
     }
     
     saveDb(data);

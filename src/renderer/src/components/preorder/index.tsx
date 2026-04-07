@@ -14,10 +14,9 @@ import {
   CheckCircle2,
   X,
   MessageSquare,
-  Minus,
+  Package,
   Calculator,
-  FileText,
-  Settings2
+  FileText
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
@@ -121,11 +120,11 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'pending': return <span className="px-3 py-1 rounded-full text-[10px] Font_bold uppercase bg-slate-100 text-slate-500 border border-slate-200">Pending</span>;
-      case 'designing': return <span className="px-3 py-1 rounded-full text-[10px] Font_bold uppercase bg-blue-100 text-blue-600 border border-blue-200 animate-pulse">Designing</span>;
-      case 'printing': return <span className="px-3 py-1 rounded-full text-[10px] Font_bold uppercase bg-amber-100 text-amber-600 border border-amber-200">Printing</span>;
-      case 'completed': return <span className="px-3 py-1 rounded-full text-[10px] Font_bold uppercase bg-emerald-100 text-emerald-600 border border-emerald-200">Selesai</span>;
-      case 'canceled': return <span className="px-3 py-1 rounded-full text-[10px] Font_bold uppercase bg-rose-100 text-rose-600 border border-rose-200">Batal</span>;
+      case 'pending': return <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-500 border border-slate-200">Pending</span>;
+      case 'designing': return <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-600 border border-blue-200 animate-pulse">Designing</span>;
+      case 'printing': return <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-amber-100 text-amber-600 border border-amber-200">Printing</span>;
+      case 'completed': return <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-600 border border-emerald-200">Selesai</span>;
+      case 'canceled': return <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase bg-rose-100 text-rose-600 border border-rose-200">Batal</span>;
       default: return null;
     }
   };
@@ -205,7 +204,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
         </div>
         <button 
           onClick={() => { setEditingId(null); resetForm(); setShowModal(true); }}
-          className="btn btn-primary px-8 py-3.5 rounded-xl shadow-lg shadow-primary/20 flex items-center gap-3 hover:scale-103 transition-transform Font_bold text-[10px] uppercase tracking-widest"
+          className="btn btn-primary px-8 py-3.5 rounded-xl shadow-lg shadow-primary/20 flex items-center gap-3 hover:scale-103 transition-transform font-bold text-[10px] uppercase tracking-widest"
         >
           <Plus size={18} /> Tambah Proyek
         </button>
@@ -215,40 +214,40 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="glass-card p-5 border-l-4 border-primary">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[9px] Font_bold uppercase tracking-[0.2em] text-muted dark:text-muted">Antrian</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted">Antrian</span>
             <Clock className="text-primary" size={16} />
           </div>
-          <div className="text-2xl font-black">{preorders.filter(p => p.status !== 'completed' && p.status !== 'canceled').length}</div>
-          <p className="text-[9px] text-muted dark:text-muted uppercase Font_bold opacity-60">On Process</p>
+          <div className="text-2xl font-bold">{preorders.filter(p => p.status !== 'completed' && p.status !== 'canceled').length}</div>
+          <p className="text-[9px] text-muted dark:text-muted uppercase font-bold opacity-60">On Process</p>
         </div>
         <div className="glass-card p-5 border-l-4 border-amber-500">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[9px] Font_bold uppercase tracking-[0.2em] text-muted dark:text-muted">Piutang</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted">Piutang</span>
             <Calculator className="text-amber-500" size={16} />
           </div>
-          <div className="text-2xl font-black text-amber-500">Rp {formatIDR(totalUnpaid)}</div>
-          <p className="text-[9px] text-muted dark:text-muted uppercase Font_bold opacity-60">Pending Payment</p>
+          <div className="text-2xl font-bold text-amber-500">Rp {formatIDR(totalUnpaid)}</div>
+          <p className="text-[9px] text-muted dark:text-muted uppercase font-bold opacity-60">Pending Payment</p>
         </div>
         <div className="glass-card p-5 border-l-4 border-emerald-500">
           <div className="flex justify-between items-center mb-1">
-            <span className="text-[9px] Font_bold uppercase tracking-[0.2em] text-muted dark:text-muted">Done</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted">Done</span>
             <CheckCircle2 className="text-emerald-500" size={16} />
           </div>
-          <div className="text-2xl font-black text-emerald-500">{preorders.filter(p => p.status === 'completed').length}</div>
-          <p className="text-[9px] text-muted dark:text-muted uppercase Font_bold opacity-60">Completed</p>
+          <div className="text-2xl font-bold text-emerald-500">{preorders.filter(p => p.status === 'completed').length}</div>
+          <p className="text-[9px] text-muted dark:text-muted uppercase font-bold opacity-60">Completed</p>
         </div>
       </div>
 
       <div className="glass-card flex items-center gap-4 px-6 py-3.5">
         <Search className="text-muted shrink-0" size={18} />
-        <input type="text" placeholder="Cari pesanan..." className="bg-transparent border-none outline-none w-full Font_bold text-xs uppercase" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <input type="text" placeholder="Cari pesanan..." className="bg-transparent border-none outline-none w-full font-bold text-xs uppercase" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
       </div>
 
       <div className="grid grid-cols-1 gap-4">
         {filteredPreorders.length === 0 ? (
           <div className="glass-card py-16 flex flex-col items-center justify-center opacity-30">
             <ShoppingBag size={48} className="mb-4 stroke-[1px]" />
-            <p className="Font_bold text-xs uppercase tracking-[0.3em]">Antrian Kosong</p>
+            <p className="font-bold text-xs uppercase tracking-[0.3em]">Antrian Kosong</p>
           </div>
         ) : (
           filteredPreorders.map((p) => (
@@ -259,10 +258,10 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-md font-black truncate uppercase tracking-tight italic">{p.customerName}</h3>
+                    <h3 className="text-md font-bold truncate uppercase tracking-tight italic">{p.customerName}</h3>
                     {getStatusBadge(p.status)}
                   </div>
-                  <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-[10px] text-muted dark:text-muted Font_bold uppercase opacity-60">
+                  <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-[10px] text-muted dark:text-muted font-bold uppercase opacity-60">
                     <span className="flex items-center gap-1.5"><Wrench size={12} className="text-primary" /> {p.serviceName}</span>
                     <span className="flex items-center gap-1.5"><Calendar size={12} className="text-primary" /> {p.dueDate}</span>
                     {p.notes && <span className="flex items-center gap-1.5 font-normal"><MessageSquare size={12} /> {p.notes}</span>}
@@ -270,15 +269,15 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                 </div>
                 <div className="flex gap-8 items-center shrink-0">
                   <div className="text-right">
-                    <div className="text-[9px] Font_bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Kontrak</div>
-                    <div className="text-md font-black italic">Rp {formatIDR(p.totalAmount)}</div>
+                    <div className="text-[9px] font-bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Kontrak</div>
+                    <div className="text-md font-bold italic">Rp {formatIDR(p.totalAmount)}</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[9px] Font_bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Sisa</div>
+                    <div className="text-[9px] font-bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Sisa</div>
                     {p.remainingAmount > 0 ? (
-                      <div className="text-[9px] font-black text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/10">Rp {formatIDR(p.remainingAmount)}</div>
+                      <div className="text-[9px] font-bold text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/10">Rp {formatIDR(p.remainingAmount)}</div>
                     ) : (
-                      <div className="text-[9px] font-black text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">LUNAS</div>
+                      <div className="text-[9px] font-bold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">LUNAS</div>
                     )}
                   </div>
                     <div className="flex gap-1.5">
@@ -304,166 +303,259 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
           <div className="w-full flex justify-center items-center">
             <div className="w-full max-w-5xl max-h-[95vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[1.8rem] overflow-hidden shadow-2xl">
               
-              <div className="px-6 py-4 bg-slate-900 dark:bg-black text-white flex justify-between items-center shrink-0 border-b border-white/5">
-                <div className="flex items-center gap-4">
-                  <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
-                    <FileText size={18} />
+              <div className="px-8 py-5 bg-slate-900 dark:bg-black text-white flex justify-between items-center shrink-0 border-b border-white/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-full bg-primary/10 -skew-x-12 transform translate-x-32" />
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-rose-600 flex items-center justify-center text-white shadow-xl shadow-primary/20">
+                    <FileText size={22} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-black uppercase tracking-tight italic">Formulir Pesanan Kios {editingId ? `#${editingId}` : 'Percetakan'}</h2>
-                    <p className="text-white/40 text-[8px] Font_bold tracking-[0.3em] uppercase">Multi-Order System v3.1.5</p>
+                    <h2 className="text-xl font-bold uppercase tracking-tight italic">Formulir Pesanan {editingId ? `Edit #${editingId}` : 'Baru'}</h2>
+                    <p className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">v3.1.6-Lite Harmony System</p>
                   </div>
                 </div>
-                <button className="w-8 h-8 rounded-full hover:bg-white/10 flex items-center justify-center transition-all opacity-60" onClick={() => setShowModal(false)}><X size={18} /></button>
+                <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all opacity-60 hover:opacity-100 group" onClick={() => setShowModal(false)}>
+                  <X size={20} className="group-hover:rotate-90 transition-transform" />
+                </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-7 space-y-8 scrollbar-thin">
-                 <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-white dark:bg-bg-card p-5 rounded-2xl border border-slate-100 dark:border-border shadow-sm">
-                    <div className="md:col-span-12 lg:col-span-6 space-y-1.5">
-                       <label className="text-xs Font_bold uppercase tracking-widest text-muted dark:text-muted flex items-center gap-2 ml-1">Nama Customer</label>
-                       <input 
-                         required
-                         className="w-full bg-slate-50 dark:bg-bg-dark border border-slate-200 dark:border-border focus:border-primary px-4 py-3 rounded-xl outline-none font-bold text-sm shadow-inner dark:text-white"
-                         placeholder="Ketik Nama..."
-                         value={formData.customerName}
-                         onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-                       />
+              <div className="flex-1 overflow-y-auto p-8 space-y-10 scrollbar-thin scrollbar-thumb-primary/20">
+                {/* 1. Header Information */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="lg:col-span-6 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary flex items-center gap-2 ml-1">
+                      <User size={12} /> Nama Pelanggan / Instansi
+                    </label>
+                    <input 
+                      required
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 italic"
+                      placeholder="Input nama pemesan..."
+                      value={formData.customerName}
+                      onChange={(e) => setFormData({...formData, customerName: e.target.value})}
+                    />
+                  </div>
+                  <div className="lg:col-span-3 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted flex items-center gap-2 ml-1">
+                      <Clock size={12} /> Status Antrian
+                    </label>
+                    <div className="relative group">
+                      <select 
+                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white cursor-pointer uppercase tracking-tighter italic appearance-none"
+                        value={formData.status}
+                        onChange={(e) => setFormData({...formData, status: e.target.value as any})}
+                      >
+                        <option value="pending" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">PENDING (ANTRIAN)</option>
+                        <option value="designing" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">DESIGNING (PROSES)</option>
+                        <option value="printing" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">PRINTING (CETAK)</option>
+                        <option value="completed" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">COMPLETED (SIAP)</option>
+                        <option value="canceled" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">CANCELED (BATAL)</option>
+                      </select>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity">
+                        <Plus size={14} className="rotate-45" />
+                      </div>
                     </div>
-                    <div className="md:col-span-6 lg:col-span-3 space-y-1.5">
-                       <label className="text-xs Font_bold uppercase tracking-widest text-muted dark:text-muted flex items-center gap-2 ml-1">Status Antrian</label>
-                       <select 
-                         className="w-full bg-slate-50 dark:bg-bg-dark border border-slate-200 dark:border-border focus:border-primary px-4 py-3 rounded-xl outline-none font-bold text-sm shadow-inner dark:text-white cursor-pointer uppercase tracking-tighter italic"
-                         value={formData.status}
-                         onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                       >
-                         <option value="pending">PENDING (ANTRIAN)</option>
-                         <option value="designing">DESIGNING (PROSES)</option>
-                         <option value="printing">PRINTING (CETAK)</option>
-                         <option value="completed">COMPLETED (SIAP)</option>
-                         <option value="canceled">CANCELED (BATAL)</option>
-                       </select>
+                  </div>
+                  <div className="lg:col-span-3 space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted flex items-center gap-2 ml-1">
+                      <Calendar size={12} /> Estimasi Selesai
+                    </label>
+                    <input 
+                      type="date" 
+                      required 
+                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white cursor-pointer italic" 
+                      value={formData.dueDate} 
+                      onClick={(e) => (e.target as any).showPicker?.()}
+                      onChange={(e) => setFormData({...formData, dueDate: e.target.value})} 
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Order Items Section */}
+                <div className="space-y-6">
+                  <div className="flex justify-between items-center px-1">
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-slate-800 dark:text-white italic flex items-center gap-3">
+                        Daftar Spesifikasi Produk
+                        <span className="px-2 py-0.5 rounded bg-primary text-white text-[9px] not-italic font-bold">{orderItems.length} ITEM</span>
+                      </h3>
+                      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1 opacity-60">Rincian dimensi, qty, dan harga</p>
                     </div>
-                    <div className="md:col-span-6 lg:col-span-3 space-y-1.5">
-                       <label className="text-xs Font_bold uppercase tracking-widest text-muted dark:text-muted flex items-center gap-2 ml-1">Tanggal Deadline</label>
-                       <div className="flex flex-col gap-2">
-                         <input 
-                           type="date" 
-                           required 
-                           className="form-input dark:text-muted cursor-pointer font-bold" 
-                           value={formData.dueDate} 
-                           onClick={(e) => (e.target as any).showPicker?.()}
-                           onChange={(e) => setFormData({...formData, dueDate: e.target.value})} 
-                         />
-                       </div>
-                    </div>
-                 </div>
+                    <button 
+                      type="button" 
+                      onClick={addOrderItem} 
+                      className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl text-[10px] font-bold tracking-widest flex items-center gap-3 shadow-lg shadow-primary/20 hover:scale-105 transition-all uppercase"
+                    > 
+                      <Plus size={16} /> Tambah Barang
+                    </button>
+                  </div>
 
-                <div className="space-y-4">
-                   <div className="flex justify-between items-center px-1">
-                      <h3 className="text-[13px] Font_bold uppercase tracking-widest text-primary italic flex items-center gap-2 underline decoration-primary/20 underline-offset-8">Daftar Barang Pesanan</h3>
-                      <button type="button" onClick={addOrderItem} className="btn-primary px-5 py-2.5 rounded-xl text-[10px] Font_bold tracking-widest flex items-center gap-2 shadow-lg hover:scale-103 transition-transform uppercase"> <Plus size={14} /> Tambah Item </button>
-                   </div>
+                  <div className="space-y-6">
+                    {orderItems.map((item, idx) => (
+                      <div key={item.id} className="relative animate-slide-up group" style={{ animationDelay: `${idx * 0.1}s` }}>
+                        <div className={`p-6 rounded-[2rem] border transition-all duration-300 ${item.isBanner ? 'bg-primary/5 border-primary/20 shadow-primary/5' : 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 shadow-sm'}`}>
+                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                            {/* Primary Info */}
+                            <div className="lg:col-span-7 space-y-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1">Nama Barang / Jasa Cetak</label>
+                                  <input 
+                                    className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-5 py-3.5 rounded-2xl outline-none font-semibold text-sm italic focus:border-primary transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20" 
+                                    placeholder="Spanduk, Kartu Nama, Jasa Design..." 
+                                    value={item.name} 
+                                    onChange={(e) => updateOrderItem(item.id, 'name', e.target.value)} 
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1">Material / Bahan</label>
+                                  <input 
+                                    className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-5 py-3.5 rounded-2xl outline-none font-semibold text-sm italic focus:border-primary transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20" 
+                                    placeholder="Flexi 340, Art Carton 260, dll" 
+                                    value={item.bahan} 
+                                    onChange={(e) => updateOrderItem(item.id, 'bahan', e.target.value)} 
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1 flex items-center gap-2">
+                                  <MessageSquare size={12} className="text-primary" /> Catatan Produksi / Finishing
+                                </label>
+                                <textarea 
+                                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4 rounded-2xl outline-none font-semibold text-xs italic focus:border-primary transition-all min-h-[60px] resize-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20" 
+                                  placeholder="Contoh: Mata ayam di setiap pojok, laminasi doff, potong rapi..." 
+                                  value={item.notes} 
+                                  onChange={(e) => updateOrderItem(item.id, 'notes', e.target.value)} 
+                                />
+                              </div>
+                            </div>
 
-                   <div className="space-y-6 mt-4">
-                      {orderItems.map((item, idx) => (
-                        <div key={item.id} className="relative group animate-slide-up" style={{ animationDelay: `${idx * 0.1}s` }}>
-                           <div className="border-2 border-dashed border-slate-200 dark:border-border p-5 rounded-3xl bg-white dark:bg-bg-card hover:border-primary/40 transition-colors flex gap-4 items-center shadow-sm">
-                              <div className="flex-1 space-y-4">
-                                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-                                    <div className="md:col-span-7 space-y-1.5">
-                                       <span className="text-[11px] Font_bold uppercase text-muted dark:text-muted tracking-widest px-1">Nama Item</span>
-                                       <input className="w-full bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 px-4 py-3 rounded-xl outline-none font-black text-sm italic focus:bg-primary/10 dark:focus:bg-primary/20 transition-all shadow-sm dark:text-white" placeholder="Ketik Jasa/Barang..." value={item.name} onChange={(e) => updateOrderItem(item.id, 'name', e.target.value)} />
-                                    </div>
-                                    <div className="md:col-span-4 space-y-1.5">
-                                       <span className="text-[11px] Font_bold uppercase text-muted dark:text-muted tracking-widest px-1">Bahan</span>
-                                       <input className="w-full bg-primary/5 dark:bg-primary/10 border border-primary/20 dark:border-primary/30 px-4 py-3 rounded-xl outline-none font-black text-sm italic focus:bg-primary/10 dark:focus:bg-primary/20 transition-all shadow-sm dark:text-white" placeholder="Art Paper, Flexi, dll" value={item.bahan} onChange={(e) => updateOrderItem(item.id, 'bahan', e.target.value)} />
-                                    </div>
-                                    <div className="md:col-span-1 flex flex-col items-center justify-center pt-5">
-                                       <button type="button" onClick={() => updateOrderItem(item.id, 'isBanner', !item.isBanner)} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all shadow-md ${item.isBanner ? 'bg-primary text-white scale-110 shadow-primary/30' : 'bg-slate-100 dark:bg-bg-dark text-muted dark:text-text-muted hover:bg-primary/20'}`} title={item.isBanner ? "Mode Banner Aktif" : "Mode Satuan"} > <Settings2 size={18} /> </button>
-                                       <span className="text-[9px] Font_bold mt-1 uppercase text-primary/60">{item.isBanner ? 'BANNER' : 'UNIT'}</span>
-                                    </div>
-                                 </div>
-
-                                 <div className="grid grid-cols-2 md:grid-cols-12 gap-3 items-end">
-                                    {item.isBanner && (
-                                       <>
-                                          <div className="md:col-span-1.5 space-y-1.5">
-                                             <span className="text-[10px] Font_bold uppercase text-muted dark:text-muted flex justify-center">L (m)</span>
-                                             <input type="number" className="w-full bg-slate-50 dark:bg-bg-dark border border-slate-200 dark:border-border p-2.5 rounded-lg outline-none font-black text-sm text-center shadow-inner dark:text-white" value={item.p} onChange={(e) => updateOrderItem(item.id, 'p', parseFloat(e.target.value) || 0)} />
-                                          </div>
-                                          <div className="md:col-span-0.5 pb-3 text-center text-muted dark:text-muted font-black text-xs">x</div>
-                                          <div className="md:col-span-1.5 space-y-1.5">
-                                             <span className="text-[10px] Font_bold uppercase text-muted dark:text-muted flex justify-center">T (m)</span>
-                                             <input type="number" className="w-full bg-slate-50 dark:bg-bg-dark border border-slate-200 dark:border-border p-2.5 rounded-lg outline-none font-black text-sm text-center shadow-inner dark:text-white" value={item.l} onChange={(e) => updateOrderItem(item.id, 'l', parseFloat(e.target.value) || 0)} />
-                                          </div>
-                                       </>
-                                    )}
-                                    <div className={`${item.isBanner ? 'md:col-span-1.5' : 'md:col-span-2'} space-y-1.5`}>
-                                       <span className="text-[10px] Font_bold uppercase text-muted dark:text-muted flex justify-center">Qty</span>
-                                       <input type="number" className="w-full bg-slate-50 dark:bg-bg-dark border border-slate-200 dark:border-border p-2.5 rounded-lg outline-none font-black text-sm text-center shadow-inner dark:text-white" value={item.qty} onChange={(e) => updateOrderItem(item.id, 'qty', parseInt(e.target.value) || 0)} />
-                                    </div>
-                                    <div className={`${item.isBanner ? 'md:col-span-3' : 'md:col-span-4'} space-y-1.5`}>
-                                       <span className="text-[10px] Font_bold uppercase text-muted dark:text-muted flex justify-center">Harga Jasa</span>
-                                       <div className="relative">
-                                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[9px] font-black text-primary opacity-50 italic">Rp</div>
-                                          <input className="w-full bg-white dark:bg-bg-dark border-2 border-primary/5 focus:border-primary p-2.5 px-8 rounded-lg outline-none font-black text-sm text-right text-primary shadow-sm" value={formatIDR(item.price.toString())} onChange={(e) => updateOrderItem(item.id, 'price', parseFloat(unformatIDR(e.target.value)) || 0)} />
-                                       </div>
-                                    </div>
-                                    <div className={`${item.isBanner ? 'md:col-span-4' : 'md:col-span-6'} space-y-1.5`}>
-                                       <span className="text-[10px] Font_bold uppercase text-muted dark:text-muted flex justify-center">Subtotal Bruto</span>
-                                       <div className="w-full bg-slate-900 dark:bg-black p-3 rounded-xl border border-white/5 shadow-md flex justify-between items-center group-hover:border-primary/40 transition-colors">
-                                          <span className="text-[9px] font-black text-white/20 italic">Total</span>
-                                          <span className="text-sm font-black text-primary italic">Rp {formatIDR(item.total)}</span>
-                                       </div>
-                                    </div>
-                                 </div>
-
-                                 <div className="space-y-1.5 pt-2">
-                                    <div className="flex items-center gap-2 px-1">
-                                       <MessageSquare size={12} className="text-primary/60" />
-                                       <span className="text-[10px] Font_bold uppercase text-muted dark:text-muted tracking-widest">Catatan Khusus / finishing (Misal: Mata ayam pojok, laminasi, dll)</span>
-                                    </div>
-                                    <textarea className="w-full bg-slate-50/50 dark:bg-bg-dark/50 border border-slate-200 dark:border-border p-3 px-4 rounded-xl outline-none font-black text-[12px] italic focus:border-primary transition-all min-h-[50px] resize-none dark:text-white shadow-inner" placeholder="Ketik instruksi pengerjaan barang ini..." value={item.notes} onChange={(e) => updateOrderItem(item.id, 'notes', e.target.value)} />
-                                 </div>
+                            {/* Controls & Math */}
+                            <div className="lg:col-span-5 space-y-6">
+                              <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                                <div className="flex gap-2">
+                                  <button 
+                                    type="button" 
+                                    onClick={() => updateOrderItem(item.id, 'isBanner', false)} 
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest transition-all ${!item.isBanner ? 'bg-primary text-white shadow-lg' : 'text-muted hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                  >
+                                    SATUAN
+                                  </button>
+                                  <button 
+                                    type="button" 
+                                    onClick={() => updateOrderItem(item.id, 'isBanner', true)} 
+                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest transition-all ${item.isBanner ? 'bg-primary text-white shadow-lg' : 'text-muted hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                  >
+                                    BANNER
+                                  </button>
+                                </div>
+                                <button 
+                                  type="button" 
+                                  onClick={() => removeOrderItem(item.id)} 
+                                  className="p-2 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+                                  title="Hapus Item"
+                                >
+                                  <Trash2 size={18} />
+                                </button>
                               </div>
 
-                              <div className="shrink-0 flex items-center justify-center">
-                                 <button type="button" onClick={() => removeOrderItem(item.id)} className="w-10 h-10 bg-danger hover:brightness-110 text-white rounded-xl shadow-lg flex items-center justify-center transition-all hover:scale-110" > <Minus size={20} className="stroke-[3px]" /> </button>
+                              <div className="grid grid-cols-12 gap-3 items-end">
+                                {item.isBanner && (
+                                  <>
+                                    <div className="col-span-3 space-y-1">
+                                      <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">L (m)</label>
+                                      <input type="number" step="0.1" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.p} onChange={(e) => updateOrderItem(item.id, 'p', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div className="col-span-1 pb-3 text-center text-muted font-bold">×</div>
+                                    <div className="col-span-3 space-y-1">
+                                      <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">T (m)</label>
+                                      <input type="number" step="0.1" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.l} onChange={(e) => updateOrderItem(item.id, 'l', parseFloat(e.target.value) || 0)} />
+                                    </div>
+                                    <div className="col-span-5 space-y-1">
+                                      <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">Quantity</label>
+                                      <input type="number" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.qty} onChange={(e) => updateOrderItem(item.id, 'qty', parseInt(e.target.value) || 0)} />
+                                    </div>
+                                  </>
+                                )}
+                                {!item.isBanner && (
+                                  <div className="col-span-12 space-y-1">
+                                    <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">Jumlah (Qty)</label>
+                                    <input type="number" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-3 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.qty} onChange={(e) => updateOrderItem(item.id, 'qty', parseInt(e.target.value) || 0)} />
+                                  </div>
+                                )}
                               </div>
-                           </div>
-                           {item.isBanner && (
-                              <div className="absolute -left-3 top-1/2 -translate-y-1/2 w-1.5 h-12 bg-primary rounded-full shadow-lg shadow-primary/30 animate-pulse" />
-                           )}
+
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <label className="text-[9px] font-bold uppercase text-muted tracking-widest ml-1">{item.isBanner ? 'Harga /m²' : 'Harga Satuan'}</label>
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary/40 italic">Rp</span>
+                                    <input className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 focus:border-primary p-3 pl-8 rounded-xl outline-none font-bold text-sm text-right text-primary" value={formatIDR(item.price.toString())} onChange={(e) => updateOrderItem(item.id, 'price', parseFloat(unformatIDR(e.target.value)) || 0)} />
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[9px] font-bold uppercase text-primary tracking-widest ml-1">Subtotal Item</label>
+                                  <div className="w-full bg-slate-900 border border-white/5 p-3 rounded-xl flex justify-between items-center shadow-lg shadow-black/20">
+                                    <span className="text-[8px] font-bold text-white/20 uppercase tracking-tighter italic">Total</span>
+                                    <span className="text-sm font-bold text-primary italic">Rp {formatIDR(item.total)}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                   </div>
+                        {item.isBanner && (
+                          <div className="absolute -left-1 top-6 bottom-6 w-1 bg-primary rounded-full shadow-lg shadow-primary/30" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              <div className="px-8 py-6 bg-slate-50 dark:bg-bg-dark/50 border-t border-slate-200 dark:border-border flex flex-col md:flex-row justify-between items-center gap-8 shrink-0">
-                 <div className="flex gap-10 items-center">
-                    <div className="space-y-4">
-                       <label className="text-[9px] Font_bold uppercase tracking-widest text-success block px-1">Pembayaran DP</label>
-                       <div className="relative group">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-success font-black text-sm italic">Rp</div>
-                          <input className="w-64 bg-white dark:bg-bg-dark border-2 border-success/20 focus:border-success px-10 py-3.5 rounded-2xl outline-none font-black text-2xl text-success text-right shadow-md" value={formatIDR(formData.downPayment)} onChange={(e) => setFormData({...formData, downPayment: unformatIDR(e.target.value)})} />
-                       </div>
+              {/* FOOTER SUMMARY SECTION */}
+              <div className="px-10 py-8 bg-white dark:bg-black/40 border-t border-slate-200 dark:border-white/5 flex flex-col xl:flex-row justify-between items-center gap-10 shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+                <div className="flex flex-wrap gap-12 items-center w-full xl:w-auto">
+                  <div className="space-y-3 flex-1 min-w-[200px]">
+                    <div className="flex items-center gap-2 px-1">
+                      <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-success block">Uang Muka (DP)</label>
                     </div>
-                    <div className="bg-primary text-white p-6 rounded-[2rem] shadow-xl shadow-primary/20 relative overflow-hidden min-w-[300px]">
-                       <div className="relative z-10">
-                          <span className="text-[10px] Font_bold uppercase tracking-[0.4em] text-white/30 block mb-1">Sisa Pelunasan</span>
-                          <div className="text-3xl font-black italic tracking-tighter">Rp {formatIDR(Math.max(0, (parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.downPayment) || 0)))}</div>
-                       </div>
-                       <Calculator className="absolute -right-4 -bottom-4 text-white/5" size={100} />
+                    <div className="relative group">
+                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-success font-bold text-lg italic">Rp</div>
+                      <input className="w-full xl:w-64 bg-slate-100 dark:bg-white/5 border-2 border-success/10 focus:border-success px-12 py-4 rounded-3xl outline-none font-bold text-2xl text-success text-right shadow-sm transition-all" value={formatIDR(formData.downPayment)} onChange={(e) => setFormData({...formData, downPayment: unformatIDR(e.target.value)})} />
                     </div>
-                 </div>
-                 <div className="flex flex-col gap-3 w-full md:w-auto min-w-[240px]">
-                    <div className="text-center md:text-right px-2">
-                       <span className="text-[10px] Font_bold uppercase tracking-widest text-muted dark:text-muted opacity-60">Grand Total: </span>
-                       <span className="text-xl font-black text-slate-800 dark:text-white italic ml-2 leading-none">Rp {formatIDR(formData.totalAmount)}</span>
+                    <p className="text-[9px] text-muted font-bold uppercase tracking-widest pl-2">Sistem mencatat sebagai pemasukan</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-primary to-rose-600 text-white p-7 rounded-[2.5rem] shadow-2xl shadow-primary/30 relative overflow-hidden flex-1 min-w-[280px]">
+                    <div className="relative z-10 flex justify-between items-end">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/40 block mb-1">Sisa Pelunasan</span>
+                        <div className="text-3xl font-bold italic tracking-tighter">Rp {formatIDR(Math.max(0, (parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.downPayment) || 0)))}</div>
+                      </div>
+                      <div className="hidden sm:block text-right">
+                         <span className="text-[9px] font-bold uppercase tracking-widest text-white/30 block mb-1">Status</span>
+                         <span className="text-[11px] font-bold italic bg-white/20 px-3 py-1 rounded-full border border-white/20">{(parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.downPayment) || 0) <= 0 ? 'LUNAS' : 'PENDING'}</span>
+                      </div>
                     </div>
-                    <button type="submit" onClick={handleSave} className="btn-primary w-full py-5 rounded-[1.8rem] font-black italic text-lg shadow-2xl flex items-center justify-center gap-3 hover:scale-103 transition-transform" > TERBITKAN NOTA <CheckCircle2 size={24} /> </button>
-                 </div>
+                    <Calculator className="absolute -right-6 -bottom-6 text-white/10" size={120} />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[300px]">
+                  <div className="flex justify-between items-end px-3">
+                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Grand Total Bruto: </span>
+                    <span className="text-2xl font-bold text-slate-900 dark:text-white italic tracking-tight leading-none">Rp {formatIDR(formData.totalAmount)}</span>
+                  </div>
+                  <button 
+                    type="submit" 
+                    onClick={handleSave} 
+                    className="w-full bg-slate-900 dark:bg-primary hover:bg-slate-800 dark:hover:bg-primary-hover text-white py-6 rounded-3xl font-bold italic text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
+                  > 
+                    TERBITKAN NOTA 
+                    <CheckCircle2 size={24} className="group-hover:translate-x-1 transition-transform" /> 
+                  </button>
+                </div>
               </div>
 
             </div>
@@ -475,62 +567,70 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       {showDetailModal && selectedPreorder && createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-[120] px-4 py-4 overflow-hidden">
           <div className="w-full flex justify-center items-center h-full">
-            <div className="w-full max-w-4xl max-h-[90vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[2.5rem] overflow-hidden shadow-2xl">
-              <div className="px-8 py-6 bg-slate-900 text-white flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary">
-                    <ShoppingBag size={24} />
+            <div className="w-full max-w-4xl max-h-[90vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[2.5rem] overflow-hidden shadow-2xl">              <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center shrink-0 border-b border-white/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-64 h-full bg-primary/10 -skew-x-12 transform translate-x-32" />
+                <div className="flex items-center gap-5 relative z-10">
+                  <div className="w-11 h-11 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-xl shadow-primary/10">
+                    <ShoppingBag size={22} />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black uppercase tracking-tight italic">Detail Order #{selectedPreorder.id}</h2>
-                    <p className="text-white/40 text-[10px] Font_bold tracking-[0.3em] uppercase">Informasi Lengkap Barang Pesanan</p>
+                    <h2 className="text-xl font-bold uppercase tracking-tight italic">Detail Order #{selectedPreorder.id}</h2>
+                    <p className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">Multi-Order Tracking System</p>
                   </div>
                 </div>
-                <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all" onClick={() => setShowDetailModal(false)}><X size={24} /></button>
+                <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all opacity-60 hover:opacity-100 group" onClick={() => setShowDetailModal(false)}>
+                  <X size={20} className="group-hover:rotate-90 transition-transform" />
+                </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-thin">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-6 bg-white/50 dark:bg-black/20 p-6 rounded-3xl border border-slate-100 dark:border-white/5">
-                   <div className="space-y-1">
-                      <span className="text-[10px] Font_bold uppercase text-muted dark:text-text-muted tracking-widest block opacity-60">Pelanggan</span>
-                      <div className="font-black text-sm italic dark:text-white uppercase">{selectedPreorder.customerName}</div>
+              <div className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-thin">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-8 bg-slate-50 dark:bg-white/5 p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-inner">
+                   <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5">Nama Pelanggan</span>
+                      <div className="font-bold text-sm italic dark:text-white uppercase tracking-tight">{selectedPreorder.customerName}</div>
                    </div>
-                   <div className="space-y-1">
-                      <span className="text-[10px] Font_bold uppercase text-muted dark:text-text-muted tracking-widest block opacity-60">Deadline</span>
-                      <div className="font-black text-sm italic dark:text-white">{selectedPreorder.dueDate}</div>
+                   <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5">Estimasi Selesai</span>
+                      <div className="font-bold text-sm italic dark:text-white flex items-center gap-2">
+                        <Calendar size={14} className="text-primary" /> {selectedPreorder.dueDate}
+                      </div>
                    </div>
-                   <div className="space-y-1">
-                      <span className="text-[10px] Font_bold uppercase text-muted dark:text-text-muted tracking-widest block opacity-60">Status Admin</span>
-                      <div className="flex">{getStatusBadge(selectedPreorder.status)}</div>
+                   <div className="space-y-1.5">
+                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5 text-center">Status Produksi</span>
+                      <div className="flex justify-center">{getStatusBadge(selectedPreorder.status)}</div>
                    </div>
-                   <div className="space-y-1">
-                      <span className="text-[10px] Font_bold uppercase text-muted dark:text-text-muted tracking-widest block opacity-60">Nota Manual</span>
-                      <div className="font-black text-sm italic text-primary">INV-{selectedPreorder.id}</div>
+                   <div className="space-y-1.5 text-right">
+                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 mr-0.5">Nomor Invoice</span>
+                      <div className="font-bold text-sm italic text-primary tracking-widest">INV-{selectedPreorder.id.toString().padStart(4, '0')}</div>
                    </div>
                 </div>
 
-                <div className="space-y-4">
-                  <h3 className="text-xs font-black uppercase tracking-widest text-primary italic border-b-2 border-primary/10 pb-2 flex items-center gap-2"> <Search size={14} /> Daftar Barang (Itemized)</h3>
-                  <div className="space-y-3">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 px-1 border-b border-slate-100 dark:border-white/5 pb-4">
+                    <Search size={16} className="text-primary" />
+                    <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-slate-800 dark:text-white italic">Daftar Barang (Itemized List)</h3>
+                  </div>
+                  <div className="space-y-4">
                     {selectedPreorder.items?.map((item, idx) => (
-                      <div key={item.id} className="flex gap-4 p-4 rounded-2xl bg-white dark:bg-bg-card border border-slate-100 dark:border-border shadow-sm items-center group hover:border-primary/30 transition-all">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-bg-dark flex items-center justify-center text-[10px] font-black text-muted dark:text-primary/60 border border-slate-200 dark:border-white/5">{idx + 1}</div>
-                        <div className="flex-1">
-                          <div className="font-black text-sm uppercase italic dark:text-white">{item.name}</div>
-                          <div className="text-[10px] Font_bold text-muted dark:text-text-muted uppercase tracking-widest opacity-60">
-                             {item.bahan || 'Tanpa Bahan'}
-                             {item.notes && <span className="ml-2 text-primary font-black">— {item.notes}</span>}
+                      <div key={item.id} className="flex flex-col sm:flex-row gap-6 p-6 rounded-[1.8rem] bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 shadow-sm items-center hover:border-primary/20 transition-all group relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-slate-100 dark:bg-white/10 group-hover:bg-primary transition-colors" />
+                        <div className="w-10 h-10 rounded-xl bg-slate-50 dark:bg-white/5 flex items-center justify-center text-xs font-bold text-muted dark:text-primary/40 border border-slate-200 dark:border-white/5 shrink-0">{idx + 1}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-md uppercase italic dark:text-white leading-tight mb-1">{item.name}</div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold text-muted uppercase tracking-widest opacity-60">
+                             <span className="flex items-center gap-1.5"><Package size={12} className="text-primary/60" /> {item.bahan || 'Reguler'}</span>
+                             {item.notes && <span className="flex items-center gap-1.5 text-primary italic lowercase font-medium">— {item.notes}</span>}
                           </div>
                         </div>
-                        <div className="text-center px-4">
-                          <div className="text-[9px] Font_bold text-muted dark:text-text-muted uppercase tracking-tighter opacity-60">Dimensi / Qty</div>
-                          <div className="font-black text-xs italic dark:text-primary">
-                            {item.isBanner ? `${item.p}x${item.l}m` : 'SATUAN'} × {item.qty}
+                        <div className="text-center px-4 shrink-0 border-x border-slate-100 dark:border-white/5 hidden sm:block">
+                          <div className="text-[9px] font-bold text-muted uppercase tracking-tighter opacity-40 mb-1">Dimensi / Qty</div>
+                          <div className="font-bold text-xs italic dark:text-primary leading-none">
+                            {item.isBanner ? `${item.p}x${item.l}m` : 'PCS'} <span className="text-muted mx-1">×</span> {item.qty}
                           </div>
                         </div>
-                        <div className="text-right min-w-[120px]">
-                          <div className="text-[9px] Font_bold text-muted dark:text-text-muted uppercase tracking-tighter opacity-60">Subtotal</div>
-                          <div className="font-black text-sm text-primary italic">Rp {formatIDR(item.total)}</div>
+                        <div className="text-right min-w-[140px] shrink-0">
+                          <div className="text-[9px] font-bold text-muted uppercase tracking-tighter opacity-40 mb-1">Subtotal Bruto</div>
+                          <div className="font-bold text-lg text-slate-900 dark:text-white italic leading-none group-hover:text-primary transition-colors">Rp {formatIDR(item.total)}</div>
                         </div>
                       </div>
                     ))}
@@ -538,27 +638,28 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                 </div>
               </div>
 
-              <div className="px-8 py-6 bg-slate-50 dark:bg-bg-dark/50 border-t border-slate-200 dark:border-border flex flex-col md:flex-row justify-between items-center shrink-0 gap-6">
-                <div className="flex flex-wrap gap-8">
-                  <div>
-                     <span className="text-[9px] Font_bold uppercase text-muted dark:text-text-muted tracking-widest block opacity-60">Total Order</span>
-                     <div className="text-xl font-black italic dark:text-white">Rp {formatIDR(selectedPreorder.totalAmount)}</div>
+              <div className="px-10 py-8 bg-slate-50 dark:bg-black/40 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center shrink-0 gap-10">
+                <div className="flex flex-wrap gap-12 items-center">
+                  <div className="space-y-1">
+                     <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic">Total Kontrak</span>
+                     <div className="text-2xl font-bold italic dark:text-white tracking-tight">Rp {formatIDR(selectedPreorder.totalAmount)}</div>
                   </div>
-                  <div>
-                     <span className="text-[9px] Font_bold uppercase text-muted dark:text-text-muted tracking-widest block opacity-60">Uang Muka / DP</span>
-                     <div className="text-xl font-black text-success italic">Rp {formatIDR(selectedPreorder.downPayment)}</div>
+                  <div className="space-y-1">
+                     <span className="text-[10px] font-bold uppercase text-success tracking-widest block italic">Uang Muka (DP)</span>
+                     <div className="text-2xl font-bold text-success italic tracking-tight">Rp {formatIDR(selectedPreorder.downPayment)}</div>
                   </div>
-                  <div className="bg-primary/5 dark:bg-primary/10 px-6 py-2 rounded-2xl border border-primary/20">
-                     <span className="text-[9px] Font_bold uppercase text-primary tracking-widest block">Sisa Pelunasan</span>
-                     <div className="text-xl font-black text-primary italic">Rp {formatIDR(selectedPreorder.remainingAmount)}</div>
+                  <div className="bg-primary/5 dark:bg-primary/10 px-8 py-4 rounded-[1.8rem] border border-primary/20 shadow-xl shadow-primary/5">
+                     <span className="text-[11px] font-bold uppercase text-primary tracking-[0.2em] block mb-1">Sisa Pelunasan</span>
+                     <div className="text-3xl font-bold text-primary italic tracking-tighter">Rp {formatIDR(selectedPreorder.remainingAmount)}</div>
                   </div>
                 </div>
-                <div className="flex gap-3 w-full md:w-auto">
-                   <button className="flex-1 md:flex-none px-6 py-3.5 rounded-2xl font-black text-muted border border-slate-200 hover:bg-slate-100 transition-all text-xs" onClick={() => setShowDetailModal(false)}> TUTUP </button>
-                   <button className="flex-1 md:flex-none btn btn-primary px-8 py-3.5 rounded-2xl font-black italic text-sm shadow-xl flex items-center gap-2" 
-                     onClick={() => generatePreorderInvoicePDF('Kios Percetakan', selectedPreorder, 'light')}
+                <div className="flex gap-4 w-full md:w-auto">
+                   <button className="flex-1 md:flex-none px-8 py-4 rounded-2xl font-bold text-muted border border-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-xs tracking-widest uppercase italic" onClick={() => setShowDetailModal(false)}> TUTUP </button>
+                   <button 
+                     className="flex-1 md:flex-none bg-primary hover:bg-primary-hover text-white px-10 py-4 rounded-2xl font-bold italic text-sm shadow-2xl shadow-primary/30 flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all group" 
+                     onClick={() => generatePreorderInvoicePDF('UD. DM FOTO', selectedPreorder, 'light')}
                    > 
-                     <FileText size={18} /> CETAK NOTA 
+                     <FileText size={20} className="group-hover:translate-y-[-2px] transition-transform" /> CETAK NOTA 
                    </button>
                 </div>
               </div>

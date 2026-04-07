@@ -42,7 +42,7 @@ const StockManager: React.FC<StockManagerProps> = ({
           <h1 className="text-3xl font-semibold flex items-center gap-3">
             <Archive className="text-primary" size={32} /> Stock Hub
           </h1>
-          <p className="text-muted dark:text-muted mt-1 uppercase tracking-widest Font_bold text-[10px] opacity-60">Pencatatan Barang Habis & Opname</p>
+          <p className="text-muted dark:text-muted mt-1 uppercase tracking-widest font-bold text-[10px] opacity-60">Pencatatan Barang Habis & Opname v3.1.6-Lite</p>
         </div>
         <div className="flex gap-4">
           <button className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10" onClick={sendStockToOwner}>
@@ -60,11 +60,11 @@ const StockManager: React.FC<StockManagerProps> = ({
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-slate-50 dark:bg-white/5 border-b border-slate-200 dark:border-white/10">
-                <th className="px-6 py-4 text-left text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60 w-16">No.</th>
-                <th className="px-6 py-4 text-left text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60">Nama Barang</th>
-                <th className="px-6 py-4 text-left text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60 w-32">Status</th>
-                <th className="px-6 py-4 text-left text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60 w-48">Tanggal Dicatat</th>
-                <th className="px-6 py-4 text-center text-[10px] Font_bold uppercase tracking-[0.2em] text-muted opacity-60 w-32">Aksi</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-60 w-16">No.</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Nama Barang</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-60 w-32 px-1">Status</th>
+                <th className="px-6 py-4 text-left text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-60 w-48">Tanggal</th>
+                <th className="px-6 py-4 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-60 w-32">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-white/5">
@@ -83,28 +83,29 @@ const StockManager: React.FC<StockManagerProps> = ({
                     {isStockUrgent ? <AlertCircle size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}
                   </button>
                 </td>
-                <td className="px-4 py-2" colSpan={2}>
-                  <div className="flex items-center gap-3">
+                <td className="px-4 py-2" colSpan={4}>
+                  <div className="flex items-center justify-between gap-4">
                     <input
                       type="text"
-                      className="w-full bg-transparent border-none outline-none py-3 px-2 font-bold text-lg placeholder:text-primary/30 placeholder:font-normal"
+                      className="flex-1 bg-transparent border-none outline-none py-4 px-2 font-bold text-xl placeholder:text-primary/30 dark:placeholder:text-primary/10 placeholder:font-normal placeholder:italic"
                       placeholder={isStockUrgent ? "Ketik BARANG MENDESAK..." : "Ketik nama barang + tekan ENTER..."}
                       value={newStockItem}
                       onChange={(e) => setNewStockItem(e.target.value)}
                       onKeyDown={handleKeyDown}
                     />
-                    {isStockUrgent && (
-                      <span className="flex items-center gap-1 px-3 py-1 bg-rose-500 text-white text-[10px] font-black rounded-full animate-pulse whitespace-nowrap">
-                        🚨 MENDESAK
+                    <div className="flex items-center gap-3 shrink-0 mr-10">
+                      {isStockUrgent && (
+                        <span className="flex items-center gap-1.5 px-3 py-1 bg-rose-500 text-white text-[10px] font-black rounded-xl animate-pulse whitespace-nowrap shadow-lg shadow-rose-500/20">
+                          🚨 MENDESAK
+                        </span>
+                      )}
+                      <span className={`text-[9px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-lg border ${isStockUrgent ? 'text-rose-500 border-rose-500/20 bg-rose-500/5' : 'text-primary border-primary/20 bg-primary/5 opacity-60'}`}>
+                        {isStockUrgent ? 'URGENT MODE' : 'ENTER MODE'}
                       </span>
-                    )}
+                    </div>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-center">
-                   <span className={`text-[9px] Font_bold uppercase tracking-tighter ${isStockUrgent ? 'text-rose-500' : 'text-primary opacity-40'}`}>
-                     {isStockUrgent ? 'URGENT MODE' : 'ENTER MODE'}
-                   </span>
-                </td>
+                {/* No sixth column needed because of colSpan={4} */}
               </tr>
 
               {/* Data Rows */}
@@ -136,7 +137,7 @@ const StockManager: React.FC<StockManagerProps> = ({
                     </td>
                   <td className="px-6 py-5">
                       <div className="flex items-center gap-3">
-                        <span className={`font-bold text-lg uppercase tracking-tight transition-colors italic ${
+                        <span className={`font-bold text-lg uppercase tracking-tight transition-colors ${
                           item.status === 'bought' ? 'line-through opacity-40' : item.isUrgent ? 'text-rose-600 dark:text-rose-400' : 'group-hover:text-primary'
                         }`}>
                           {item.name}
@@ -155,16 +156,16 @@ const StockManager: React.FC<StockManagerProps> = ({
                     </td>
                     <td className="px-6 py-5">
                       {item.status === 'bought' ? (
-                        <span className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black rounded-xl w-fit">
-                          <CheckCircle2 size={12} /> Sudah Dibeli
+                        <span className="flex items-center gap-2 px-4 py-1.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full w-fit shadow-sm border border-emerald-200 dark:border-emerald-500/30 whitespace-nowrap">
+                          <CheckCircle2 size={12} /> SUDAH DIBELI
                         </span>
                       ) : (
-                        <span className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black rounded-xl w-fit ${
+                        <span className={`flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold rounded-full w-fit shadow-sm uppercase italic border whitespace-nowrap ${
                           item.isUrgent
-                            ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400'
-                            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
+                            ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30'
+                            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
                         }`}>
-                          {item.isUrgent ? '🚨 Mendesak' : '📦 Habis'}
+                          {item.isUrgent ? '🚨 MENDESAK' : '📦 STOK HABIS'}
                         </span>
                       )}
                     </td>
@@ -222,7 +223,7 @@ const StockManager: React.FC<StockManagerProps> = ({
               <form onSubmit={handleAddStockItem} className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <label className="block mb-2 text-[10px] Font_bold uppercase tracking-widest text-muted opacity-80">Nama Barang</label>
+                    <label className="block mb-2 text-[10px] font-bold uppercase tracking-widest text-muted opacity-80">Nama Barang</label>
                     <input
                       type="text"
                       className="form-input py-4 text-lg font-normal"
