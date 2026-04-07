@@ -129,3 +129,30 @@ export async function initDb() {
         saveDb(defaultData);
     }
 }
+
+export function clearTransactions(range: 'day' | 'month' | 'year' | 'all') {
+    const data = readDb();
+    const now = new Date();
+    const today = now.toISOString().split('T')[0];
+    const thisMonth = today.substring(0, 7); // YYYY-MM
+    const thisYear = today.substring(0, 4);   // YYYY
+
+    if (range === 'all') {
+        data.transactions = [];
+        data.debts = [];
+        data.wallet = [];
+        data.preorders = [];
+        data.stock = [];
+    } else {
+        data.transactions = data.transactions.filter(t => {
+            const tDate = t.date.split('T')[0];
+            if (range === 'day') return tDate !== today;
+            if (range === 'month') return tDate.substring(0, 7) !== thisMonth;
+            if (range === 'year') return tDate.substring(0, 4) !== thisYear;
+            return true;
+        });
+    }
+    
+    saveDb(data);
+    return true;
+}

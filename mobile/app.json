@@ -1,0 +1,29 @@
+{
+  "expo": {
+    "name": "DM POS Lite",
+    "slug": "pembukuan-mobile",
+    "version": "3.1.5-Lite",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.dm.pembukuan.lite",
+      "buildNumber": "315"
+    },
+    "android": {
+      "backgroundColor": "#0f172a",
+      "package": "com.dm.pembukuan.lite",
+      "versionCode": 315
+    },
+    "web": {
+      "backgroundColor": "#0f172a"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "a9901c03-97ea-499c-90d7-984ab0ad8e05"
+      }
+    },
+    "owner": "piccaart"
+  }
+}

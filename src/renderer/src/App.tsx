@@ -278,11 +278,32 @@ const App: React.FC = () => {
 
       // Listener global untuk refresh data saat ada dana masuk otomatis
       if (api.onWalletStatusUpdated) {
-        const removeListener = api.onWalletStatusUpdated(() => {
+        const removeWallet = api.onWalletStatusUpdated(() => {
           console.log('[APP] Mendeteksi update data, me-refresh...');
           loadData();
         });
-        return () => { removeListener(); clearInterval(retryInterval); };
+        
+        const removeMobile = api.onMobileInput ? api.onMobileInput((data: any) => {
+          console.log('[APP] Mendeteksi input mobile baru!');
+          Swal.fire({
+            title: '📲 Input dari HP!',
+            html: `<div style="text-align: left;"><b>Nominal:</b> Rp ${(data.amount || 0).toLocaleString('id-ID')}<br/><b>Ket:</b> ${data.description.replace('[MOBILE] ', '')}</div>`,
+            icon: 'success',
+            toast: true,
+            position: 'top-end',
+            timer: 5000,
+            showConfirmButton: false,
+            timerProgressBar: true,
+            iconColor: '#f43f5e'
+          });
+          loadData();
+        }) : () => {};
+
+        return () => { 
+          removeWallet(); 
+          removeMobile();
+          clearInterval(retryInterval); 
+        };
       }
       return () => clearInterval(retryInterval);
     } else {
@@ -633,7 +654,7 @@ const App: React.FC = () => {
                     setCurrentPage={setTransacPage}
                     handleEditClick={handleEditClick}
                     handleDeleteTransaction={handleDeleteTransaction}
-                    isViewOnly={true}
+                    isViewOnly={false}
                   />
                 </div>
               )}
@@ -844,6 +865,61 @@ const App: React.FC = () => {
                       <p className="text-[10px] font-medium">Harmony Interface System</p>
                     </div>
                   </div>
+
+                  {/* RESET DATA SECTION */}
+                  <div className="glass-card flex flex-col border-rose-500/20 bg-rose-500/5 mt-8">
+                       <h3 className="text-xl font-bold mb-1 flex items-center gap-2 text-rose-500">
+                          ⚠️ Area Berbahaya (Reset Data)
+                       </h3>
+                       <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Gunakan fitur ini hanya untuk membersihkan data testing / masal.</p>
+
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <button 
+                            onClick={async () => {
+                              const res = await Swal.fire({ title: 'Reset Hari Ini?', text: 'Semua transaksi tanggal ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
+                              if(res.isConfirmed) {
+                                await api.resetData({ range: 'day' });
+                                loadData();
+                                Swal.fire('Berhasil!', 'Data hari ini dibersihkan.', 'success');
+                              }
+                            }}
+                            className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
+                          >
+                            <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">🧹 Reset Hari Ini</h4>
+                            <p className="text-[10px] text-text-muted leading-tight">Bersihkan salah input hari ini.</p>
+                          </button>
+
+                          <button 
+                            onClick={async () => {
+                              const res = await Swal.fire({ title: 'Reset Bulan Ini?', text: 'Semua transaksi bulan ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
+                              if(res.isConfirmed) {
+                                await api.resetData({ range: 'month' });
+                                loadData();
+                                Swal.fire('Berhasil!', 'Data bulan ini dibersihkan.', 'success');
+                              }
+                            }}
+                            className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
+                          >
+                            <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">📅 Reset Bulan Ini</h4>
+                            <p className="text-[10px] text-text-muted leading-tight">Mulai pembukuan baru bulan ini.</p>
+                          </button>
+
+                          <button 
+                             onClick={async () => {
+                              const res = await Swal.fire({ title: 'TOTAL WIPE-OUT?', text: 'SEMUA DATA (Stok, Transaksi, Hutang, QRIS) AKAN HILANG PERMANEN!', icon: 'error', showCancelButton: true, confirmButtonText: 'YA, RESET TOTAL!' });
+                              if(res.isConfirmed) {
+                                await api.resetData({ range: 'all' });
+                                loadData();
+                                Swal.fire('Data Bersih!', 'Sistem kembali ke kondisi awal.', 'success');
+                              }
+                            }}
+                            className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500 hover:text-white transition-all text-left"
+                          >
+                            <h4 className="text-xs font-bold uppercase tracking-widest mb-1">🔥 Reset Seluruh Data</h4>
+                            <p className="text-[10px] opacity-70 leading-tight italic">Hanya untuk install ulang / ganti pemilik.</p>
+                          </button>
+                       </div>
+                    </div>
                 </div>
               )}
             </div>

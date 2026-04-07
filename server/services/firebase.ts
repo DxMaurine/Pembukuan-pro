@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, onSnapshot, collection } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, onSnapshot, collection, serverTimestamp } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyAobTZcu_KxyjZImpskRrnXpdY7fZMioGA",
@@ -66,4 +66,60 @@ export function listenDanaIncoming(onDana: (text: string, docId: string) => void
       }
     });
   });
+}
+
+export async function syncDashboardToFirebase(summary: any) {
+  try {
+    await setDoc(doc(db, "mobile_sync", "dashboard"), {
+      ...summary,
+      lastUpdate: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("[FIREBASE] Dashboard Sync Error:", error);
+  }
+}
+
+export function listenToMobileInput(onInput: (data: any, docId: string) => void) {
+  const q = collection(db, "mobile_input");
+  return onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach(async (change) => {
+      if (change.type === "added") {
+        const data = change.doc.data();
+        if (!data.processed) {
+          onInput(data, change.doc.id);
+          await setDoc(doc(db, "mobile_input", change.doc.id), 
+            { processed: true }, { merge: true });
+        }
+      }
+    });
+  });
+}
+
+let globalSyncLastRequest: string | null = null;
+
+export function listenToSyncRequests(onSyncRequest: (month: number, year: number) => void) {
+  const docRef = doc(db, "mobile_sync", "request");
+  return onSnapshot(docRef, (snap) => {
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.requestedAt && (!globalSyncLastRequest || data.requestedAt !== globalSyncLastRequest)) {
+        globalSyncLastRequest = data.requestedAt;
+        onSyncRequest(data.month, data.year);
+      }
+    }
+  });
+}
+
+export async function syncStoreMetadata(settings: any) {
+  try {
+    const metaRef = doc(db, "metadata", "shop_info");
+    await setDoc(metaRef, {
+      storeName: settings.storeName || "DM POS",
+      ownerNumber: settings.ownerNumber || "",
+      lastUpdated: serverTimestamp()
+    }, { merge: true });
+    console.log("[FIREBASE] Shop Metadata synced successfully");
+  } catch (e) {
+    console.error("[FIREBASE] Sync Metadata Error:", e);
+  }
 }

@@ -69,10 +69,17 @@ const api = {
   waLogout: () => rest.post('/api/wa/logout'),
   waSendMessage: (data: { to: string, message: string }) => rest.post('/api/wa/send', data),
 
+  // Data Management
+  resetData: (params: any) => rest.post('/api/reset-data', params),
+
   // --- Real-time Listeners via Socket.io ---
   onWalletStatusUpdated: (callback: (data: any) => void) => {
     socket.on('db:wallet-status-updated', callback)
     return () => socket.off('db:wallet-status-updated', callback)
+  },
+  onMobileInput: (callback: (data: any) => void) => {
+    socket.on('server:mobile-input', callback)
+    return () => socket.off('server:mobile-input', callback)
   },
   onWaQrUpdate: (callback: (data: { qr: string }) => void) => {
     socket.on('wa:qr-update', callback)

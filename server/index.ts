@@ -3,11 +3,64 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import fs from 'fs';
+import path from 'path';
 
-import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal } from './database';
-import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus } from './services/firebase';
+import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal, clearTransactions } from './database';
+import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus, syncDashboardToFirebase, listenToMobileInput, syncStoreMetadata, listenToSyncRequests } from './services/firebase';
 import { notifyQRISInternal, notifyPreorderInternal, sendReportInternal, setStatusUpdateCallback } from './services/telegram';
 import { initWhatsApp, getWhatsAppStatus, logoutWhatsApp, sendInternalMessage, setWhatsAppCallbacks } from './services/whatsapp';
+
+// --- SYNC MONTH DATA ---
+function syncMonthData(month: number, year: number) {
+  const data = readDb();
+  const monthStr = String(month + 1).padStart(2, '0');
+  const yearStr = String(year);
+  const prefix = `${yearStr}-${monthStr}`;
+
+  // Filter Transactions & Wallet Entries
+  const filteredTransactions = data.transactions.filter(t => String(t.date).includes(prefix));
+  const filteredWallet = (data.wallet || []).filter(w => String(w.date).includes(prefix));
+
+  // Calculate Totals using robust numeric conversion
+  const transIncome = filteredTransactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const transExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  
+  // Wallet entries: QRIS income (received) or Savings
+  const walletIncome = filteredWallet.filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
+
+  const transBalance = transIncome - transExpense;
+  const walletBalance = walletIncome;
+
+  const totalIncome = transIncome + walletIncome;
+  const totalExpense = transExpense;
+  
+  // Create Unified History (Audit Trail)
+  const unifiedHistory = [
+    ...filteredTransactions.map(t => ({ ...t, source: 'manual' })),
+    ...filteredWallet.map(w => ({ ...w, source: 'wallet' }))
+  ].sort((a, b) => b.id - a.id).slice(0, 50);
+
+  const lowStockItems = [...data.stock].sort((a, b) => b.id - a.id);
+
+  const summary = {
+    totalIncome,
+    totalExpense,
+    balance: totalIncome - totalExpense,
+    transBalance,
+    walletBalance,
+    stockLowCount: lowStockItems.length,
+    lowStockItems,
+    unifiedHistory,
+    settings: data.settings || {},
+    lastSync: new Date().toISOString(),
+    isFiltered: true,
+    filterLabel: `${new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date(year, month))}`
+  };
+
+  console.log(`[SYNC] Sending Audit Trail for ${summary.filterLabel}: ${unifiedHistory.length} items.`);
+  syncDashboardToFirebase(summary);
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -17,6 +70,26 @@ const io = new Server(server, {
 
 app.use(cors());
 app.use(bodyParser.json({ limit: '50mb' }));
+
+// API Endpoints
+app.post('/api/reset-data', (req, res) => {
+  const { range } = req.body;
+  const success = clearTransactions(range as any);
+  
+  // Recalculate summary for mobile sync
+  const data = readDb();
+  const summary = {
+    totalIncome: data.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
+    totalExpense: data.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
+    balance: 0,
+    recentTransactions: data.transactions.slice(-20).reverse(),
+    settings: data.settings
+  };
+  summary.balance = summary.totalIncome - summary.totalExpense;
+
+  syncDashboardToFirebase(summary); // Sync cleared state to mobile
+  res.json({ success });
+});
 
 const PORT = 3000;
 
@@ -40,6 +113,67 @@ function addDanaLog(log: Omit<DanaLog, 'id'>) {
   if (danaLogs.length > MAX_LOGS) danaLogs.pop();
   io.emit('server:dana-log', entry);
   return entry;
+}
+
+// --- MOBILE SYNC HELPER ---
+function recalculateAndSync() {
+  const data = readDb();
+  const today = new Date().toLocaleDateString('en-CA'); 
+  const filteredTransactions = data.transactions.filter(t => String(t.date).startsWith(today));
+  const filteredWallet = (data.wallet || []).filter(w => String(w.date).startsWith(today));
+  
+  const transIncome = filteredTransactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const transExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const walletIncome = filteredWallet.filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
+
+  const transBalance = transIncome - transExpense;
+  const walletBalance = walletIncome;
+
+  const totalIncome = transIncome + walletIncome;
+  const totalExpense = transExpense;
+  
+  const lowStockItems = [...data.stock].sort((a, b) => b.id - a.id);
+  
+  // Create Unified History (Audit Trail)
+  const unifiedHistory = [
+    ...data.transactions.map(t => ({ ...t, source: 'manual' })),
+    ...(data.wallet || []).map(w => ({ ...w, source: 'wallet' }))
+  ].sort((a, b) => b.id - a.id).slice(0, 50);
+
+  const summary = {
+    totalIncome,
+    totalExpense,
+    balance: totalIncome - totalExpense,
+    transBalance,
+    walletBalance,
+    stockLowCount: lowStockItems.length,
+    lowStockItems,
+    unifiedHistory,
+    settings: data.settings || {},
+    lastSync: new Date().toISOString()
+  };
+
+  syncDashboardToFirebase(summary);
+  syncStoreMetadata(data.settings || {});
+  return summary;
+}
+
+// Watch db.json for changes from Electron UI
+const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'db.json');
+
+if (fs.existsSync(dbPath)) {
+  let watchTimeout: NodeJS.Timeout | null = null;
+  fs.watch(dbPath, (event) => {
+    if (event === 'change') {
+      if (watchTimeout) clearTimeout(watchTimeout);
+      watchTimeout = setTimeout(() => {
+        console.log('[SERVER] DB change detected, syncing metadata...');
+        recalculateAndSync();
+      }, 500); // 500ms debounce
+    }
+  });
+} else {
+  console.warn('[SERVER] Warning: db.json not found, real-time sync watchers disabled.');
 }
 
 // --- SOCKET.IO ---
@@ -98,6 +232,7 @@ app.post('/api/transactions', (req, res) => {
   const newTransaction = { ...req.body, id: Date.now(), date: req.body.date || new Date().toISOString() };
   data.transactions.push(newTransaction);
   saveDb(data);
+  recalculateAndSync();
   res.json(newTransaction);
 });
 
@@ -119,6 +254,7 @@ app.delete('/api/transactions/:id', (req, res) => {
   const data = readDb();
   data.transactions = data.transactions.filter((t) => t.id !== id);
   saveDb(data);
+  recalculateAndSync();
   res.json({ success: true });
 });
 
@@ -471,6 +607,34 @@ listenToFirebaseUpdates((id, status) => {
 // Firebase DANA incoming listener
 listenDanaIncoming(async (text, docId) => {
   console.log('[FIREBASE-WATCH] Data Baru Terdeteksi dari HP!', docId);
-  await processDanaText(text || '', docId);
+  const success = await processDanaText(text || '', docId);
+  if (success) recalculateAndSync();
 });
 console.log('[FIREBASE] Listener Dana/Gopay Aktif (Menunggu Notifikasi)');
+
+// Mobile Input Listener
+listenToMobileInput((data, docId) => {
+  const dbData = readDb();
+  const newTransaction = {
+    id: Date.now(),
+    type: data.type || 'expense',
+    amount: data.amount,
+    description: `[MOBILE] ${data.description}`,
+    category: data.category || 'Mobile Input',
+    date: new Date().toISOString()
+  };
+  dbData.transactions.push(newTransaction);
+  saveDb(dbData);
+  recalculateAndSync();
+  io.emit('server:mobile-input', newTransaction);
+  console.log('[MOBILE-REMOTE] Transaksi Berhasil Disimpan!');
+});
+
+// Sync Request Listener (Month/Year Filter)
+listenToSyncRequests((month, year) => {
+  console.log(`[FIREBASE-SYNC] HP Minta Data Periode: ${month + 1}/${year}`);
+  syncMonthData(month, year);
+});
+
+// Initial Sync
+recalculateAndSync();
