@@ -1,39 +1,57 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Modal, FlatList, Switch, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Modal, FlatList, Switch, KeyboardAvoidingView, Platform, Animated, PanResponder, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { db } from './firebaseConfig';
 import { doc, onSnapshot, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { TrendingUp, TrendingDown, Wallet, Plus, X, RefreshCw, Archive, LayoutDashboard, History, ShoppingBag, Settings, Moon, Sun, Info, User } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Wallet, Plus, X, RefreshCw, Archive, LayoutDashboard, History, ShoppingBag, Settings, Moon, Sun, Info, User, Package, CheckCircle, Trash2, Edit3, AlertCircle, ChevronLeft, CreditCard, Landmark, Coins, ChevronRight } from 'lucide-react-native';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'history' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'finance' | 'history' | 'settings'>('dashboard');
+  const [financeSubTab, setFinanceSubTab] = useState<'main' | 'add' | 'input'>('main');
+  const [selectedMethod, setSelectedMethod] = useState<any>(null);
+  const [newBalance, setNewBalance] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(true);
   const [summary, setSummary] = useState<any>(null);
   const [storeName, setStoreName] = useState('DM POS Mobile');
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
+  const [stockModalVisible, setStockModalVisible] = useState(false);
   const [amount, setAmount] = useState('');
   const [desc, setDesc] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showFabMenu, setShowFabMenu] = useState(false);
+  // Stock input states
+  const [stockName, setStockName] = useState('');
+  const [stockUrgent, setStockUrgent] = useState(false);
+  const [submittingStock, setSubmittingStock] = useState(false);
 
   // Date Filtering
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
+  const [accentColor, setAccentColor] = useState('#f43f5e');
+
+  const colorPresets = [
+    { name: 'Rose', color: '#f43f5e' },
+    { name: 'Emerald', color: '#10b981' },
+    { name: 'Amber', color: '#f59e0b' },
+    { name: 'Violet', color: '#8b5cf6' },
+    { name: 'Sky', color: '#0ea5e9' },
+  ];
 
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
 
   // Theme configuration
   const theme = {
-    primary: '#6366f1',
+    primary: accentColor,
     success: '#22c55e',
     danger: '#ef4444',
-    bg: isDarkMode ? '#0f172a' : '#f8fafc',
-    card: isDarkMode ? '#1e293b' : '#ffffff',
-    text: isDarkMode ? '#ffffff' : '#1e293b',
-    subText: isDarkMode ? '#94a3b8' : '#64748b',
-    navBg: isDarkMode ? '#111827' : '#ffffff',
-    border: isDarkMode ? '#1f2937' : '#e2e8f0',
-    inputBg: isDarkMode ? '#0f172a' : '#f1f5f9',
+    bg: isDarkMode ? '#1e1e1e' : '#f5f5f2',
+    card: isDarkMode ? '#2d2d2d' : '#ffffff',
+    text: isDarkMode ? '#ffffff' : '#1e1e1e',
+    subText: isDarkMode ? '#8c8c8c' : '#64748b',
+    navBg: isDarkMode ? '#1a1a1a' : '#ffffff',
+    border: isDarkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
+    inputBg: isDarkMode ? '#1a1a1a' : '#f1f5f9',
   };
 
   useEffect(() => {
@@ -55,9 +73,19 @@ export default function App() {
         }
       });
 
+      // Listener 3: Mobile Prefs (Accent Color)
+      const prefsRef = doc(db, 'metadata', 'mobile_prefs');
+      const unsubPrefs = onSnapshot(prefsRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.accentColor) setAccentColor(data.accentColor);
+        }
+      });
+
       return () => {
         unsubDashboard();
         unsubMeta();
+        unsubPrefs();
       };
     } catch (err) {
       console.error("Firestore initialization error:", err);
@@ -87,6 +115,106 @@ export default function App() {
       alert('Gagal mengirim data!');
     }
     setSubmitting(false);
+  };
+
+  const handleAddStock = async () => {
+    if (!stockName.trim()) return;
+    setSubmittingStock(true);
+    try {
+      await addDoc(collection(db, 'mobile_stock_actions'), {
+        action: 'add',
+        name: stockName.trim(),
+        isUrgent: stockUrgent,
+        dateAdded: new Date().toISOString(),
+        processed: false,
+        timestamp: serverTimestamp()
+      });
+      setStockModalVisible(false);
+      setStockName('');
+      setStockUrgent(false);
+      alert('✅ Barang berhasil dicatat!');
+    } catch (e) {
+      console.error(e);
+      alert('Gagal menyimpan barang!');
+    }
+    setSubmittingStock(false);
+  };
+
+  const handleStockDone = (item: any) => {
+    Alert.alert('Tandai Sudah Dibeli?', `"${item.name}" akan ditandai sudah dibeli.`, [
+      { text: 'Batal', style: 'cancel' },
+      { text: '✅ Ya, Sudah Dibeli', onPress: async () => {
+        await addDoc(collection(db, 'mobile_stock_actions'), {
+          action: 'done', id: item.id, processed: false, timestamp: serverTimestamp()
+        });
+      }}
+    ]);
+  };
+
+  const handleStockDelete = (item: any) => {
+    Alert.alert('Hapus Catatan?', `"${item.name}" akan dihapus permanen.`, [
+      { text: 'Batal', style: 'cancel' },
+      { text: '🗑️ Hapus', style: 'destructive', onPress: async () => {
+        await addDoc(collection(db, 'mobile_stock_actions'), {
+          action: 'delete', id: item.id, processed: false, timestamp: serverTimestamp()
+        });
+      }}
+    ]);
+  };
+
+  const handleAddFinanceSource = async () => {
+    if (!selectedMethod || !newBalance) return;
+    
+    // Clean
+    const amount = parseInt(newBalance.replace(/\D/g, '')) || 0;
+    
+    try {
+      setLoading(true);
+      await addDoc(collection(db, 'mobile_stock_actions'), {
+        action: 'add_finance',
+        data: {
+          ...selectedMethod,
+          balance: Number(amount),
+          id: selectedMethod.id || Date.now().toString()
+        },
+        processed: false,
+        timestamp: serverTimestamp()
+      });
+      setFinanceSubTab('main');
+      setNewBalance('');
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinanceDelete = async (source: any) => {
+    try {
+      setLoading(true);
+      await addDoc(collection(db, 'mobile_stock_actions'), {
+        action: 'delete_finance',
+        data: { id: source.id, name: source.name },
+        processed: false,
+        timestamp: serverTimestamp()
+      });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFinanceEdit = (source: any) => {
+    setSelectedMethod(source);
+    setNewBalance('Rp ' + source.balance.toLocaleString('id-ID'));
+    setFinanceSubTab('input');
+  };
+
+  const handleAccentChange = async (color: string) => {
+    setAccentColor(color);
+    const { setDoc } = await import('firebase/firestore');
+    await setDoc(doc(db, 'metadata', 'mobile_prefs'), { accentColor: color }, { merge: true });
   };
 
   const handleAmountChange = (text: string) => {
@@ -137,7 +265,12 @@ export default function App() {
     <ScrollView contentContainerStyle={styles.scrollContent}>
       {/* Main Balance Card */}
       <View style={[styles.mainCard, { backgroundColor: theme.primary }]}>
-        <Text style={styles.cardLabel}>Saldo Kas Toko Berjalan</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Text style={styles.cardLabel}>Saldo Kas Toko Berjalan</Text>
+          <View style={{ backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
+            <Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{summary?.filterLabel?.toUpperCase() || 'HARI INI'}</Text>
+          </View>
+        </View>
         <Text style={styles.cardValue}>{formatIDR(summary?.balance)}</Text>
         
         {/* Breakdown Row */}
@@ -226,33 +359,79 @@ export default function App() {
 
   const renderStock = () => (
     <View style={styles.tabContent}>
-      <Text style={[styles.tabHeading, { color: theme.text }]}>Persediaan Barang (Stok Menipis)</Text>
+      <Text style={[styles.tabHeading, { color: theme.text }]}>Catatan Barang Habis</Text>
       <FlatList
         data={summary?.lowStockItems || []}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={{ paddingBottom: 120 }}
-        renderItem={({ item }) => (
-          <View style={[styles.listItem, { backgroundColor: theme.card }]}>
-            <View style={[styles.listItemIcon, { backgroundColor: 'rgba(99,102,241,0.1)' }]}>
-              <ShoppingBag color={theme.primary} size={20} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={[styles.listItemTitle, { color: theme.text }]}>{item.name}</Text>
-              <Text style={[styles.listItemSubtitle, { color: theme.subText }]}>{item.dateAdded ? new Date(item.dateAdded).toLocaleDateString('id-ID') : 'Catatan Manual'}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <View style={[styles.urgentBadge, { backgroundColor: item.isUrgent ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)' }]}>
-                <Text style={[styles.urgentText, { color: item.isUrgent ? theme.danger : '#f59e0b' }]}>
-                  {item.isUrgent ? 'Darurat!' : 'Habis'}
-                </Text>
+        renderItem={({ item }) => {
+          const translateX = new Animated.Value(0);
+          const panResponder = PanResponder.create({
+            onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dy) < 20,
+            onPanResponderMove: (_, g) => {
+              if (g.dx < 0) translateX.setValue(Math.max(g.dx, -110));
+            },
+            onPanResponderRelease: (_, g) => {
+              if (g.dx < -55) {
+                Animated.spring(translateX, { toValue: -110, useNativeDriver: true }).start();
+              } else {
+                Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+              }
+            }
+          });
+          const isBought = item.status === 'bought';
+          return (
+            <View style={{ marginHorizontal: 16, marginVertical: 4, borderRadius: 22, overflow: 'hidden', backgroundColor: theme.card }}>
+              {/* Action buttons behind (In-Frame) */}
+              <View style={[styles.swipeActions, { backgroundColor: theme.card }]}>
+                <View style={{ flex: 1 }} />
+                <TouchableOpacity
+                  style={[styles.swipeBtn, { backgroundColor: '#22c55e' }]}
+                  onPress={() => handleStockDone(item)}
+                >
+                  <CheckCircle color="#fff" size={18} />
+                  <Text style={styles.swipeBtnText}>Dibeli</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.swipeBtn, { backgroundColor: '#ef4444' }]}
+                  onPress={() => handleStockDelete(item)}
+                >
+                  <Trash2 color="#fff" size={18} />
+                  <Text style={styles.swipeBtnText}>Hapus</Text>
+                </TouchableOpacity>
               </View>
+              {/* Item row */}
+              <Animated.View
+                style={[styles.listItem, { backgroundColor: theme.card, transform: [{ translateX }], marginHorizontal: 0, marginVertical: 0, elevation: 0 }]}
+                {...panResponder.panHandlers}
+              >
+                <View style={[styles.listItemIcon, { backgroundColor: isBought ? 'rgba(34,197,94,0.1)' : (item.isUrgent ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)') }]}>
+                  {isBought ? <CheckCircle color="#22c55e" size={20} /> : item.isUrgent ? <AlertCircle color="#ef4444" size={20} /> : <Package color="#f59e0b" size={20} />}
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.listItemTitle, { color: isBought ? theme.subText : theme.text, textDecorationLine: isBought ? 'line-through' : 'none' }]}>{item.name}</Text>
+                  <Text style={[styles.listItemSubtitle, { color: theme.subText }]}>
+                    {item.dateAdded ? new Date(item.dateAdded).toLocaleDateString('id-ID') : 'Catatan Manual'}
+                    {item.source === 'mobile' ? ' • 📱 Mobile' : ''}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <View style={[styles.urgentBadge, { backgroundColor: isBought ? 'rgba(34,197,94,0.1)' : item.isUrgent ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)' }]}>
+                    <Text style={[styles.urgentText, { color: isBought ? '#22c55e' : item.isUrgent ? theme.danger : '#f59e0b' }]}>
+                      {isBought ? '✅ Dibeli' : item.isUrgent ? 'Darurat!' : 'Habis'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.swipeHint, { color: theme.subText }]}>← geser</Text>
+                </View>
+              </Animated.View>
             </View>
-          </View>
-        )}
+          );
+        }}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Archive color={theme.subText} size={48} />
-            <Text style={[styles.emptyText, { color: theme.subText }]}>Tidak ada catatan barang habis.</Text>
+            <Package color={theme.subText} size={48} />
+            <Text style={[styles.emptyText, { color: theme.subText }]}>Belum ada catatan barang habis.</Text>
+            <Text style={[styles.emptyText, { color: theme.subText, fontSize: 12, marginTop: 4 }]}>Tap tombol + untuk tambah dari HP!</Text>
           </View>
         }
       />
@@ -302,7 +481,7 @@ export default function App() {
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={{ paddingBottom: 150 }}
         renderItem={({ item }) => (
-          <View style={[styles.listItem, { backgroundColor: theme.card }]}>
+          <View style={[styles.listItem, { backgroundColor: theme.card, marginBottom: 12 }]}>
             <View style={[styles.listItemIcon, { backgroundColor: item.source === 'manual' ? (item.type === 'income' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)') : 'rgba(99,102,241,0.1)' }]}>
                {item.source === 'wallet' ? (
                  <Wallet color={theme.primary} size={20} />
@@ -346,6 +525,193 @@ export default function App() {
     </View>
   );
 
+  const renderFinance = () => {
+    if (financeSubTab === 'add') return renderAddFinanceMethod();
+    if (financeSubTab === 'input') return renderInputFinanceBalance();
+
+    return (
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 }]}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+          <Text style={[styles.tabHeading, { color: theme.text, marginBottom: 0 }]}>Keuangan</Text>
+          <TouchableOpacity 
+            onPress={() => setFinanceSubTab('add')}
+            style={{ backgroundColor: 'rgba(34,197,94,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
+          >
+            <Plus size={16} color={theme.success} />
+            <Text style={{ color: theme.success, fontWeight: 'bold', marginLeft: 4 }}>Tambah</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Section 1: Sumber Dana (Real Data) */}
+        <Text style={[styles.sectionTitle, { color: theme.text, fontSize: 16, marginBottom: 12 }]}>Sumber dana</Text>
+        
+        <View style={styles.stackedContainer}>
+          {(summary?.financeSources || []).length === 0 ? (
+            <View style={[styles.financeEmptyState, { backgroundColor: theme.card, padding: 30 }]}>
+               <Info color={theme.subText} size={32} />
+               <Text style={{ color: theme.subText, marginTop: 10, textAlign: 'center' }}>Belum ada sumber dana. Klik Tambah untuk mencatat saldo Bank/Dompet Bapak.</Text>
+            </View>
+          ) : (
+            summary.financeSources.map((source: any, idx: number) => {
+              const translateX = new Animated.Value(0);
+              const panResponder = PanResponder.create({
+                onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dx) > 8 && Math.abs(g.dy) < 20,
+                onPanResponderMove: (_, g) => {
+                  if (g.dx < 0) translateX.setValue(Math.max(g.dx, -130));
+                },
+                onPanResponderRelease: (_, g) => {
+                  if (g.dx < -65) {
+                    Animated.spring(translateX, { toValue: -130, useNativeDriver: true }).start();
+                  } else {
+                    Animated.spring(translateX, { toValue: 0, useNativeDriver: true }).start();
+                  }
+                }
+              });
+
+              return (
+                <View key={source.id} style={{ borderRadius: idx === 0 ? 22 : (idx === summary.financeSources.length - 1 ? 22 : 0), overflow: 'hidden', marginBottom: 2 }}>
+                  {/* Action buttons behind */}
+                  <View style={[styles.swipeActions, { backgroundColor: theme.card, borderRadius: 0 }]}>
+                    <View style={{ flex: 1 }} />
+                    <TouchableOpacity
+                      style={[styles.swipeBtn, { backgroundColor: theme.primary }]}
+                      onPress={() => handleFinanceEdit(source)}
+                    >
+                      <Edit3 color="#fff" size={18} />
+                      <Text style={styles.swipeBtnText}>Ubah</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.swipeBtn, { backgroundColor: '#ef4444' }]}
+                      onPress={() => handleFinanceDelete(source)}
+                    >
+                      <Trash2 color="#fff" size={18} />
+                      <Text style={styles.swipeBtnText}>Hapus</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <Animated.View
+                    style={[
+                      styles.stackedItem,
+                      { backgroundColor: theme.card, transform: [{ translateX }], marginHorizontal: 0 }
+                    ]}
+                    {...panResponder.panHandlers}
+                  >
+                    <View style={[styles.iconCircle, { backgroundColor: source.color || theme.primary }]}>
+                      {source.name === 'BRI' || source.name === 'BNI' || source.name === 'MANDIRI' ? <Landmark color="#fff" size={20} /> : <Wallet color="#fff" size={20} />}
+                    </View>
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={[styles.itemLabel, { color: theme.text }]}>{source.name}</Text>
+                      <Text style={[styles.itemValue, { color: theme.subText, fontSize: 13 }]}>{formatIDR(source.balance)}</Text>
+                    </View>
+                    <ChevronRight color={theme.subText} size={20} />
+                  </Animated.View>
+                </View>
+              );
+            })
+          )}
+        </View>
+
+        {/* Section 2: Kas Toko (Built-in) */}
+        <Text style={[styles.sectionTitle, { color: theme.text, fontSize: 16, marginTop: 24, marginBottom: 12 }]}>Saldo Toko (Sistem)</Text>
+        <View style={styles.stackedContainer}>
+           <TouchableOpacity style={[styles.stackedItem, styles.stackedAlone, { backgroundColor: theme.card }]}>
+              <View style={[styles.iconCircle, { backgroundColor: '#22c55e' }]}>
+                 <Wallet color="#fff" size={20} />
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.itemLabel, { color: theme.text }]}>Saldo QRIS / Digital</Text>
+                <Text style={[styles.itemValue, { color: theme.subText, fontSize: 13 }]}>{formatIDR(summary?.walletBalance)}</Text>
+              </View>
+           </TouchableOpacity>
+        </View>
+      </ScrollView>
+    );
+  };
+
+  const renderAddFinanceMethod = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.modalHeader}>
+         <TouchableOpacity onPress={() => setFinanceSubTab('main')}>
+            <ChevronLeft color={theme.text} size={28} />
+         </TouchableOpacity>
+         <Text style={[styles.modalTitle, { color: theme.text, marginLeft: 10 }]}>Tambah Metode</Text>
+      </View>
+      
+      <ScrollView>
+        <Text style={[styles.sectionTitle, { color: theme.subText, fontSize: 14, marginBottom: 15 }]}>Pilih Bank atau E-Wallet rujukan Bapak</Text>
+        
+        <View style={styles.stackedContainer}>
+          {[
+            { name: 'BRI', type: 'Bank', color: '#00529C', icon: 'Landmark' },
+            { name: 'MANDIRI', type: 'Bank', color: '#FDB813', icon: 'Landmark' },
+            { name: 'BNI', type: 'Bank', color: '#F15A24', icon: 'Landmark' },
+            { name: 'DANA', type: 'E-Wallet', color: '#118EEA', icon: 'Wallet' },
+            { name: 'GOPAY', type: 'E-Wallet', color: '#00AED6', icon: 'Wallet' }
+          ].map((item, idx, arr) => (
+            <TouchableOpacity 
+              key={item.name}
+              style={[
+                styles.stackedItem,
+                idx === 0 && styles.stackedTop,
+                idx === arr.length - 1 && styles.stackedBottom,
+                { backgroundColor: theme.card }
+              ]}
+              onPress={() => {
+                setSelectedMethod(item);
+                setFinanceSubTab('input');
+              }}
+            >
+              <View style={[styles.iconCircle, { backgroundColor: item.color }]}>
+                {item.icon === 'Landmark' ? <Landmark color="#fff" size={20} /> : <Wallet color="#fff" size={20} />}
+              </View>
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.itemLabel, { color: theme.text }]}>{item.name}</Text>
+                <Text style={{ color: theme.subText, fontSize: 12 }}>{item.type}</Text>
+              </View>
+              <Plus color={theme.success} size={20} />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </ScrollView>
+    </View>
+  );
+
+  const renderInputFinanceBalance = () => (
+    <View style={styles.tabContent}>
+      <View style={styles.modalHeader}>
+         <TouchableOpacity onPress={() => setFinanceSubTab('add')}>
+            <ChevronLeft color={theme.text} size={28} />
+         </TouchableOpacity>
+         <Text style={[styles.modalTitle, { color: theme.text, marginLeft: 10 }]}>Input Saldo {selectedMethod?.name}</Text>
+      </View>
+
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <View style={[styles.settingGroup, { backgroundColor: theme.card, padding: 20 }]}>
+           <Text style={[styles.inputLabel, { color: theme.subText }]}>Nominal Saldo Saat Ini (Rp)</Text>
+           <TextInput
+             style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, height: 60, fontSize: 24, fontWeight: 'bold' }]}
+             keyboardType="numeric"
+             placeholder="0"
+             placeholderTextColor={theme.subText}
+             value={newBalance}
+             onChangeText={(t) => {
+                const cleaned = t.replace(/\D/g, '');
+                setNewBalance(cleaned ? 'Rp ' + parseInt(cleaned).toLocaleString('id-ID') : '');
+             }}
+             autoFocus
+           />
+           
+           <TouchableOpacity 
+             onPress={handleAddFinanceSource}
+             style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 30, height: 55 }]}
+           >
+             <Text style={styles.actionBtnText}>Simpan Catatan Saldo</Text>
+           </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+
   const renderSettings = () => (
     <View style={styles.tabContent}>
       <Text style={[styles.tabHeading, { color: theme.text }]}>Pengaturan Aplikasi</Text>
@@ -373,6 +739,31 @@ export default function App() {
             value={isDarkMode}
           />
         </View>
+
+        {/* Accent Selector (Below Theme) */}
+        <View style={[styles.settingItem, { borderTopWidth: 1, borderTopColor: theme.border, marginTop: 4, paddingTop: 16 }]}>
+          <View style={{ flex: 1 }}>
+            <View style={styles.row}>
+              <LayoutDashboard color={theme.primary} size={20} />
+              <Text style={[styles.settingLabel, { color: theme.text }]}>Pilihan Aksen</Text>
+            </View>
+            <View style={{ flexDirection: 'row', marginTop: 16, gap: 12 }}>
+              {colorPresets.map((preset) => (
+                <TouchableOpacity
+                  key={preset.color}
+                  onPress={() => handleAccentChange(preset.color)}
+                  style={[
+                    styles.accentCircle,
+                    { backgroundColor: preset.color },
+                    accentColor === preset.color && { borderWidth: 3, borderColor: theme.text }
+                  ]}
+                >
+                  {accentColor === preset.color && <CheckCircle color="#fff" size={14} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        </View>
       </View>
 
       {/* Server Info */}
@@ -396,7 +787,7 @@ export default function App() {
           </View>
           <View style={styles.infoRow}>
             <Text style={[styles.infoLabel, { color: theme.subText }]}>Versi Aplikasi</Text>
-            <Text style={[styles.infoValue, { color: theme.text }]}>v1.2.0-PRO</Text>
+            <Text style={[styles.infoValue, { color: theme.text }]}>v3.1.6-Lite</Text>
           </View>
         </View>
       </View>
@@ -423,37 +814,71 @@ export default function App() {
       <View style={{ flex: 1 }}>
         {activeTab === 'dashboard' && renderDashboard()}
         {activeTab === 'stock' && renderStock()}
+        {activeTab === 'finance' && renderFinance()}
         {activeTab === 'history' && renderHistory()}
         {activeTab === 'settings' && renderSettings()}
       </View>
 
       {/* FAB (Only Dashboard) */}
+      {/* FAB (Only Dashboard) */}
       {activeTab === 'dashboard' && (
-        <TouchableOpacity 
-          style={[styles.fab, { backgroundColor: theme.primary, shadowColor: theme.primary }]} 
-          onPress={() => setModalVisible(true)}
-        >
-          <Plus color="#fff" size={32} />
-        </TouchableOpacity>
+        <View style={styles.fabContainer}>
+          {showFabMenu && (
+            <>
+              <View style={styles.fabMenuOverlay}>
+                <TouchableOpacity style={[styles.fabMenuItem, { backgroundColor: theme.primary }]} onPress={() => { setShowFabMenu(false); setModalVisible(true); }}>
+                  <TrendingDown color="#fff" size={20} />
+                  <Text style={styles.fabMenuText}>Pengeluaran</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.fabMenuItem, { backgroundColor: '#f59e0b' }]} onPress={() => { setShowFabMenu(false); setStockModalVisible(true); }}>
+                  <Package color="#fff" size={20} />
+                  <Text style={styles.fabMenuText}>Barang Habis</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity style={styles.fabOverlayBg} onPress={() => setShowFabMenu(false)} />
+            </>
+          )}
+          <TouchableOpacity
+            style={[styles.fab, { backgroundColor: showFabMenu ? '#64748b' : theme.primary, shadowColor: theme.primary }]}
+            onPress={() => setShowFabMenu(!showFabMenu)}
+          >
+            {showFabMenu ? <X color="#fff" size={28} /> : <Plus color="#fff" size={32} />}
+          </TouchableOpacity>
+        </View>
       )}
 
       {/* Bottom Nav */}
-      <View style={[styles.bottomNav, { backgroundColor: theme.navBg, borderTopColor: theme.border }]}>
-        {[
-          { id: 'dashboard', icon: LayoutDashboard, label: 'Beranda' },
-          { id: 'stock', icon: ShoppingBag, label: 'Stok' },
-          { id: 'history', icon: History, label: 'Riwayat' },
-          { id: 'settings', icon: Settings, label: 'Pengaturan' }
-        ].map((item) => (
-          <TouchableOpacity 
-            key={item.id}
-            style={styles.navItem} 
-            onPress={() => setActiveTab(item.id as any)}
-          >
-            <item.icon color={activeTab === item.id ? theme.primary : theme.subText} size={24} />
-            <Text style={[styles.navText, { color: activeTab === item.id ? theme.primary : theme.subText }]}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
+      <View style={[styles.bottomNav, { backgroundColor: theme.navBg, borderTopColor: theme.border, height: 75 }]}>
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('dashboard')}>
+          <LayoutDashboard color={activeTab === 'dashboard' ? theme.primary : theme.subText} size={24} />
+          <Text style={[styles.navText, { color: activeTab === 'dashboard' ? theme.primary : theme.subText }]}>Beranda</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('stock')}>
+          <ShoppingBag color={activeTab === 'stock' ? theme.primary : theme.subText} size={24} />
+          <Text style={[styles.navText, { color: activeTab === 'stock' ? theme.primary : theme.subText }]}>Stok</Text>
+        </TouchableOpacity>
+
+        {/* Center Wallet Button */}
+        <TouchableOpacity 
+          style={[styles.centerNavItem, { backgroundColor: activeTab === 'finance' ? theme.primary : '#333' }]} 
+          onPress={() => setActiveTab('finance')}
+        >
+          <Wallet color="#fff" size={28} />
+          <View style={styles.centerBadge}>
+             <Text style={{ color: '#fff', fontSize: 8, fontWeight: 'bold' }}>PRO</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('history')}>
+          <History color={activeTab === 'history' ? theme.primary : theme.subText} size={24} />
+          <Text style={[styles.navText, { color: activeTab === 'history' ? theme.primary : theme.subText }]}>Riwayat</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('settings')}>
+          <Settings color={activeTab === 'settings' ? theme.primary : theme.subText} size={24} />
+          <Text style={[styles.navText, { color: activeTab === 'settings' ? theme.primary : theme.subText }]}>Profil</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Modal Quick Expense */}
@@ -496,6 +921,51 @@ export default function App() {
           </View>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Modal Input Barang Habis */}
+      <Modal animationType="slide" transparent={true} visible={stockModalVisible}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalBg}>
+          <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+            <View style={styles.modalHeader}>
+              <Text style={[styles.modalTitle, { color: theme.text }]}>📦 Catat Barang Habis</Text>
+              <TouchableOpacity onPress={() => { setStockModalVisible(false); setStockName(''); setStockUrgent(false); }}>
+                <X color={theme.subText} size={24} />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.inputGroup}>
+              <Text style={[styles.inputLabel, { color: theme.subText }]}>Nama Barang *</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]}
+                value={stockName}
+                onChangeText={setStockName}
+                placeholder="Contoh: Kertas A4, Tinta Printer..."
+                placeholderTextColor={theme.subText}
+                autoFocus
+              />
+            </View>
+            <TouchableOpacity
+              style={[styles.urgentToggle, { backgroundColor: stockUrgent ? 'rgba(239,68,68,0.1)' : theme.inputBg, borderColor: stockUrgent ? '#ef4444' : theme.border }]}
+              onPress={() => setStockUrgent(!stockUrgent)}
+            >
+              <AlertCircle color={stockUrgent ? '#ef4444' : theme.subText} size={20} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.inputLabel, { color: stockUrgent ? '#ef4444' : theme.text, marginBottom: 0 }]}>Tandai MENDESAK 🚨</Text>
+                <Text style={[styles.inputLabel, { color: theme.subText, fontSize: 11, fontWeight: '400' }]}>Prioritas tinggi untuk segera dibeli</Text>
+              </View>
+              <View style={[styles.checkbox, { backgroundColor: stockUrgent ? '#ef4444' : 'transparent', borderColor: stockUrgent ? '#ef4444' : theme.subText }]}>
+                {stockUrgent && <Text style={{ color: '#fff', fontSize: 12 }}>✓</Text>}
+              </View>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.btn, { backgroundColor: '#f59e0b', marginTop: 20 }]}
+              onPress={handleAddStock}
+              disabled={submittingStock}
+            >
+              {submittingStock ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>📦 Simpan Catatan Barang</Text>}
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -532,7 +1002,7 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: '800', marginBottom: 12, textTransform: 'uppercase', letterSpacing: 1 },
   listRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   listRowText: { marginLeft: 12, fontSize: 13, fontWeight: '600' },
-  listItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 22, marginBottom: 12 },
+  listItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 22 },
   listItemIcon: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 16 },
   listItemTitle: { fontSize: 14, fontWeight: '700' },
   listItemSubtitle: { fontSize: 11, marginTop: 2 },
@@ -541,10 +1011,25 @@ const styles = StyleSheet.create({
   sourceText: { fontSize: 9, fontWeight: '900', textTransform: 'uppercase' },
   urgentBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   urgentText: { fontSize: 10, fontWeight: '900' },
+  historyHeader: { marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#6366f1', paddingLeft: 12 },
+  // Swipe Actions
+  swipeActions: { position: 'absolute', right: 0, left: 0, top: 0, bottom: 0, flexDirection: 'row', alignItems: 'center' },
+  swipeBtn: { width: 60, height: '100%', justifyContent: 'center', alignItems: 'center' },
+  swipeBtnText: { color: '#fff', fontSize: 10, fontWeight: '800', marginTop: 3 },
+  swipeHint: { fontSize: 9, fontWeight: '600', marginTop: 4, opacity: 0.5 },
+  // FAB Menu
+  fabContainer: { position: 'absolute', bottom: 100, right: 20, alignItems: 'flex-end', zIndex: 999 },
+  fabMenuOverlay: { marginBottom: 12, gap: 10, alignItems: 'flex-end' },
+  fabMenuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 20, gap: 10, elevation: 5, minWidth: 140, justifyContent: 'flex-end' },
+  fabMenuText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+  fabOverlayBg: { position: 'absolute', top: -2000, bottom: -100, left: -1000, right: -100, zIndex: -1 },
+  // Stock Modal extras
+  urgentToggle: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 16, borderWidth: 1.5, marginTop: 4 },
+  checkbox: { width: 24, height: 24, borderRadius: 8, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
   row: { flexDirection: 'row', alignItems: 'center' },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingBottom: 150 },
+
   emptyText: { fontSize: 14, marginTop: 12, fontWeight: '600' },
-  fab: { position: 'absolute', bottom: 110, right: 20, width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  fab: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', elevation: 8 },
   bottomNav: { flexDirection: 'row', paddingBottom: 30, paddingTop: 12, borderTopWidth: 1 },
   navItem: { flex: 1, alignItems: 'center' },
   navText: { fontSize: 10, marginTop: 4, fontWeight: '700' },
@@ -578,5 +1063,68 @@ const styles = StyleSheet.create({
   yearNav: { fontSize: 20, fontWeight: '900' },
   yearText: { fontSize: 18, fontWeight: '900', minWidth: 60, textAlign: 'center' },
   miniSyncBtn: { padding: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(148, 163, 184, 0.1)' },
-  historyHeader: { marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#6366f1', paddingLeft: 12 }
+  accentCircle: { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center', elevation: 2 },
+  
+  // Finance UI Styles
+  stackedContainer: { borderRadius: 24, overflow: 'hidden' },
+  stackedItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
+  stackedTop: { borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  stackedMiddle: { borderBottomWidth: 1 },
+  stackedBottom: { borderBottomLeftRadius: 24, borderBottomRightRadius: 24, borderBottomWidth: 0 },
+  stackedAlone: { borderRadius: 24, borderBottomWidth: 0 },
+  iconCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  itemLabel: { fontSize: 15, fontWeight: '600' },
+  itemValue: { marginTop: 2 },
+  
+  // Bottom Nav Center Button
+  centerNavItem: {
+    width: 65,
+    height: 65,
+    borderRadius: 33,
+    marginTop: -30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 8,
+    borderWidth: 4,
+    borderColor: '#1e1e1e'
+  },
+  centerBadge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#f59e0b',
+    paddingHorizontal: 4,
+    borderRadius: 4,
+  },
+  emptyState: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    padding: 20 
+  },
+  financeEmptyState: { 
+    borderRadius: 24, 
+    alignItems: 'center', 
+    justifyContent: 'center' 
+  },
+  actionBtn: {
+    height: 50,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  actionBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
 });

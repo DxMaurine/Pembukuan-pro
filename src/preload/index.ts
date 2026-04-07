@@ -14,6 +14,7 @@ const rest = {
   get: async (url: string, params?: any) => (await axios.get(`${BACKEND_URL}${url}`, { params })).data,
   post: async (url: string, data?: any) => (await axios.post(`${BACKEND_URL}${url}`, data)).data,
   put: async (url: string, data?: any) => (await axios.put(`${BACKEND_URL}${url}`, data)).data,
+  patch: async (url: string, data?: any) => (await axios.patch(`${BACKEND_URL}${url}`, data)).data,
   delete: async (url: string) => (await axios.delete(`${BACKEND_URL}${url}`)).data,
 }
 
@@ -29,6 +30,7 @@ const api = {
   getStock: () => rest.get('/api/stock'),
   updateStock: (data: any) => rest.post('/api/stock', data),
   deleteStock: (id: number) => rest.delete(`/api/stock/${id}`),
+  patchStock: (id: number, data: any) => rest.patch(`/api/stock/${id}`, data),
   
   getSummary: (filters?: any) => rest.get('/api/summary', filters),
   
@@ -88,6 +90,14 @@ const api = {
   onWaStatusUpdate: (callback: (data: { status: string, pushName?: string }) => void) => {
     socket.on('wa:status-update', callback)
     return () => socket.off('wa:status-update', callback)
+  },
+  onStockUpdated: (callback: (data: any) => void) => {
+    socket.on('db:stock-updated', callback)
+    return () => socket.off('db:stock-updated', callback)
+  },
+  onStockDeleted: (callback: (data: any) => void) => {
+    socket.on('db:stock-deleted', callback)
+    return () => socket.off('db:stock-deleted', callback)
   },
   
   // --- Server Control IPC ---

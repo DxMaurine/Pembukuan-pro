@@ -124,3 +124,19 @@ export async function syncStoreMetadata(settings: any) {
     console.error("[FIREBASE] Sync Metadata Error:", e);
   }
 }
+
+export function listenToMobileStockActions(onAction: (action: string, data: any, docId: string) => void) {
+  const q = collection(db, 'mobile_stock_actions');
+  return onSnapshot(q, (snapshot) => {
+    snapshot.docChanges().forEach(async (change) => {
+      if (change.type === 'added') {
+        const data = change.doc.data();
+        if (!data.processed) {
+          onAction(data.action, data, change.doc.id);
+          await setDoc(doc(db, 'mobile_stock_actions', change.doc.id),
+            { processed: true }, { merge: true });
+        }
+      }
+    });
+  });
+}

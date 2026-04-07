@@ -106,7 +106,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         </div>
 
         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest opacity-50">
-          Harmony Security v1.0
+          Harmony Security v3.1.6-Lite
         </p>
       </div>
     </div>

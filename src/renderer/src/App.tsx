@@ -299,9 +299,21 @@ const App: React.FC = () => {
           loadData();
         }) : () => {};
 
+        const removeStockUpdate = api.onStockUpdated ? api.onStockUpdated(() => {
+          console.log('[APP] Mendeteksi update stok dari mobile...');
+          loadData();
+        }) : () => {};
+
+        const removeStockDelete = api.onStockDeleted ? api.onStockDeleted(() => {
+          console.log('[APP] Mendeteksi penghapusan stok dari mobile...');
+          loadData();
+        }) : () => {};
+
         return () => { 
           removeWallet(); 
           removeMobile();
+          removeStockUpdate();
+          removeStockDelete();
           clearInterval(retryInterval); 
         };
       }
@@ -493,6 +505,11 @@ const App: React.FC = () => {
   const handleDeleteStockItem = async (id: number) => {
     const result = await Swal.fire({ title: 'Hapus Item?', icon: 'question', showCancelButton: true, confirmButtonText: 'Ya, Hapus' });
     if (result.isConfirmed) { await api.deleteStock(id); loadData(); }
+  };
+
+  const handleMarkBoughtItem = async (id: number) => {
+    await api.patchStock(id, { status: 'bought', boughtAt: new Date().toISOString() });
+    loadData();
   };
 
   const sendToOwner = async () => {
@@ -696,6 +713,7 @@ const App: React.FC = () => {
                   setShowStockModal={setShowStockModal}
                   handleAddStockItem={handleAddStockItem}
                   handleDeleteStockItem={handleDeleteStockItem}
+                  handleMarkBoughtItem={handleMarkBoughtItem}
                   sendStockToOwner={sendStockToOwner}
                   isStockUrgent={isStockUrgent}
                   setIsStockUrgent={setIsStockUrgent}
@@ -860,66 +878,67 @@ const App: React.FC = () => {
                       </div>
                       <p className="text-[11px] text-text-muted font-medium italic opacity-50">*Klik warna untuk merubah aksen seluruh aplikasi.</p>
                     </div>
-                    <div className="hidden lg:block p-8 border-2 border-dashed border-border/20 rounded-3xl flex flex-col items-center justify-center text-center opacity-30">
-                      <p className="text-xs font-bold uppercase tracking-widest">DM PRO V3.1.5</p>
-                      <p className="text-[10px] font-medium">Harmony Interface System</p>
-                    </div>
+                  </div>
+
+                  {/* Version Footer */}
+                  <div className="mt-12 pt-8 border-t border-border/10 flex justify-center">
+                    <p className="text-[10px] font-bold uppercase tracking-[0.3em] opacity-20">DM PRO V3.1.6-Lite • Harmony Interface System</p>
                   </div>
 
                   {/* RESET DATA SECTION */}
                   <div className="glass-card flex flex-col border-rose-500/20 bg-rose-500/5 mt-8">
-                       <h3 className="text-xl font-bold mb-1 flex items-center gap-2 text-rose-500">
-                          ⚠️ Area Berbahaya (Reset Data)
-                       </h3>
-                       <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Gunakan fitur ini hanya untuk membersihkan data testing / masal.</p>
+                    <h3 className="text-xl font-bold mb-1 flex items-center gap-2 text-rose-500">
+                      ⚠️ Area Berbahaya (Reset Data)
+                    </h3>
+                    <p className="text-[10px] text-text-muted font-bold uppercase tracking-[0.2em] mb-6 opacity-60">Gunakan fitur ini hanya untuk membersihkan data testing / masal.</p>
 
-                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <button 
-                            onClick={async () => {
-                              const res = await Swal.fire({ title: 'Reset Hari Ini?', text: 'Semua transaksi tanggal ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
-                              if(res.isConfirmed) {
-                                await api.resetData({ range: 'day' });
-                                loadData();
-                                Swal.fire('Berhasil!', 'Data hari ini dibersihkan.', 'success');
-                              }
-                            }}
-                            className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
-                          >
-                            <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">🧹 Reset Hari Ini</h4>
-                            <p className="text-[10px] text-text-muted leading-tight">Bersihkan salah input hari ini.</p>
-                          </button>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <button
+                        onClick={async () => {
+                          const res = await Swal.fire({ title: 'Reset Hari Ini?', text: 'Semua transaksi tanggal ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
+                          if (res.isConfirmed) {
+                            await api.resetData({ range: 'day' });
+                            loadData();
+                            Swal.fire('Berhasil!', 'Data hari ini dibersihkan.', 'success');
+                          }
+                        }}
+                        className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
+                      >
+                        <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">🧹 Reset Hari Ini</h4>
+                        <p className="text-[10px] text-text-muted leading-tight">Bersihkan salah input hari ini.</p>
+                      </button>
 
-                          <button 
-                            onClick={async () => {
-                              const res = await Swal.fire({ title: 'Reset Bulan Ini?', text: 'Semua transaksi bulan ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
-                              if(res.isConfirmed) {
-                                await api.resetData({ range: 'month' });
-                                loadData();
-                                Swal.fire('Berhasil!', 'Data bulan ini dibersihkan.', 'success');
-                              }
-                            }}
-                            className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
-                          >
-                            <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">📅 Reset Bulan Ini</h4>
-                            <p className="text-[10px] text-text-muted leading-tight">Mulai pembukuan baru bulan ini.</p>
-                          </button>
+                      <button
+                        onClick={async () => {
+                          const res = await Swal.fire({ title: 'Reset Bulan Ini?', text: 'Semua transaksi bulan ini akan dihapus!', icon: 'warning', showCancelButton: true, confirmButtonText: 'Ya, Bersihkan!' });
+                          if (res.isConfirmed) {
+                            await api.resetData({ range: 'month' });
+                            loadData();
+                            Swal.fire('Berhasil!', 'Data bulan ini dibersihkan.', 'success');
+                          }
+                        }}
+                        className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 transition-all text-left group"
+                      >
+                        <h4 className="text-xs font-bold uppercase tracking-widest mb-1 group-hover:text-rose-500 transition-colors">📅 Reset Bulan Ini</h4>
+                        <p className="text-[10px] text-text-muted leading-tight">Mulai pembukuan baru bulan ini.</p>
+                      </button>
 
-                          <button 
-                             onClick={async () => {
-                              const res = await Swal.fire({ title: 'TOTAL WIPE-OUT?', text: 'SEMUA DATA (Stok, Transaksi, Hutang, QRIS) AKAN HILANG PERMANEN!', icon: 'error', showCancelButton: true, confirmButtonText: 'YA, RESET TOTAL!' });
-                              if(res.isConfirmed) {
-                                await api.resetData({ range: 'all' });
-                                loadData();
-                                Swal.fire('Data Bersih!', 'Sistem kembali ke kondisi awal.', 'success');
-                              }
-                            }}
-                            className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500 hover:text-white transition-all text-left"
-                          >
-                            <h4 className="text-xs font-bold uppercase tracking-widest mb-1">🔥 Reset Seluruh Data</h4>
-                            <p className="text-[10px] opacity-70 leading-tight italic">Hanya untuk install ulang / ganti pemilik.</p>
-                          </button>
-                       </div>
+                      <button
+                        onClick={async () => {
+                          const res = await Swal.fire({ title: 'TOTAL WIPE-OUT?', text: 'SEMUA DATA (Stok, Transaksi, Hutang, QRIS) AKAN HILANG PERMANEN!', icon: 'error', showCancelButton: true, confirmButtonText: 'YA, RESET TOTAL!' });
+                          if (res.isConfirmed) {
+                            await api.resetData({ range: 'all' });
+                            loadData();
+                            Swal.fire('Data Bersih!', 'Sistem kembali ke kondisi awal.', 'success');
+                          }
+                        }}
+                        className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 hover:bg-rose-500 hover:text-white transition-all text-left"
+                      >
+                        <h4 className="text-xs font-bold uppercase tracking-widest mb-1">🔥 Reset Seluruh Data</h4>
+                        <p className="text-[10px] opacity-70 leading-tight italic">Hanya untuk install ulang / ganti pemilik.</p>
+                      </button>
                     </div>
+                  </div>
                 </div>
               )}
             </div>

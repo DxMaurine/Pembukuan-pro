@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal, clearTransactions } from './database';
-import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus, syncDashboardToFirebase, listenToMobileInput, syncStoreMetadata, listenToSyncRequests } from './services/firebase';
+import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus, syncDashboardToFirebase, listenToMobileInput, syncStoreMetadata, listenToSyncRequests, listenToMobileStockActions } from './services/firebase';
 import { notifyQRISInternal, notifyPreorderInternal, sendReportInternal, setStatusUpdateCallback } from './services/telegram';
 import { initWhatsApp, getWhatsAppStatus, logoutWhatsApp, sendInternalMessage, setWhatsAppCallbacks } from './services/whatsapp';
 
@@ -43,23 +43,16 @@ function syncMonthData(month: number, year: number) {
 
   const lowStockItems = [...data.stock].sort((a, b) => b.id - a.id);
 
-  const summary = {
+  sendUnifiedSync({
     totalIncome,
     totalExpense,
-    balance: totalIncome - totalExpense,
+    balance: transBalance + walletBalance,
     transBalance,
     walletBalance,
-    stockLowCount: lowStockItems.length,
-    lowStockItems,
     unifiedHistory,
-    settings: data.settings || {},
-    lastSync: new Date().toISOString(),
     isFiltered: true,
     filterLabel: `${new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(new Date(year, month))}`
-  };
-
-  console.log(`[SYNC] Sending Audit Trail for ${summary.filterLabel}: ${unifiedHistory.length} items.`);
-  syncDashboardToFirebase(summary);
+  });
 }
 
 const app = express();
@@ -76,18 +69,7 @@ app.post('/api/reset-data', (req, res) => {
   const { range } = req.body;
   const success = clearTransactions(range as any);
   
-  // Recalculate summary for mobile sync
-  const data = readDb();
-  const summary = {
-    totalIncome: data.transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
-    totalExpense: data.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0),
-    balance: 0,
-    recentTransactions: data.transactions.slice(-20).reverse(),
-    settings: data.settings
-  };
-  summary.balance = summary.totalIncome - summary.totalExpense;
-
-  syncDashboardToFirebase(summary); // Sync cleared state to mobile
+  recalculateAndSync();
   res.json({ success });
 });
 
@@ -115,42 +97,34 @@ function addDanaLog(log: Omit<DanaLog, 'id'>) {
   return entry;
 }
 
-// --- MOBILE SYNC HELPER ---
-function recalculateAndSync() {
+// --- UNIFIED SYNC HELPER ---
+function sendUnifiedSync(overrides: any = {}) {
   const data = readDb();
-  const today = new Date().toLocaleDateString('en-CA'); 
-  const filteredTransactions = data.transactions.filter(t => String(t.date).startsWith(today));
-  const filteredWallet = (data.wallet || []).filter(w => String(w.date).startsWith(today));
   
-  const transIncome = filteredTransactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
-  const transExpense = filteredTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
-  const walletIncome = filteredWallet.filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
-
-  const transBalance = transIncome - transExpense;
-  const walletBalance = walletIncome;
-
-  const totalIncome = transIncome + walletIncome;
-  const totalExpense = transExpense;
+  // Base running totals (Always included)
+  const totalTransIncome = data.transactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const totalTransExpense = data.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const totalWalletBalance = (data.wallet || []).filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
   
+  const transBalanceRunning = totalTransIncome - totalTransExpense;
+  const walletBalanceRunning = totalWalletBalance;
+
   const lowStockItems = [...data.stock].sort((a, b) => b.id - a.id);
-  
-  // Create Unified History (Audit Trail)
-  const unifiedHistory = [
-    ...data.transactions.map(t => ({ ...t, source: 'manual' })),
-    ...(data.wallet || []).map(w => ({ ...w, source: 'wallet' }))
-  ].sort((a, b) => b.id - a.id).slice(0, 50);
 
   const summary = {
-    totalIncome,
-    totalExpense,
-    balance: totalIncome - totalExpense,
-    transBalance,
-    walletBalance,
+    // Default values if not overridden
+    totalIncome: 0,
+    totalExpense: 0,
+    balance: transBalanceRunning + walletBalanceRunning,
+    transBalance: transBalanceRunning,
+    walletBalance: walletBalanceRunning,
     stockLowCount: lowStockItems.length,
     lowStockItems,
-    unifiedHistory,
+    financeSources: data.financeSources || [],
     settings: data.settings || {},
-    lastSync: new Date().toISOString()
+    lastSync: new Date().toISOString(),
+    // Merge with specific data (like monthly filter)
+    ...overrides
   };
 
   syncDashboardToFirebase(summary);
@@ -158,8 +132,30 @@ function recalculateAndSync() {
   return summary;
 }
 
+function recalculateAndSync() {
+  const data = readDb();
+  const today = new Date().toLocaleDateString('en-CA'); 
+  const filteredTransactions = data.transactions.filter(t => String(t.date).startsWith(today));
+  const filteredWallet = (data.wallet || []).filter(w => String(w.date).startsWith(today));
+  
+  const transIncomeToday = filteredTransactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const transExpenseToday = filteredTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const walletIncomeToday = filteredWallet.filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
+
+  return sendUnifiedSync({
+    totalIncome: transIncomeToday + walletIncomeToday,
+    totalExpense: transExpenseToday,
+    unifiedHistory: [
+      ...data.transactions.map(t => ({ ...t, source: 'manual' })),
+      ...(data.wallet || []).map(w => ({ ...w, source: 'wallet' }))
+    ].sort((a, b) => b.id - a.id).slice(0, 50),
+    isFiltered: false,
+    filterLabel: `Hari Ini (${new Date().toLocaleDateString('id-ID')})`
+  });
+}
+
 // Watch db.json for changes from Electron UI
-const dbPath = process.env.DB_PATH || path.resolve(__dirname, 'db.json');
+const dbPath = path.resolve('f:/PEMBUKUAN APP/server/db.json');
 
 if (fs.existsSync(dbPath)) {
   let watchTimeout: NodeJS.Timeout | null = null;
@@ -243,6 +239,7 @@ app.put('/api/transactions/:id', (req, res) => {
   if (index !== -1) {
     data.transactions[index] = { ...data.transactions[index], ...req.body };
     saveDb(data);
+    recalculateAndSync();
     res.json(data.transactions[index]);
   } else {
     res.status(404).json({ error: 'Transaction not found' });
@@ -263,6 +260,7 @@ app.post('/api/transactions/batch', (req, res) => {
   const newBatch = req.body.map((t: any) => ({ ...t, id: Date.now() + Math.random() }));
   data.transactions.push(...newBatch);
   saveDb(data);
+  recalculateAndSync();
   res.json({ success: true, count: newBatch.length });
 });
 
@@ -294,6 +292,13 @@ app.post('/api/wallet', (req, res) => {
   const newEntry = { ...req.body, id: Date.now(), date: req.body.date || new Date().toISOString() };
   data.wallet.push(newEntry);
   saveDb(data);
+  
+  // TRIGGER NOTIFIKASI JIKA PENDING (INPUT DESKTOP)
+  if (newEntry.status === 'pending') {
+    notifyQRISInternal(newEntry, false).catch(e => console.error('[SERVER] Desktop Notify Error:', e));
+  }
+
+  recalculateAndSync();
   res.json(newEntry);
 });
 
@@ -304,6 +309,7 @@ app.put('/api/wallet/:id', (req, res) => {
   if (index !== -1) {
     data.wallet[index] = { ...data.wallet[index], ...req.body };
     saveDb(data);
+    recalculateAndSync();
     res.json(data.wallet[index]);
   } else {
     res.status(404).json({ error: 'Wallet entry not found' });
@@ -315,6 +321,7 @@ app.delete('/api/wallet/:id', (req, res) => {
   const data = readDb();
   data.wallet = data.wallet.filter((t) => t.id !== id);
   saveDb(data);
+  recalculateAndSync();
   res.json({ success: true });
 });
 
@@ -329,6 +336,7 @@ app.post('/api/stock', (req, res) => {
   const newStock = { ...req.body, id: Date.now() };
   data.stock.push(newStock);
   saveDb(data);
+  recalculateAndSync();
   res.json(newStock);
 });
 
@@ -337,7 +345,19 @@ app.delete('/api/stock/:id', (req, res) => {
   const data = readDb();
   data.stock = data.stock.filter((s) => s.id !== id);
   saveDb(data);
+  recalculateAndSync();
   res.json({ success: true });
+});
+
+app.patch('/api/stock/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  const idx = data.stock.findIndex((s) => s.id === id);
+  if (idx === -1) return res.status(404).json({ error: 'Not found' });
+  data.stock[idx] = { ...data.stock[idx], ...req.body };
+  saveDb(data);
+  recalculateAndSync();
+  res.json(data.stock[idx]);
 });
 
 // Alias for old endpoints if any
@@ -357,6 +377,7 @@ app.post('/api/preorders', (req, res) => {
   const newPreorder = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };
   data.preorders.push(newPreorder);
   saveDb(data);
+  recalculateAndSync();
   
   // Notify Telegram about new preorder
   notifyPreorderInternal(newPreorder);
@@ -371,6 +392,7 @@ app.put('/api/preorders/:id', (req, res) => {
   if (index !== -1) {
     data.preorders[index] = { ...data.preorders[index], ...req.body };
     saveDb(data);
+    recalculateAndSync();
     res.json(data.preorders[index]);
   } else {
     res.status(404).json({ error: 'Preorder not found' });
@@ -382,6 +404,7 @@ app.delete('/api/preorders/:id', (req, res) => {
   const data = readDb();
   data.preorders = data.preorders.filter((p) => p.id !== id);
   saveDb(data);
+  recalculateAndSync();
   res.json({ success: true });
 });
 
@@ -396,6 +419,7 @@ app.post('/api/debts', (req, res) => {
   const newDebt = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };
   data.debts.push(newDebt);
   saveDb(data);
+  recalculateAndSync();
   res.json(newDebt);
 });
 
@@ -406,6 +430,7 @@ app.put('/api/debts/:id', (req, res) => {
   if (index !== -1) {
     data.debts[index] = { ...data.debts[index], ...req.body };
     saveDb(data);
+    recalculateAndSync();
     res.json(data.debts[index]);
   } else {
     res.status(404).json({ error: 'Debt not found' });
@@ -417,6 +442,7 @@ app.delete('/api/debts/:id', (req, res) => {
   const data = readDb();
   data.debts = data.debts.filter((d) => d.id !== id);
   saveDb(data);
+  recalculateAndSync();
   res.json({ success: true });
 });
 
@@ -458,6 +484,7 @@ app.post('/api/settings', (req, res) => {
   const data = readDb();
   data.settings = { ...(data.settings || {}), ...req.body };
   saveDb(data);
+  recalculateAndSync();
   res.json(data.settings);
 });
 
@@ -473,6 +500,7 @@ app.post('/api/capital', (req, res) => {
     if (!data.capital) data.capital = [];
     data.capital.push(newCapital);
     saveDb(data);
+    recalculateAndSync(); // KRUSIAL: Update HP saat input modal!
     res.json(newCapital);
 });
 
@@ -561,7 +589,7 @@ async function processDanaText(text: string, docId?: string) {
 
       // Kirim Notifikasi WA ke Kasir jika Auto-Pilot Aktif
       if (isAutoConf && dbData.settings?.cashierNumber) {
-        const waMsg = `🔔 *NOTIFIKASI AUTO-PILOT*\n\n✅ Dana Masuk: Rp ${amount.toLocaleString('id-ID')}\n📝 Keterangan: ${newEntry.description}\n\n👤 *Status: TERVERIFIKASI OTOMATIS*\n_Aplikasi DM PRO v3.1.2_`;
+        const waMsg = `🔔 *NOTIFIKASI AUTO-PILOT*\n\n✅ Dana Masuk: Rp ${amount.toLocaleString('id-ID')}\n📝 Keterangan: ${newEntry.description}\n\n👤 *Status: TERVERIFIKASI OTOMATIS*\n_Aplikasi DM PRO v3.1.6-Lite_`;
         await sendInternalMessage(waMsg, dbData.settings.cashierNumber);
       }
     }
@@ -600,7 +628,10 @@ listenToFirebaseUpdates((id, status) => {
   const numericId = parseInt(id);
   if (!isNaN(numericId)) {
     const success = updateWalletStatusLocal(numericId, status as any);
-    if (success) io.emit('db:wallet-status-updated', { id: numericId, status });
+    if (success) {
+      recalculateAndSync(); // KRUSIAL: Update HP saat status QRIS berubah!
+      io.emit('db:wallet-status-updated', { id: numericId, status });
+    }
   }
 });
 
@@ -635,6 +666,73 @@ listenToSyncRequests((month, year) => {
   console.log(`[FIREBASE-SYNC] HP Minta Data Periode: ${month + 1}/${year}`);
   syncMonthData(month, year);
 });
+
+// Mobile Stock Actions Listener
+listenToMobileStockActions((action, data, docId) => {
+  console.log(`[FIREBASE-ACTION] Menerima aksi: ${action} untuk ID: ${data.id || 'N/A'}`);
+  const dbData = readDb();
+  if (action === 'add') {
+    const newItem = {
+      id: Date.now(),
+      name: data.name,
+      isUrgent: data.isUrgent || false,
+      status: 'pending' as const,
+      dateAdded: data.dateAdded || new Date().toISOString(),
+      source: 'mobile' as const,
+    };
+    dbData.stock.push(newItem);
+    saveDb(dbData);
+    recalculateAndSync();
+    io.emit('db:stock-updated', newItem);
+    console.log(`[MOBILE-STOCK] Barang baru: ${newItem.name}`);
+  } else if (action === 'add_finance') {
+    if (!dbData.financeSources) dbData.financeSources = [];
+    
+    // AMBIL DATA INTI - Perbaikan: data.data berisi rincian bank/saldo
+    const financeData = data.data || data; 
+    const newSource = { ...financeData, id: financeData.id || Date.now().toString() };
+    
+    // Bersihkan data sampah teknis jika ada
+    dbData.financeSources = dbData.financeSources.filter(s => s.name && s.balance !== undefined);
+
+    // Check if duplicate ID or Name (to update instead of push)
+    const idx = dbData.financeSources.findIndex(s => s.id === newSource.id || s.name === newSource.name);
+    if (idx !== -1) {
+      dbData.financeSources[idx] = newSource;
+    } else {
+      dbData.financeSources.push(newSource);
+    }
+    
+    saveDb(dbData);
+    recalculateAndSync();
+    console.log(`[MOBILE-FINANCE] Sumber dana diperbarui: ${newSource.name} - Rp ${newSource.balance}`);
+  } else if (action === 'delete_finance') {
+    if (dbData.financeSources) {
+      dbData.financeSources = dbData.financeSources.filter(s => s.id !== data.id && s.name !== data.name);
+      saveDb(dbData);
+      recalculateAndSync();
+      console.log(`[MOBILE-FINANCE] Sumber dana dihapus: ${data.name}`);
+    }
+  } else if (action === 'done') {
+    const idx = dbData.stock.findIndex((s) => s.id === Number(data.id));
+    if (idx !== -1) {
+      dbData.stock[idx].status = 'bought';
+      dbData.stock[idx].boughtAt = new Date().toISOString();
+      saveDb(dbData);
+      recalculateAndSync();
+      io.emit('db:stock-updated', dbData.stock[idx]);
+      console.log(`[MOBILE-STOCK] Barang ditandai dibeli: ${dbData.stock[idx].name}`);
+    }
+  } else if (action === 'delete') {
+    const item = dbData.stock.find((s) => s.id === Number(data.id));
+    dbData.stock = dbData.stock.filter((s) => s.id !== Number(data.id));
+    saveDb(dbData);
+    recalculateAndSync();
+    io.emit('db:stock-deleted', { id: Number(data.id) });
+    console.log(`[MOBILE-STOCK] Barang dihapus: ${item?.name}`);
+  }
+});
+console.log('[FIREBASE] Listener Mobile Stock Actions Aktif');
 
 // Initial Sync
 recalculateAndSync();

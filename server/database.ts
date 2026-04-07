@@ -14,9 +14,14 @@ export type Transaction = {
 export type StockItem = {
   id: number;
   name: string;
-  quantity: number;
-  price: number;
-  unit: string;
+  quantity?: number;
+  price?: number;
+  unit?: string;
+  isUrgent?: boolean;
+  status?: 'pending' | 'bought';
+  dateAdded?: string;
+  boughtAt?: string;
+  source?: 'desktop' | 'mobile';
 }
 
 export type Debt = {
@@ -36,6 +41,16 @@ export type WalletEntry = {
   description: string;
   date: string;
   status?: 'pending' | 'received';
+}
+
+export type FinanceSource = {
+  id: string;
+  name: string;
+  type: 'Bank' | 'E-Wallet';
+  balance: number;
+  icon: string;
+  color?: string;
+  accountNumber?: string;
 }
 
 export type Capital = {
@@ -66,6 +81,7 @@ export type Data = {
   wallet: WalletEntry[];
   capital: Capital[];
   preorders: Preorder[];
+  financeSources: FinanceSource[];
   settings: Record<string, any>;
 }
 
@@ -76,10 +92,11 @@ const defaultData: Data = {
   wallet: [], 
   capital: [], 
   preorders: [],
+  financeSources: [],
   settings: { password: '0000', storeName: 'DM FOTOCOPY', autoConfirm: false } 
 };
 
-const dbPath = process.env.DB_PATH || path.join(__dirname, 'db.json');
+const dbPath = path.resolve('f:/PEMBUKUAN APP/server/db.json');
 
 export function readDb(): Data {
   if (!fs.existsSync(dbPath)) {
