@@ -1,0 +1,13 @@
+node_modules/
+.expo/
+dist/
+web-build/
+
+# Firebase credentials - JANGAN PERNAH push ke GitHub!
+firebaseConfig.ts
+.env
+.env.local
+
+# OS
+.DS_Store
+*.log

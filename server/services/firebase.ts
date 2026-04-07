@@ -1,8 +1,9 @@
+import 'dotenv/config';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, onSnapshot, collection, serverTimestamp } from 'firebase/firestore';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAobTZcu_KxyjZImpskRrnXpdY7fZMioGA",
+  apiKey: process.env.FIREBASE_API_KEY || '',
   authDomain: "pembukuan-toko-pro.firebaseapp.com",
   projectId: "pembukuan-toko-pro",
   storageBucket: "pembukuan-toko-pro.firebasestorage.app",

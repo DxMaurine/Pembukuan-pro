@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import TelegramBot from 'node-telegram-bot-api';
 import { syncQRISToFirebase, updateFirebaseQRISStatus } from './firebase';
 import fs from 'fs';
@@ -5,8 +6,8 @@ import path from 'path';
 import { sendInternalMessage } from './whatsapp';
 import { readDb } from '../database';
 
-const BOT_TOKEN = '8398912567:AAG8AjzEemIHzna9jEq4nEPV-3Kx6pEpTJs';
-const CHAT_ID = '7978582093';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
