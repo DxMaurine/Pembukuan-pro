@@ -48,7 +48,7 @@ export default function App() {
     bg: isDarkMode ? '#1e1e1e' : '#f5f5f2',
     card: isDarkMode ? '#2d2d2d' : '#ffffff',
     text: isDarkMode ? '#ffffff' : '#1e1e1e',
-    subText: isDarkMode ? '#8c8c8c' : '#64748b',
+    subText: isDarkMode ? '#94a3b8' : '#64748b',
     navBg: isDarkMode ? '#1a1a1a' : '#ffffff',
     border: isDarkMode ? 'rgba(255,255,255,0.08)' : '#e2e8f0',
     inputBg: isDarkMode ? '#1a1a1a' : '#f1f5f9',
@@ -439,90 +439,92 @@ export default function App() {
   );
 
   const renderHistory = () => (
-    <View style={styles.tabContent}>
-      <View style={styles.filterSection}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.monthScroll}>
-          {months.map((m, idx) => (
-            <TouchableOpacity 
-              key={m} 
-              onPress={() => handleMonthChange(idx)}
-              style={[styles.monthTab, filterMonth === idx && { backgroundColor: theme.primary, borderColor: theme.primary }]}
-            >
-              <Text style={[styles.monthTabText, { color: filterMonth === idx ? '#fff' : theme.subText }]}>{m}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-        <View style={styles.yearRow}>
-           <TouchableOpacity onPress={() => { const y = filterYear - 1; setFilterYear(y); requestSync(filterMonth, y); }}>
-             <Text style={[styles.yearNav, { color: theme.primary }]}>◀</Text>
-           </TouchableOpacity>
-           <Text style={[styles.yearText, { color: theme.text }]}>{filterYear}</Text>
-           <TouchableOpacity onPress={() => { const y = filterYear + 1; setFilterYear(y); requestSync(filterMonth, y); }}>
-             <Text style={[styles.yearNav, { color: theme.primary }]}>▶</Text>
-           </TouchableOpacity>
-           
-           <TouchableOpacity 
-            style={[styles.miniSyncBtn, { backgroundColor: theme.card }]} 
-            onPress={() => requestSync(filterMonth, filterYear)}
-           >
-             <RefreshCw size={14} color={theme.primary} />
-           </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.historyHeader}>
-        <Text style={[styles.tabHeading, { color: theme.text, marginBottom: 0 }]}>
-           Audit Trail (Kas & Dompet)
-        </Text>
-      </View>
-
-      <FlatList
-        data={summary?.unifiedHistory || []}
-        keyExtractor={(item) => item.id.toString()}
-        contentContainerStyle={{ paddingBottom: 150 }}
-        renderItem={({ item }) => (
-          <View style={[styles.listItem, { backgroundColor: theme.card, marginBottom: 12 }]}>
-            <View style={[styles.listItemIcon, { backgroundColor: item.source === 'manual' ? (item.type === 'income' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)') : 'rgba(99,102,241,0.1)' }]}>
-               {item.source === 'wallet' ? (
-                 <Wallet color={theme.primary} size={20} />
-               ) : (
-                 item.type === 'income' ? <TrendingUp color={theme.success} size={20} /> : <TrendingDown color={theme.danger} size={20} />
-               )}
-            </View>
-            <View style={{ flex: 1 }}>
-              <View style={styles.row}>
-                 <View style={[styles.sourceBadge, { backgroundColor: item.source === 'wallet' ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)' }]}>
-                    <Text style={[styles.sourceText, { color: item.source === 'wallet' ? theme.success : theme.primary }]}>
-                       {item.source === 'wallet' ? 'QRIS' : 'KAS'}
-                    </Text>
-                 </View>
-                 <Text style={[styles.listItemTitle, { color: theme.text, marginLeft: 6 }]} numberOfLines={1}>
-                    {item.description || (item.source === 'wallet' ? 'QRIS Income' : 'Transaksi')}
-                 </Text>
-              </View>
-              <Text style={[styles.listItemSubtitle, { color: theme.subText }]}>{new Date(item.date).toLocaleDateString('id-ID')} • {item.category || '-'}</Text>
-            </View>
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={[styles.listItemValue, { color: (item.source === 'wallet' || item.type === 'income') ? theme.success : theme.danger }]}>
-                {(item.source === 'wallet' || item.type === 'income') ? '+' : '-'} {formatIDR(item.amount)}
-              </Text>
-            </View>
-          </View>
-        )}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <History color={theme.subText} size={48} />
-            <Text style={[styles.emptyText, { color: theme.subText }]}>Audit Trail Kosong.</Text>
-            <TouchableOpacity 
-              style={[styles.btn, { backgroundColor: theme.primary, marginTop: 20, paddingHorizontal: 30 }]}
+    <>
+      <View style={styles.tabContent}>
+        <View style={styles.filterSection}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.monthScroll}>
+            {months.map((m, idx) => (
+              <TouchableOpacity 
+                key={m} 
+                onPress={() => handleMonthChange(idx)}
+                style={[styles.monthTab, filterMonth === idx && { backgroundColor: theme.primary, borderColor: theme.primary }]}
+              >
+                <Text style={[styles.monthTabText, { color: filterMonth === idx ? '#fff' : theme.subText }]}>{m}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <View style={styles.yearRow}>
+             <TouchableOpacity onPress={() => { const y = filterYear - 1; setFilterYear(y); requestSync(filterMonth, y); }}>
+               <Text style={[styles.yearNav, { color: theme.primary }]}>◀</Text>
+             </TouchableOpacity>
+             <Text style={[styles.yearText, { color: theme.text }]}>{filterYear}</Text>
+             <TouchableOpacity onPress={() => { const y = filterYear + 1; setFilterYear(y); requestSync(filterMonth, y); }}>
+               <Text style={[styles.yearNav, { color: theme.primary }]}>▶</Text>
+             </TouchableOpacity>
+             
+             <TouchableOpacity 
+              style={[styles.miniSyncBtn, { backgroundColor: theme.card }]} 
               onPress={() => requestSync(filterMonth, filterYear)}
-            >
-              <Text style={styles.btnText}>Tarik Data Ulang</Text>
-            </TouchableOpacity>
+             >
+               <RefreshCw size={14} color={theme.primary} />
+             </TouchableOpacity>
           </View>
-        }
-      />
-    </View>
+        </View>
+
+        <View style={styles.historyHeader}>
+          <Text style={[styles.tabHeading, { color: theme.text, marginBottom: 0 }]}>
+             Audit Trail (Kas & Dompet)
+          </Text>
+        </View>
+
+        <FlatList
+          data={summary?.unifiedHistory || []}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={{ paddingBottom: 150 }}
+          renderItem={({ item }) => (
+            <View style={[styles.listItem, { backgroundColor: theme.card, marginBottom: 12 }]}>
+              <View style={[styles.listItemIcon, { backgroundColor: item.source === 'manual' ? (item.type === 'income' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)') : 'rgba(99,102,241,0.1)' }]}>
+                 {item.source === 'wallet' ? (
+                   <Wallet color={theme.primary} size={20} />
+                 ) : (
+                   item.type === 'income' ? <TrendingUp color={theme.success} size={20} /> : <TrendingDown color={theme.danger} size={20} />
+                 )}
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={styles.row}>
+                   <View style={[styles.sourceBadge, { backgroundColor: item.source === 'wallet' ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)' }]}>
+                      <Text style={[styles.sourceText, { color: item.source === 'wallet' ? theme.success : theme.primary }]}>
+                         {item.source === 'wallet' ? 'QRIS' : 'KAS'}
+                      </Text>
+                   </View>
+                   <Text style={[styles.listItemTitle, { color: theme.text, marginLeft: 6 }]} numberOfLines={1}>
+                      {item.description || (item.source === 'wallet' ? 'QRIS Income' : 'Transaksi')}
+                   </Text>
+                </View>
+                <Text style={[styles.listItemSubtitle, { color: theme.subText }]}>{new Date(item.date).toLocaleDateString('id-ID')} • {item.category || '-'}</Text>
+              </View>
+              <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.listItemValue, { color: (item.source === 'wallet' || item.type === 'income') ? theme.success : theme.danger }]}>
+                  {(item.source === 'wallet' || item.type === 'income') ? '+' : '-'} {formatIDR(item.amount)}
+                </Text>
+              </View>
+            </View>
+          )}
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <History color={theme.subText} size={48} />
+              <Text style={[styles.emptyText, { color: theme.subText }]}>Audit Trail Kosong.</Text>
+              <TouchableOpacity 
+                style={[styles.btn, { backgroundColor: theme.primary, marginTop: 20, paddingHorizontal: 30 }]}
+                onPress={() => requestSync(filterMonth, filterYear)}
+              >
+                <Text style={styles.btnText}>Tarik Data Ulang</Text>
+              </TouchableOpacity>
+            </View>
+          }
+        />
+      </View>
+    </>
   );
 
   const renderFinance = () => {
