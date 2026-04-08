@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Package, Send, Trash2, X, Plus, AlertCircle, Archive, CheckCircle2 } from 'lucide-react';
+import { Package, Send, Trash2, X, Plus, AlertCircle, Archive, CheckCircle2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface StockManagerProps {
   stockItems: any[];
@@ -29,6 +29,9 @@ const StockManager: React.FC<StockManagerProps> = ({
   isStockUrgent,
   setIsStockUrgent,
 }) => {
+  const [currentPage, setCurrentPage] = React.useState(1);
+  const entriesPerPage = 10;
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleAddStockItem(undefined, false);
@@ -119,87 +122,124 @@ const StockManager: React.FC<StockManagerProps> = ({
                   </td>
                 </tr>
               ) : (
-                [...stockItems].reverse().map((item, index) => (
-                  <tr 
-                    key={item.id} 
-                    className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group ${
-                      item.isUrgent ? 'bg-rose-500/[0.03] dark:bg-rose-500/[0.06]' : ''
-                    }`}
-                  >
-                    <td className="px-6 py-5 text-sm font-mono opacity-40 text-center">
-                      {item.isUrgent ? (
-                        <div className="w-6 h-6 bg-rose-500/20 text-rose-500 rounded-lg flex items-center justify-center mx-auto shadow-sm shadow-rose-500/10">
-                          <AlertCircle size={14} strokeWidth={3} />
-                        </div>
-                      ) : (
-                        stockItems.length - index
-                      )}
-                    </td>
-                  <td className="px-6 py-5">
-                      <div className="flex items-center gap-3">
-                        <span className={`font-bold text-lg uppercase tracking-tight transition-colors ${
-                          item.status === 'bought' ? 'line-through opacity-40' : item.isUrgent ? 'text-rose-600 dark:text-rose-400' : 'group-hover:text-primary'
-                        }`}>
-                          {item.name}
-                        </span>
-                        {item.isUrgent && item.status !== 'bought' && (
-                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[9px] font-black rounded-lg border border-rose-200 dark:border-rose-500/30">
-                             PENANGANAN CEPAT
-                          </div>
-                        )}
-                        {item.source === 'mobile' && (
-                          <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[9px] font-black rounded-lg border border-blue-200 dark:border-blue-500/30">
-                            📱 Mobile
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-5">
-                      {item.status === 'bought' ? (
-                        <span className="flex items-center gap-2 px-4 py-1.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full w-fit shadow-sm border border-emerald-200 dark:border-emerald-500/30 whitespace-nowrap">
-                          <CheckCircle2 size={12} /> SUDAH DIBELI
-                        </span>
-                      ) : (
-                        <span className={`flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold rounded-full w-fit shadow-sm uppercase italic border whitespace-nowrap ${
-                          item.isUrgent
-                            ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30'
-                            : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'
-                        }`}>
-                          {item.isUrgent ? '🚨 MENDESAK' : '📦 STOK HABIS'}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-6 py-5">
-                      <div className="flex flex-col">
-                        <span className="text-xs font-bold opacity-80 uppercase tracking-wider">{new Date(item.dateAdded).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
-                        <span className="text-[10px] opacity-40 font-mono italic">{new Date(item.dateAdded).toLocaleTimeString('id-ID')}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        {item.status !== 'bought' && handleMarkBoughtItem && (
-                          <button
-                            className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 opacity-0 group-hover:opacity-100 transition-all hover:bg-emerald-500 hover:text-white"
-                            title="Tandai Sudah Dibeli"
-                            onClick={() => handleMarkBoughtItem(item.id)}
+                (() => {
+                  const sortedItems = [...stockItems].reverse();
+                  const currentEntries = sortedItems.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
+
+                  return (
+                    <>
+                      {currentEntries.map((item, index) => {
+                        // Original index for the "No." column: sortedItems.length - (actual index in total list)
+                        const originalIndex = sortedItems.length - ((currentPage - 1) * entriesPerPage + index);
+                        return (
+                          <tr
+                            key={item.id}
+                            className={`hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group ${item.isUrgent ? 'bg-rose-500/[0.03] dark:bg-rose-500/[0.06]' : ''}`}
                           >
-                            <CheckCircle2 size={16} />
-                          </button>
-                        )}
-                        <button
-                          className="p-2.5 rounded-xl bg-danger/10 text-danger opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-white"
-                          onClick={() => handleDeleteStockItem(item.id)}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                            <td className="px-6 py-5 text-sm font-mono opacity-40 text-center">
+                              {item.isUrgent ? (
+                                <div className="w-6 h-6 bg-rose-500/20 text-rose-500 rounded-lg flex items-center justify-center mx-auto shadow-sm shadow-rose-500/10">
+                                  <AlertCircle size={14} strokeWidth={3} />
+                                </div>
+                              ) : (
+                                originalIndex
+                              )}
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-3">
+                                <span className={`font-bold text-lg uppercase tracking-tight transition-colors ${item.status === 'bought' ? 'line-through opacity-40' : item.isUrgent ? 'text-rose-600 dark:text-rose-400' : 'group-hover:text-primary'}`}>
+                                  {item.name}
+                                </span>
+                                {item.isUrgent && item.status !== 'bought' && (
+                                  <div className="flex items-center gap-1.5 px-2 py-0.5 bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 text-[9px] font-black rounded-lg border border-rose-200 dark:border-rose-500/30">
+                                    PENANGANAN CEPAT
+                                  </div>
+                                )}
+                                {item.source === 'mobile' && (
+                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[9px] font-black rounded-lg border border-blue-200 dark:border-blue-500/30">
+                                    📱 Mobile
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              {item.status === 'bought' ? (
+                                <span className="flex items-center gap-2 px-4 py-1.5 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold rounded-full w-fit shadow-sm border border-emerald-200 dark:border-emerald-500/30 whitespace-nowrap">
+                                  <CheckCircle2 size={12} /> SUDAH DIBELI
+                                </span>
+                              ) : (
+                                <span className={`flex items-center gap-2 px-4 py-1.5 text-[10px] font-bold rounded-full w-fit shadow-sm uppercase italic border whitespace-nowrap ${item.isUrgent ? 'bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 border-rose-200 dark:border-rose-500/30' : 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/30'}`}>
+                                  {item.isUrgent ? '🚨 MENDESAK' : '📦 STOK HABIS'}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold opacity-80 uppercase tracking-wider">{new Date(item.dateAdded).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                                <span className="text-[10px] opacity-40 font-mono italic">{new Date(item.dateAdded).toLocaleTimeString('id-ID')}</span>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                {item.status !== 'bought' && handleMarkBoughtItem && (
+                                  <button
+                                    className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 opacity-0 group-hover:opacity-100 transition-all hover:bg-emerald-500 hover:text-white"
+                                    title="Tandai Sudah Dibeli"
+                                    onClick={() => handleMarkBoughtItem(item.id)}
+                                  >
+                                    <CheckCircle2 size={16} />
+                                  </button>
+                                )}
+                                <button
+                                  className="p-2.5 rounded-xl bg-danger/10 text-danger opacity-0 group-hover:opacity-100 transition-all hover:bg-danger hover:text-white"
+                                  onClick={() => handleDeleteStockItem(item.id)}
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </>
+                  );
+                })()
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {(() => {
+          const totalPages = Math.ceil(stockItems.length / entriesPerPage) || 1;
+          if (totalPages <= 1) return null;
+
+          return (
+            <div className="flex justify-center items-center gap-2 mt-4 mb-4 py-4 border-t border-slate-200 dark:border-white/5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="flex items-center gap-1.5 px-4">
+                <span className="text-sm font-black text-primary">{currentPage}</span>
+                <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>
+                <span className="text-sm font-black text-muted">{totalPages}</span>
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {showStockModal && createPortal(

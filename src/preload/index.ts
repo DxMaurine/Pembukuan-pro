@@ -60,6 +60,11 @@ const api = {
   updatePreorder: (data: any) => rest.put(`/api/preorders/${data.id}`, data),
   deletePreorder: (id: number) => rest.delete(`/api/preorders/${id}`),
 
+  // Mutations
+  getMutations: () => rest.get('/api/mutations'),
+  addMutation: (data: any) => rest.post('/api/mutations', data),
+  deleteMutation: (id: number) => rest.delete(`/api/mutations/${id}`),
+
   // Services
   sendReport: (data: any) => rest.post('/api/service/send-report', data),
   notifyQRIS: (data: any) => rest.post('/api/service/notify-qris', data),

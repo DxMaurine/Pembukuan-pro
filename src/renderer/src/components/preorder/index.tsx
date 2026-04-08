@@ -1,22 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { 
-  ShoppingBag, 
-  Plus, 
-  Search, 
-  Calendar, 
-  User, 
-  Wrench, 
+import {
+  ShoppingBag,
+  Plus,
+  Search,
+  Calendar,
+  User,
+  Wrench,
   Trash2,
   Edit2,
   Eye,
   Clock,
+  Info,
   CheckCircle2,
   X,
   MessageSquare,
   Package,
   Calculator,
-  FileText
+  FileText,
+  Send,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
@@ -60,8 +64,11 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPreorder, setSelectedPreorder] = useState<Preorder | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [preorderStep, setPreorderStep] = useState<'config' | 'input'>('config');
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 10;
+
   const [formData, setFormData] = useState({
     customerName: '',
     serviceName: '',
@@ -86,9 +93,9 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
   }, [orderItems]);
 
   const addOrderItem = () => {
-    setOrderItems([...orderItems, { 
-      id: Math.random().toString(36).substr(2, 9), 
-      name: '', bahan: '', p: 1, l: 1, qty: 1, price: 0, total: 0, isBanner: false, notes: '' 
+    setOrderItems([...orderItems, {
+      id: Math.random().toString(36).substr(2, 9),
+      name: '', bahan: '', p: 1, l: 1, qty: 1, price: 0, total: 0, isBanner: false, notes: ''
     }]);
   };
 
@@ -133,7 +140,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
     e.preventDefault();
     const total = parseFloat(unformatIDR(formData.totalAmount)) || 0;
     const dp = parseFloat(unformatIDR(formData.downPayment)) || 0;
-    
+
     if (orderItems.some(item => !item.name.trim())) {
       Swal.fire('Peringatan', 'Nama barang belum diisi Pak!', 'warning');
       return;
@@ -149,6 +156,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       }
       setShowModal(false);
       setEditingId(null);
+      setPreorderStep('config');
       resetForm();
       loadData();
       Swal.fire({ title: 'Berhasil!', text: 'Pesanan telah disimpan.', icon: 'success', timer: 1500, showConfirmButton: false });
@@ -178,6 +186,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
     } else {
       setOrderItems([{ id: Math.random().toString(36).substr(2, 9), name: p.serviceName, bahan: '', p: 1, l: 1, qty: 1, price: p.totalAmount, total: p.totalAmount, isBanner: false }]);
     }
+    setPreorderStep('input');
     setShowModal(true);
   };
 
@@ -198,12 +207,12 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-semibold flex items-center gap-3">
-             <ShoppingBag className="text-primary" size={32} /> Manajemen Pesanan
+            <ShoppingBag className="text-primary" size={32} /> Manajemen Pesanan
           </h1>
           <p className="text-muted dark:text-muted mt-1 italic text-sm opacity-60">Pencatatan antrian cetak & jasa percetakan.</p>
         </div>
-        <button 
-          onClick={() => { setEditingId(null); resetForm(); setShowModal(true); }}
+        <button
+          onClick={() => { setEditingId(null); setPreorderStep('config'); resetForm(); setShowModal(true); }}
           className="btn btn-primary px-8 py-3.5 rounded-xl shadow-lg shadow-primary/20 flex items-center gap-3 hover:scale-103 transition-transform font-bold text-[10px] uppercase tracking-widest"
         >
           <Plus size={18} /> Tambah Proyek
@@ -240,69 +249,116 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
 
       <div className="glass-card flex items-center gap-4 px-6 py-3.5">
         <Search className="text-muted shrink-0" size={18} />
-        <input type="text" placeholder="Cari pesanan..." className="bg-transparent border-none outline-none w-full font-bold text-xs uppercase" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+        <input
+          type="text"
+          placeholder="Cari pesanan..."
+          className="bg-transparent border-none outline-none w-full font-bold text-xs uppercase"
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setCurrentPage(1);
+          }}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {filteredPreorders.length === 0 ? (
-          <div className="glass-card py-16 flex flex-col items-center justify-center opacity-30">
-            <ShoppingBag size={48} className="mb-4 stroke-[1px]" />
-            <p className="font-bold text-xs uppercase tracking-[0.3em]">Antrian Kosong</p>
-          </div>
-        ) : (
-          filteredPreorders.map((p) => (
-            <div key={p.id} className="glass-card p-4 group hover:border-primary/20 transition-all duration-300 relative overflow-hidden">
-              <div className="flex flex-col md:flex-row gap-5 items-center">
-                <div className="w-10 h-10 rounded-xl bg-primary/5 dark:bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-105 transition-transform">
-                  <User size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-md font-bold truncate uppercase tracking-tight italic">{p.customerName}</h3>
-                    {getStatusBadge(p.status)}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-[10px] text-muted dark:text-muted font-bold uppercase opacity-60">
-                    <span className="flex items-center gap-1.5"><Wrench size={12} className="text-primary" /> {p.serviceName}</span>
-                    <span className="flex items-center gap-1.5"><Calendar size={12} className="text-primary" /> {p.dueDate}</span>
-                    {p.notes && <span className="flex items-center gap-1.5 font-normal"><MessageSquare size={12} /> {p.notes}</span>}
-                  </div>
-                </div>
-                <div className="flex gap-8 items-center shrink-0">
-                  <div className="text-right">
-                    <div className="text-[9px] font-bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Kontrak</div>
-                    <div className="text-md font-bold italic">Rp {formatIDR(p.totalAmount)}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[9px] font-bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Sisa</div>
-                    {p.remainingAmount > 0 ? (
-                      <div className="text-[9px] font-bold text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/10">Rp {formatIDR(p.remainingAmount)}</div>
-                    ) : (
-                      <div className="text-[9px] font-bold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">LUNAS</div>
-                    )}
-                  </div>
-                    <div className="flex gap-1.5">
-                      <button 
-                        onClick={() => { setSelectedPreorder(p); setShowDetailModal(true); }} 
-                        className="p-2.5 rounded-lg bg-primary/5 hover:bg-primary hover:text-white transition-all text-primary border border-primary/20"
-                        title="Lihat Detail"
-                      >
-                        <Eye size={16} />
-                      </button>
-                      <button onClick={() => handleEdit(p)} className="p-2.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-primary hover:text-white transition-all text-muted"><Edit2 size={16} /></button>
-                      <button onClick={() => handleDelete(p.id)} className="p-2.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-rose-500 hover:text-white transition-all text-muted"><Trash2 size={16} /></button>
-                    </div>
-                </div>
+        {(() => {
+          const totalPages = Math.ceil(filteredPreorders.length / entriesPerPage) || 1;
+          const currentEntries = filteredPreorders.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
+
+          if (filteredPreorders.length === 0) {
+            return (
+              <div className="glass-card py-16 flex flex-col items-center justify-center opacity-30">
+                <ShoppingBag size={48} className="mb-4 stroke-[1px]" />
+                <p className="font-bold text-xs uppercase tracking-[0.3em]">Antrian Kosong</p>
               </div>
-            </div>
-          ))
-        )}
+            );
+          }
+
+          return (
+            <>
+              {currentEntries.map((p) => (
+                <div key={p.id} className="glass-card p-4 group hover:border-primary/20 transition-all duration-300 relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row gap-5 items-center">
+                    <div className="w-10 h-10 rounded-xl bg-primary/5 dark:bg-primary/10 flex items-center justify-center text-primary shrink-0 group-hover:scale-105 transition-transform">
+                      <User size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="text-md font-bold truncate uppercase tracking-tight italic">{p.customerName}</h3>
+                        {getStatusBadge(p.status)}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-[10px] text-muted dark:text-muted font-bold uppercase opacity-60">
+                        <span className="flex items-center gap-1.5"><Wrench size={12} className="text-primary" /> {p.serviceName}</span>
+                        <span className="flex items-center gap-1.5"><Calendar size={12} className="text-primary" /> {p.dueDate}</span>
+                        {p.notes && <span className="flex items-center gap-1.5 font-normal"><MessageSquare size={12} /> {p.notes}</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-8 items-center shrink-0">
+                      <div className="text-right">
+                        <div className="text-[9px] font-bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Kontrak</div>
+                        <div className="text-md font-bold italic">Rp {formatIDR(p.totalAmount)}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-[9px] font-bold uppercase text-muted dark:text-muted tracking-widest mb-0.5">Sisa</div>
+                        {p.remainingAmount > 0 ? (
+                          <div className="text-[9px] font-bold text-rose-500 bg-rose-500/5 px-2 py-0.5 rounded border border-rose-500/10">Rp {formatIDR(p.remainingAmount)}</div>
+                        ) : (
+                          <div className="text-[9px] font-bold text-emerald-500 bg-emerald-500/5 px-2 py-0.5 rounded border border-emerald-500/10">LUNAS</div>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => { setSelectedPreorder(p); setShowDetailModal(true); }}
+                          className="p-2.5 rounded-lg bg-primary/5 hover:bg-primary hover:text-white transition-all text-primary border border-primary/20"
+                          title="Lihat Detail"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button onClick={() => handleEdit(p)} className="p-2.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-primary hover:text-white transition-all text-muted"><Edit2 size={16} /></button>
+                        <button onClick={() => handleDelete(p.id)} className="p-2.5 rounded-lg bg-slate-100 dark:bg-white/5 hover:bg-rose-500 hover:text-white transition-all text-muted"><Trash2 size={16} /></button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-4 py-4 border-t border-slate-200 dark:border-white/5">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+                  >
+                    <ChevronLeft size={18} />
+                  </button>
+
+                  <div className="flex items-center gap-1.5 px-4">
+                    <span className="text-sm font-black text-primary">{currentPage}</span>
+                    <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>
+                    <span className="text-sm font-black text-muted">{totalPages}</span>
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+                  >
+                    <ChevronRight size={18} />
+                  </button>
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
-      {showModal && createPortal(
+      {showModal ? createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-[110] px-4 py-4 overflow-hidden">
           <div className="w-full flex justify-center items-center">
-            <div className="w-full max-w-5xl max-h-[95vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[1.8rem] overflow-hidden shadow-2xl">
-              
+            <div className={`w-full ${preorderStep === 'config' ? 'max-w-[480px]' : 'max-w-5xl'} max-h-[95vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[1.8rem] overflow-hidden shadow-2xl transition-all duration-500 ease-in-out`}>
+
               <div className="px-8 py-5 bg-slate-900 dark:bg-black text-white flex justify-between items-center shrink-0 border-b border-white/5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-full bg-primary/10 -skew-x-12 transform translate-x-32" />
                 <div className="flex items-center gap-5 relative z-10">
@@ -314,295 +370,338 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                     <p className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">v3.1.6-Lite Harmony System</p>
                   </div>
                 </div>
-                <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all opacity-60 hover:opacity-100 group" onClick={() => setShowModal(false)}>
+                <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all opacity-60 hover:opacity-100 group" onClick={() => { setShowModal(false); setPreorderStep('config'); }}>
                   <X size={20} className="group-hover:rotate-90 transition-transform" />
                 </button>
               </div>
 
               <div className="flex-1 overflow-y-auto p-8 space-y-10 scrollbar-thin scrollbar-thumb-primary/20">
-                {/* 1. Header Information */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                  <div className="lg:col-span-6 space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary flex items-center gap-2 ml-1">
-                      <User size={12} /> Nama Pelanggan / Instansi
-                    </label>
-                    <input 
-                      required
-                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 italic"
-                      placeholder="Input nama pemesan..."
-                      value={formData.customerName}
-                      onChange={(e) => setFormData({...formData, customerName: e.target.value})}
-                    />
-                  </div>
-                  <div className="lg:col-span-3 space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted flex items-center gap-2 ml-1">
-                      <Clock size={12} /> Status Antrian
-                    </label>
-                    <div className="relative group">
-                      <select 
-                        className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white cursor-pointer uppercase tracking-tighter italic appearance-none"
-                        value={formData.status}
-                        onChange={(e) => setFormData({...formData, status: e.target.value as any})}
-                      >
-                        <option value="pending" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">PENDING (ANTRIAN)</option>
-                        <option value="designing" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">DESIGNING (PROSES)</option>
-                        <option value="printing" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">PRINTING (CETAK)</option>
-                        <option value="completed" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">COMPLETED (SIAP)</option>
-                        <option value="canceled" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">CANCELED (BATAL)</option>
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40 group-hover:opacity-100 transition-opacity">
-                        <Plus size={14} className="rotate-45" />
+                {preorderStep === 'config' ? (
+                  /* --- STEP 1: CONFIGURATION (PORTRAIT) --- */
+                  <div className="space-y-8 animate-fade-in py-4">
+                    <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 flex gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                        <Info size={20} />
+                      </div>
+                      <p className="text-xs text-muted leading-relaxed italic">Input Nama Pelanggan dan Status Antrian terlebih dahulu sebelum memasukkan detail barang cetakan.</p>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary flex items-center gap-2 ml-1">
+                          <User size={12} /> Nama Pelanggan / Instansi
+                        </label>
+                        <input
+                          autoFocus
+                          required
+                          className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 italic"
+                          placeholder="Input nama pemesan..."
+                          value={formData.customerName}
+                          onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-6">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted flex items-center gap-2 ml-1">
+                            <Clock size={12} /> Status Antrian
+                          </label>
+                          <select
+                            className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white cursor-pointer uppercase tracking-tighter italic appearance-none"
+                            value={formData.status}
+                            onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
+                          >
+                            <option value="pending" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">PENDING (ANTRIAN)</option>
+                            <option value="designing" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">DESIGNING (PROSES)</option>
+                            <option value="printing" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">PRINTING (CETAK)</option>
+                            <option value="completed" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">COMPLETED (SIAP)</option>
+                            <option value="canceled" className="bg-white dark:bg-bg-dark text-slate-900 dark:text-white">CANCELED (BATAL)</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted flex items-center gap-2 ml-1">
+                            <Calendar size={12} /> Estimasi Selesai
+                          </label>
+                          <input
+                            type="date"
+                            required
+                            className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white cursor-pointer italic"
+                            value={formData.dueDate}
+                            onClick={(e) => (e.target as any).showPicker?.()}
+                            onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="lg:col-span-3 space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted flex items-center gap-2 ml-1">
-                      <Calendar size={12} /> Estimasi Selesai
-                    </label>
-                    <input 
-                      type="date" 
-                      required 
-                      className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-sm shadow-sm transition-all dark:text-white cursor-pointer italic" 
-                      value={formData.dueDate} 
-                      onClick={(e) => (e.target as any).showPicker?.()}
-                      onChange={(e) => setFormData({...formData, dueDate: e.target.value})} 
-                    />
-                  </div>
-                </div>
 
-                {/* 2. Order Items Section */}
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center px-1">
-                    <div>
-                      <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-slate-800 dark:text-white italic flex items-center gap-3">
-                        Daftar Spesifikasi Produk
-                        <span className="px-2 py-0.5 rounded bg-primary text-white text-[9px] not-italic font-bold">{orderItems.length} ITEM</span>
-                      </h3>
-                      <p className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1 opacity-60">Rincian dimensi, qty, dan harga</p>
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={addOrderItem} 
-                      className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl text-[10px] font-bold tracking-widest flex items-center gap-3 shadow-lg shadow-primary/20 hover:scale-105 transition-all uppercase"
-                    > 
-                      <Plus size={16} /> Tambah Barang
+                    <button
+                      type="button"
+                      disabled={!formData.customerName}
+                      onClick={() => setPreorderStep('input')}
+                      className="w-full bg-primary hover:bg-primary-hover text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-xl shadow-primary/20 transition-all disabled:opacity-50 disabled:grayscale uppercase tracking-widest text-xs"
+                    >
+                      Lanjutkan Detail Item <ChevronRight size={18} />
                     </button>
                   </div>
-
-                  <div className="space-y-6">
-                    {orderItems.map((item, idx) => (
-                      <div key={item.id} className="relative animate-slide-up group" style={{ animationDelay: `${idx * 0.1}s` }}>
-                        <div className={`p-6 rounded-[2rem] border transition-all duration-300 ${item.isBanner ? 'bg-primary/5 border-primary/20 shadow-primary/5' : 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 shadow-sm'}`}>
-                          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                            {/* Primary Info */}
-                            <div className="lg:col-span-7 space-y-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1">Nama Barang / Jasa Cetak</label>
-                                  <input 
-                                    className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-5 py-3.5 rounded-2xl outline-none font-semibold text-sm italic focus:border-primary transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20" 
-                                    placeholder="Spanduk, Kartu Nama, Jasa Design..." 
-                                    value={item.name} 
-                                    onChange={(e) => updateOrderItem(item.id, 'name', e.target.value)} 
-                                  />
-                                </div>
-                                <div className="space-y-1.5">
-                                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1">Material / Bahan</label>
-                                  <input 
-                                    className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-5 py-3.5 rounded-2xl outline-none font-semibold text-sm italic focus:border-primary transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20" 
-                                    placeholder="Flexi 340, Art Carton 260, dll" 
-                                    value={item.bahan} 
-                                    onChange={(e) => updateOrderItem(item.id, 'bahan', e.target.value)} 
-                                  />
-                                </div>
-                              </div>
-                              <div className="space-y-1.5">
-                                <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1 flex items-center gap-2">
-                                  <MessageSquare size={12} className="text-primary" /> Catatan Produksi / Finishing
-                                </label>
-                                <textarea 
-                                  className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4 rounded-2xl outline-none font-semibold text-xs italic focus:border-primary transition-all min-h-[60px] resize-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20" 
-                                  placeholder="Contoh: Mata ayam di setiap pojok, laminasi doff, potong rapi..." 
-                                  value={item.notes} 
-                                  onChange={(e) => updateOrderItem(item.id, 'notes', e.target.value)} 
-                                />
-                              </div>
-                            </div>
-
-                            {/* Controls & Math */}
-                            <div className="lg:col-span-5 space-y-6">
-                              <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
-                                <div className="flex gap-2">
-                                  <button 
-                                    type="button" 
-                                    onClick={() => updateOrderItem(item.id, 'isBanner', false)} 
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest transition-all ${!item.isBanner ? 'bg-primary text-white shadow-lg' : 'text-muted hover:bg-slate-200 dark:hover:bg-white/10'}`}
-                                  >
-                                    SATUAN
-                                  </button>
-                                  <button 
-                                    type="button" 
-                                    onClick={() => updateOrderItem(item.id, 'isBanner', true)} 
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest transition-all ${item.isBanner ? 'bg-primary text-white shadow-lg' : 'text-muted hover:bg-slate-200 dark:hover:bg-white/10'}`}
-                                  >
-                                    BANNER
-                                  </button>
-                                </div>
-                                <button 
-                                  type="button" 
-                                  onClick={() => removeOrderItem(item.id)} 
-                                  className="p-2 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
-                                  title="Hapus Item"
-                                >
-                                  <Trash2 size={18} />
-                                </button>
-                              </div>
-
-                              <div className="grid grid-cols-12 gap-3 items-end">
-                                {item.isBanner && (
-                                  <>
-                                    <div className="col-span-3 space-y-1">
-                                      <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">L (m)</label>
-                                      <input type="number" step="0.1" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.p} onChange={(e) => updateOrderItem(item.id, 'p', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div className="col-span-1 pb-3 text-center text-muted font-bold">×</div>
-                                    <div className="col-span-3 space-y-1">
-                                      <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">T (m)</label>
-                                      <input type="number" step="0.1" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.l} onChange={(e) => updateOrderItem(item.id, 'l', parseFloat(e.target.value) || 0)} />
-                                    </div>
-                                    <div className="col-span-5 space-y-1">
-                                      <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">Quantity</label>
-                                      <input type="number" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.qty} onChange={(e) => updateOrderItem(item.id, 'qty', parseInt(e.target.value) || 0)} />
-                                    </div>
-                                  </>
-                                )}
-                                {!item.isBanner && (
-                                  <div className="col-span-12 space-y-1">
-                                    <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">Jumlah (Qty)</label>
-                                    <input type="number" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-3 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.qty} onChange={(e) => updateOrderItem(item.id, 'qty', parseInt(e.target.value) || 0)} />
-                                  </div>
-                                )}
-                              </div>
-
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-1">
-                                  <label className="text-[9px] font-bold uppercase text-muted tracking-widest ml-1">{item.isBanner ? 'Harga /m²' : 'Harga Satuan'}</label>
-                                  <div className="relative">
-                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary/40 italic">Rp</span>
-                                    <input className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 focus:border-primary p-3 pl-8 rounded-xl outline-none font-bold text-sm text-right text-primary" value={formatIDR(item.price.toString())} onChange={(e) => updateOrderItem(item.id, 'price', parseFloat(unformatIDR(e.target.value)) || 0)} />
-                                  </div>
-                                </div>
-                                <div className="space-y-1">
-                                  <label className="text-[9px] font-bold uppercase text-primary tracking-widest ml-1">Subtotal Item</label>
-                                  <div className="w-full bg-slate-900 border border-white/5 p-3 rounded-xl flex justify-between items-center shadow-lg shadow-black/20">
-                                    <span className="text-[8px] font-bold text-white/20 uppercase tracking-tighter italic">Total</span>
-                                    <span className="text-sm font-bold text-primary italic">Rp {formatIDR(item.total)}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                ) : (
+                  /* --- STEP 2: DETAILS (LANDSCAPE) --- */
+                  <div className="animate-fade-in space-y-10">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 shadow-inner">
+                      <div className="flex gap-8">
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-muted opacity-60 mb-1">Pelanggan</p>
+                          <p className="text-sm font-bold uppercase italic">{formData.customerName}</p>
                         </div>
-                        {item.isBanner && (
-                          <div className="absolute -left-1 top-6 bottom-6 w-1 bg-primary rounded-full shadow-lg shadow-primary/30" />
-                        )}
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-widest text-muted opacity-60 mb-1">Deadline</p>
+                          <p className="text-sm font-bold italic">{formData.dueDate}</p>
+                        </div>
                       </div>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setPreorderStep('config')}
+                        className="text-[10px] font-bold text-primary hover:underline uppercase tracking-tighter"
+                      >
+                         Ubah Data Dasar ✎
+                      </button>
+                    </div>
+
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center px-1">
+                        <div>
+                          <h3 className="text-sm font-bold uppercase tracking-[0.1em] text-slate-800 dark:text-white italic flex items-center gap-3">
+                            Daftar Spesifikasi Produk
+                            <span className="px-2 py-0.5 rounded bg-primary text-white text-[9px] not-italic font-bold">{orderItems.length} ITEM</span>
+                          </h3>
+                          <p className="text-[10px] text-muted font-bold uppercase tracking-widest mt-1 opacity-60">Rincian dimensi, qty, dan harga</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={addOrderItem}
+                          className="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-2xl text-[10px] font-bold tracking-widest flex items-center gap-3 shadow-lg shadow-primary/20 hover:scale-105 transition-all uppercase"
+                        >
+                          <Plus size={16} /> Tambah Barang
+                        </button>
+                      </div>
+
+                      <div className="space-y-6">
+                        {orderItems.map((item, idx) => (
+                          <div key={item.id} className="relative animate-slide-up group" style={{ animationDelay: `${idx * 0.1}s` }}>
+                            <div className={`p-6 rounded-[2rem] border transition-all duration-300 ${item.isBanner ? 'bg-primary/5 border-primary/20 shadow-primary/5' : 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 shadow-sm'}`}>
+                              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                                {/* Primary Info */}
+                                <div className="lg:col-span-12 xl:col-span-7 space-y-4">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="space-y-1.5">
+                                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1">Nama Barang / Jasa Cetak</label>
+                                      <input
+                                        className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-5 py-3.5 rounded-2xl outline-none font-semibold text-sm italic focus:border-primary transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20"
+                                        placeholder="Spanduk, Kartu Nama, Jasa Design..."
+                                        value={item.name}
+                                        onChange={(e) => updateOrderItem(item.id, 'name', e.target.value)}
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1">Material / Bahan</label>
+                                      <input
+                                        className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 px-5 py-3.5 rounded-2xl outline-none font-semibold text-sm italic focus:border-primary transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20"
+                                        placeholder="Flexi 340, Art Carton 260, dll"
+                                        value={item.bahan}
+                                        onChange={(e) => updateOrderItem(item.id, 'bahan', e.target.value)}
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted opacity-60 px-1 flex items-center gap-2">
+                                      <MessageSquare size={12} className="text-primary" /> Catatan Produksi / Finishing
+                                    </label>
+                                    <textarea
+                                      className="w-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-4 rounded-2xl outline-none font-semibold text-xs italic focus:border-primary transition-all min-h-[60px] resize-none dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20"
+                                      placeholder="Contoh: Mata ayam di setiap pojok, laminasi doff, potong rapi..."
+                                      value={item.notes}
+                                      onChange={(e) => updateOrderItem(item.id, 'notes', e.target.value)}
+                                    />
+                                  </div>
+                                </div>
+
+                                {/* Controls & Math */}
+                                <div className="lg:col-span-12 xl:col-span-5 space-y-6">
+                                  <div className="flex items-center justify-between p-2 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5">
+                                    <div className="flex gap-2">
+                                      <button
+                                        type="button"
+                                        onClick={() => updateOrderItem(item.id, 'isBanner', false)}
+                                        className={`px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest transition-all ${!item.isBanner ? 'bg-primary text-white shadow-lg' : 'text-muted hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                      >
+                                        SATUAN
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => updateOrderItem(item.id, 'isBanner', true)}
+                                        className={`px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest transition-all ${item.isBanner ? 'bg-primary text-white shadow-lg' : 'text-muted hover:bg-slate-200 dark:hover:bg-white/10'}`}
+                                      >
+                                        BANNER
+                                      </button>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeOrderItem(item.id)}
+                                      className="p-2 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl transition-all"
+                                      title="Hapus Item"
+                                    >
+                                      <Trash2 size={18} />
+                                    </button>
+                                  </div>
+
+                                  <div className="grid grid-cols-12 gap-3 items-end">
+                                    {item.isBanner && (
+                                      <>
+                                        <div className="col-span-3 space-y-1">
+                                          <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">L (m)</label>
+                                          <input type="number" step="0.1" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.p} onChange={(e) => updateOrderItem(item.id, 'p', parseFloat(e.target.value) || 0)} />
+                                        </div>
+                                        <div className="col-span-1 pb-3 text-center text-muted font-bold">×</div>
+                                        <div className="col-span-3 space-y-1">
+                                          <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">T (m)</label>
+                                          <input type="number" step="0.1" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.l} onChange={(e) => updateOrderItem(item.id, 'l', parseFloat(e.target.value) || 0)} />
+                                        </div>
+                                        <div className="col-span-5 space-y-1">
+                                          <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">Quantity</label>
+                                          <input type="number" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-2.5 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.qty} onChange={(e) => updateOrderItem(item.id, 'qty', parseInt(e.target.value) || 0)} />
+                                        </div>
+                                      </>
+                                    )}
+                                    {!item.isBanner && (
+                                      <div className="col-span-12 space-y-1">
+                                        <label className="text-[9px] font-bold uppercase text-muted text-center block tracking-widest">Jumlah (Qty)</label>
+                                        <input type="number" className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 p-3 rounded-xl outline-none font-bold text-sm text-center dark:text-white" value={item.qty} onChange={(e) => updateOrderItem(item.id, 'qty', parseInt(e.target.value) || 0)} />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-bold uppercase text-muted tracking-widest ml-1">{item.isBanner ? 'Harga /m²' : 'Harga Satuan'}</label>
+                                      <div className="relative">
+                                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-bold text-primary/40 italic">Rp</span>
+                                        <input className="w-full bg-white dark:bg-bg-dark border border-slate-200 dark:border-white/10 focus:border-primary p-3 pl-8 rounded-xl outline-none font-bold text-sm text-right text-primary" value={formatIDR(item.price.toString())} onChange={(e) => updateOrderItem(item.id, 'price', parseFloat(unformatIDR(e.target.value)) || 0)} />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <label className="text-[9px] font-bold uppercase text-primary tracking-widest ml-1">Subtotal Item</label>
+                                      <div className="w-full bg-slate-900 border border-white/5 p-3 rounded-xl flex justify-between items-center shadow-lg shadow-black/20">
+                                        <span className="text-[8px] font-bold text-white/20 uppercase tracking-tighter italic">Total</span>
+                                        <span className="text-sm font-bold text-primary italic">Rp {formatIDR(item.total)}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            {item.isBanner && (
+                              <div className="absolute -left-1 top-6 bottom-6 w-1 bg-primary rounded-full shadow-lg shadow-primary/30" />
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
-              {/* FOOTER SUMMARY SECTION */}
-              <div className="px-10 py-8 bg-white dark:bg-black/40 border-t border-slate-200 dark:border-white/5 flex flex-col xl:flex-row justify-between items-center gap-10 shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-                <div className="flex flex-wrap gap-12 items-center w-full xl:w-auto">
-                  <div className="space-y-3 flex-1 min-w-[200px]">
-                    <div className="flex items-center gap-2 px-1">
-                      <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                      <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-success block">Uang Muka (DP)</label>
+              {/* FOOTER SUMMARY SECTION (Hanya tampil di Step 2) */}
+              {preorderStep === 'input' && (
+                <div className="px-10 py-8 bg-white dark:bg-black/40 border-t border-slate-200 dark:border-white/5 flex flex-col xl:flex-row justify-between items-center gap-10 shrink-0 shadow-[0_-10px_30px_rgba(0,0,0,0.05)] animate-slide-up">
+                  <div className="flex flex-wrap gap-12 items-center w-full xl:w-auto">
+                    <div className="space-y-3 flex-1 min-w-[200px]">
+                      <div className="flex items-center gap-2 px-1">
+                        <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+                        <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-success block">Uang Muka (DP)</label>
+                      </div>
+                      <div className="relative group">
+                        <div className="absolute left-5 top-1/2 -translate-y-1/2 text-success font-bold text-lg italic">Rp</div>
+                        <input className="w-full xl:w-64 bg-slate-100 dark:bg-white/5 border-2 border-success/10 focus:border-success px-12 py-4 rounded-3xl outline-none font-bold text-2xl text-success text-right shadow-sm transition-all" value={formatIDR(formData.downPayment)} onChange={(e) => setFormData({ ...formData, downPayment: unformatIDR(e.target.value) })} />
+                      </div>
+                      <p className="text-[9px] text-muted font-bold uppercase tracking-widest pl-2">Sistem mencatat sebagai pemasukan</p>
                     </div>
-                    <div className="relative group">
-                      <div className="absolute left-5 top-1/2 -translate-y-1/2 text-success font-bold text-lg italic">Rp</div>
-                      <input className="w-full xl:w-64 bg-slate-100 dark:bg-white/5 border-2 border-success/10 focus:border-success px-12 py-4 rounded-3xl outline-none font-bold text-2xl text-success text-right shadow-sm transition-all" value={formatIDR(formData.downPayment)} onChange={(e) => setFormData({...formData, downPayment: unformatIDR(e.target.value)})} />
+
+                    <div className="bg-gradient-to-br from-primary to-rose-600 text-white p-7 rounded-[2.5rem] shadow-2xl shadow-primary/30 relative overflow-hidden flex-1 min-w-[280px]">
+                      <div className="relative z-10 flex justify-between items-end">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/40 block mb-1">Sisa Pelunasan</span>
+                          <div className="text-3xl font-bold italic tracking-tighter">Rp {formatIDR(Math.max(0, (parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.downPayment) || 0)))}</div>
+                        </div>
+                        <div className="hidden sm:block text-right">
+                          <span className="text-[9px] font-bold uppercase tracking-widest text-white/30 block mb-1">Status</span>
+                          <span className="text-[11px] font-bold italic bg-white/20 px-3 py-1 rounded-full border border-white/20">{(parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.downPayment) || 0) <= 0 ? 'LUNAS' : 'PENDING'}</span>
+                        </div>
+                      </div>
+                      <Calculator className="absolute -right-6 -bottom-6 text-white/10" size={120} />
                     </div>
-                    <p className="text-[9px] text-muted font-bold uppercase tracking-widest pl-2">Sistem mencatat sebagai pemasukan</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-primary to-rose-600 text-white p-7 rounded-[2.5rem] shadow-2xl shadow-primary/30 relative overflow-hidden flex-1 min-w-[280px]">
-                    <div className="relative z-10 flex justify-between items-end">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-white/40 block mb-1">Sisa Pelunasan</span>
-                        <div className="text-3xl font-bold italic tracking-tighter">Rp {formatIDR(Math.max(0, (parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.downPayment) || 0)))}</div>
-                      </div>
-                      <div className="hidden sm:block text-right">
-                         <span className="text-[9px] font-bold uppercase tracking-widest text-white/30 block mb-1">Status</span>
-                         <span className="text-[11px] font-bold italic bg-white/20 px-3 py-1 rounded-full border border-white/20">{(parseFloat(formData.totalAmount) || 0) - (parseFloat(formData.downPayment) || 0) <= 0 ? 'LUNAS' : 'PENDING'}</span>
-                      </div>
+                  <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[300px]">
+                    <div className="flex justify-between items-end px-3">
+                      <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Grand Total Bruto: </span>
+                      <span className="text-2xl font-bold text-slate-900 dark:text-white italic tracking-tight leading-none">Rp {formatIDR(formData.totalAmount)}</span>
                     </div>
-                    <Calculator className="absolute -right-6 -bottom-6 text-white/10" size={120} />
+                    <button
+                      type="submit"
+                      onClick={handleSave}
+                      className="w-full bg-slate-900 dark:bg-primary hover:bg-slate-800 dark:hover:bg-primary-hover text-white py-6 rounded-3xl font-bold italic text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
+                    >
+                      Catat & Kirim SPK
+                      <Send size={24} className="group-hover:translate-x-1 transition-transform" />
+                    </button>
                   </div>
                 </div>
-
-                <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[300px]">
-                  <div className="flex justify-between items-end px-3">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Grand Total Bruto: </span>
-                    <span className="text-2xl font-bold text-slate-900 dark:text-white italic tracking-tight leading-none">Rp {formatIDR(formData.totalAmount)}</span>
-                  </div>
-                  <button 
-                    type="submit" 
-                    onClick={handleSave} 
-                    className="w-full bg-slate-900 dark:bg-primary hover:bg-slate-800 dark:hover:bg-primary-hover text-white py-6 rounded-3xl font-bold italic text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
-                  > 
-                    TERBITKAN NOTA 
-                    <CheckCircle2 size={24} className="group-hover:translate-x-1 transition-transform" /> 
-                  </button>
-                </div>
-              </div>
-
+              )}
             </div>
           </div>
         </div>,
         document.body
-      )}
+      ) : null}
 
-      {showDetailModal && selectedPreorder && createPortal(
+      {showDetailModal && selectedPreorder ? createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-[120] px-4 py-4 overflow-hidden">
           <div className="w-full flex justify-center items-center h-full">
             <div className="w-full max-w-4xl max-h-[90vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[2.5rem] overflow-hidden shadow-2xl">              <div className="px-8 py-5 bg-slate-900 text-white flex justify-between items-center shrink-0 border-b border-white/5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-64 h-full bg-primary/10 -skew-x-12 transform translate-x-32" />
-                <div className="flex items-center gap-5 relative z-10">
-                  <div className="w-11 h-11 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-xl shadow-primary/10">
-                    <ShoppingBag size={22} />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold uppercase tracking-tight italic">Detail Order #{selectedPreorder.id}</h2>
-                    <p className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">Multi-Order Tracking System</p>
-                  </div>
+              <div className="absolute top-0 right-0 w-64 h-full bg-primary/10 -skew-x-12 transform translate-x-32" />
+              <div className="flex items-center gap-5 relative z-10">
+                <div className="w-11 h-11 rounded-2xl bg-primary/20 flex items-center justify-center text-primary shadow-xl shadow-primary/10">
+                  <ShoppingBag size={22} />
                 </div>
-                <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all opacity-60 hover:opacity-100 group" onClick={() => setShowDetailModal(false)}>
-                  <X size={20} className="group-hover:rotate-90 transition-transform" />
-                </button>
+                <div>
+                  <h2 className="text-xl font-bold uppercase tracking-tight italic">Detail Order #{selectedPreorder.id}</h2>
+                  <p className="text-white/40 text-[9px] font-bold tracking-[0.4em] uppercase">Multi-Order Tracking System</p>
+                </div>
               </div>
+              <button className="w-10 h-10 rounded-full hover:bg-white/10 flex items-center justify-center transition-all opacity-60 hover:opacity-100 group" onClick={() => setShowDetailModal(false)}>
+                <X size={20} className="group-hover:rotate-90 transition-transform" />
+              </button>
+            </div>
 
               <div className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-thin">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8 bg-slate-50 dark:bg-white/5 p-8 rounded-[2rem] border border-slate-100 dark:border-white/5 shadow-inner">
-                   <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5">Nama Pelanggan</span>
-                      <div className="font-bold text-sm italic dark:text-white uppercase tracking-tight">{selectedPreorder.customerName}</div>
-                   </div>
-                   <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5">Estimasi Selesai</span>
-                      <div className="font-bold text-sm italic dark:text-white flex items-center gap-2">
-                        <Calendar size={14} className="text-primary" /> {selectedPreorder.dueDate}
-                      </div>
-                   </div>
-                   <div className="space-y-1.5">
-                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5 text-center">Status Produksi</span>
-                      <div className="flex justify-center">{getStatusBadge(selectedPreorder.status)}</div>
-                   </div>
-                   <div className="space-y-1.5 text-right">
-                      <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 mr-0.5">Nomor Invoice</span>
-                      <div className="font-bold text-sm italic text-primary tracking-widest">INV-{selectedPreorder.id.toString().padStart(4, '0')}</div>
-                   </div>
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5">Nama Pelanggan</span>
+                    <div className="font-bold text-sm italic dark:text-white uppercase tracking-tight">{selectedPreorder.customerName}</div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5">Estimasi Selesai</span>
+                    <div className="font-bold text-sm italic dark:text-white flex items-center gap-2">
+                      <Calendar size={14} className="text-primary" /> {selectedPreorder.dueDate}
+                    </div>
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 ml-0.5 text-center">Status Produksi</span>
+                    <div className="flex justify-center">{getStatusBadge(selectedPreorder.status)}</div>
+                  </div>
+                  <div className="space-y-1.5 text-right">
+                    <span className="text-[10px] font-bold uppercase text-muted tracking-[0.2em] block opacity-60 mr-0.5">Nomor Invoice</span>
+                    <div className="font-bold text-sm italic text-primary tracking-widest">INV-{selectedPreorder.id.toString().padStart(4, '0')}</div>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -618,8 +717,8 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                         <div className="flex-1 min-w-0">
                           <div className="font-bold text-md uppercase italic dark:text-white leading-tight mb-1">{item.name}</div>
                           <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold text-muted uppercase tracking-widest opacity-60">
-                             <span className="flex items-center gap-1.5"><Package size={12} className="text-primary/60" /> {item.bahan || 'Reguler'}</span>
-                             {item.notes && <span className="flex items-center gap-1.5 text-primary italic lowercase font-medium">— {item.notes}</span>}
+                            <span className="flex items-center gap-1.5"><Package size={12} className="text-primary/60" /> {item.bahan || 'Reguler'}</span>
+                            {item.notes && <span className="flex items-center gap-1.5 text-primary italic lowercase font-medium">— {item.notes}</span>}
                           </div>
                         </div>
                         <div className="text-center px-4 shrink-0 border-x border-slate-100 dark:border-white/5 hidden sm:block">
@@ -641,33 +740,33 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
               <div className="px-10 py-8 bg-slate-50 dark:bg-black/40 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center shrink-0 gap-10">
                 <div className="flex flex-wrap gap-12 items-center">
                   <div className="space-y-1">
-                     <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic">Total Kontrak</span>
-                     <div className="text-2xl font-bold italic dark:text-white tracking-tight">Rp {formatIDR(selectedPreorder.totalAmount)}</div>
+                    <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic">Total Kontrak</span>
+                    <div className="text-2xl font-bold italic dark:text-white tracking-tight">Rp {formatIDR(selectedPreorder.totalAmount)}</div>
                   </div>
                   <div className="space-y-1">
-                     <span className="text-[10px] font-bold uppercase text-success tracking-widest block italic">Uang Muka (DP)</span>
-                     <div className="text-2xl font-bold text-success italic tracking-tight">Rp {formatIDR(selectedPreorder.downPayment)}</div>
+                    <span className="text-[10px] font-bold uppercase text-success tracking-widest block italic">Uang Muka (DP)</span>
+                    <div className="text-2xl font-bold text-success italic tracking-tight">Rp {formatIDR(selectedPreorder.downPayment)}</div>
                   </div>
                   <div className="bg-primary/5 dark:bg-primary/10 px-8 py-4 rounded-[1.8rem] border border-primary/20 shadow-xl shadow-primary/5">
-                     <span className="text-[11px] font-bold uppercase text-primary tracking-[0.2em] block mb-1">Sisa Pelunasan</span>
-                     <div className="text-3xl font-bold text-primary italic tracking-tighter">Rp {formatIDR(selectedPreorder.remainingAmount)}</div>
+                    <span className="text-[11px] font-bold uppercase text-primary tracking-[0.2em] block mb-1">Sisa Pelunasan</span>
+                    <div className="text-3xl font-bold text-primary italic tracking-tighter">Rp {formatIDR(selectedPreorder.remainingAmount)}</div>
                   </div>
                 </div>
                 <div className="flex gap-4 w-full md:w-auto">
-                   <button className="flex-1 md:flex-none px-8 py-4 rounded-2xl font-bold text-muted border border-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-xs tracking-widest uppercase italic" onClick={() => setShowDetailModal(false)}> TUTUP </button>
-                   <button 
-                     className="flex-1 md:flex-none bg-primary hover:bg-primary-hover text-white px-10 py-4 rounded-2xl font-bold italic text-sm shadow-2xl shadow-primary/30 flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all group" 
-                     onClick={() => generatePreorderInvoicePDF('UD. DM FOTO', selectedPreorder, 'light')}
-                   > 
-                     <FileText size={20} className="group-hover:translate-y-[-2px] transition-transform" /> CETAK NOTA 
-                   </button>
+                  <button className="flex-1 md:flex-none px-8 py-4 rounded-2xl font-bold text-muted border border-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-xs tracking-widest uppercase italic" onClick={() => setShowDetailModal(false)}> TUTUP </button>
+                  <button
+                    className="flex-1 md:flex-none bg-primary hover:bg-primary-hover text-white px-10 py-4 rounded-2xl font-bold italic text-sm shadow-2xl shadow-primary/30 flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all group"
+                    onClick={() => generatePreorderInvoicePDF('UD. DM FOTO', selectedPreorder, 'light')}
+                  >
+                    <FileText size={20} className="group-hover:translate-y-[-2px] transition-transform" /> CETAK NOTA
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         </div>,
         document.body
-      )}
+      ) : null}
     </div>
   );
 };

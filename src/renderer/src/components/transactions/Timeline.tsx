@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit2, Trash2, ShoppingBag, CreditCard, Wallet, Banknote, History } from 'lucide-react';
+import { Edit2, Trash2, ShoppingBag, CreditCard, Wallet, Banknote, History, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatIDR } from '../../utils/formatters';
 
 interface TimelineProps {
@@ -132,26 +132,28 @@ const Timeline: React.FC<TimelineProps> = ({
         ))}
       </div>
 
-      <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-100 dark:border-white/5">
-        <span className="text-xs text-slate-500 dark:text-text-muted font-black tracking-widest uppercase opacity-60">
-          Page {currentPage} of {totalPages}
-        </span>
-        <div className="flex gap-2">
-          <button
-            className="btn px-4 py-2 text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-white/10"
-            disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => p - 1)}
-          >
-            Prev
-          </button>
-          <button
-            className="btn btn-primary px-4 py-2 text-xs font-bold uppercase tracking-widest"
-            disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => p + 1)}
-          >
-            Next
-          </button>
+      <div className="flex justify-center items-center gap-2 mt-8 pt-6 border-t border-slate-100 dark:border-white/5">
+        <button
+          onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+          disabled={currentPage === 1}
+          className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+        >
+          <ChevronLeft size={18} />
+        </button>
+
+        <div className="flex items-center gap-1.5 px-4">
+          <span className="text-sm font-black text-primary">{currentPage}</span>
+          <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>
+          <span className="text-sm font-black text-muted">{totalPages}</span>
         </div>
+
+        <button
+          onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+          disabled={currentPage === totalPages}
+          className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+        >
+          <ChevronRight size={18} />
+        </button>
       </div>
     </div>
   );

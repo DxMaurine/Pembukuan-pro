@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Coins, Plus, Calendar, TrendingUp, History, Info, X, Pencil } from 'lucide-react';
+import { Coins, Plus, Calendar, TrendingUp, History, Info, X, Pencil, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
 import { months, getYearOptions } from '../../utils/dateUtils';
 import Swal from 'sweetalert2';
@@ -21,6 +21,8 @@ interface CapitalManagerProps {
 
 const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, api }) => {
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 10;
   const today = new Date();
   const [formData, setFormData] = useState({
     amount: '',
@@ -118,36 +120,77 @@ const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, 
                   <td colSpan={3} className="py-10 text-center text-muted text-sm opacity-50 italic">Belum ada riwayat modal yang tercatat.</td>
                 </tr>
               ) : (
-                capitalData.slice().sort((a,b) => b.id - a.id).map(cap => (
-                  <tr key={cap.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
-                    <td className="py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-slate-100 dark:bg-white/10 rounded-lg text-muted group-hover:text-primary transition-colors">
-                          <Calendar size={14} />
-                        </div>
-                        <span className="text-sm font-bold">{months[cap.month]} {cap.year}</span>
-                      </div>
-                    </td>
-                    <td className="py-4 text-xs text-muted font-medium">
-                      {new Date(cap.date).toLocaleDateString('id-ID')}
-                    </td>
-                    <td className="py-4 text-sm font-black text-right">
-                      Rp {formatIDR(cap.amount)}
-                    </td>
-                    <td className="py-4 text-right">
-                      <button 
-                        onClick={() => handleEditClick(cap)} 
-                        className="btn p-2 bg-slate-200 dark:bg-white/10 shadow-none hover:bg-primary/20 hover:text-primary transition-colors border-none opacity-0 group-hover:opacity-100"
-                      >
-                        <Pencil size={12} />
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                (() => {
+                  const sortedData = capitalData.slice().sort((a, b) => b.id - a.id);
+                  const currentEntries = sortedData.slice((currentPage - 1) * entriesPerPage, currentPage * entriesPerPage);
+
+                  return (
+                    <>
+                      {currentEntries.map(cap => (
+                        <tr key={cap.id} className="border-b border-slate-100 dark:border-white/5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors group">
+                          <td className="py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-slate-100 dark:bg-white/10 rounded-lg text-muted group-hover:text-primary transition-colors">
+                                <Calendar size={14} />
+                              </div>
+                              <span className="text-sm font-bold">{months[cap.month]} {cap.year}</span>
+                            </div>
+                          </td>
+                          <td className="py-4 text-xs text-muted font-medium">
+                            {new Date(cap.date).toLocaleDateString('id-ID')}
+                          </td>
+                          <td className="py-4 text-sm font-black text-right">
+                            Rp {formatIDR(cap.amount)}
+                          </td>
+                          <td className="py-4 text-right">
+                            <button 
+                              onClick={() => handleEditClick(cap)} 
+                              className="btn p-2 bg-slate-200 dark:bg-white/10 shadow-none hover:bg-primary/20 hover:text-primary transition-colors border-none opacity-0 group-hover:opacity-100"
+                            >
+                              <Pencil size={12} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </>
+                  );
+                })()
               )}
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Controls */}
+        {(() => {
+          const totalPages = Math.ceil(capitalData.length / entriesPerPage) || 1;
+          if (totalPages <= 1) return null;
+
+          return (
+            <div className="flex justify-center items-center gap-2 mt-4 py-4 border-t border-slate-200 dark:border-white/5">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+              >
+                <ChevronLeft size={18} />
+              </button>
+
+              <div className="flex items-center gap-1.5 px-4">
+                <span className="text-sm font-black text-primary">{currentPage}</span>
+                <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>
+                <span className="text-sm font-black text-muted">{totalPages}</span>
+              </div>
+
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="btn p-3 bg-slate-100 dark:bg-white/5 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all hover:bg-slate-200 dark:hover:bg-white/10 shadow-sm"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          );
+        })()}
       </div>
 
       {showModal && createPortal(

@@ -120,7 +120,7 @@ const Overview: React.FC<OverviewProps> = ({
 
       <div className="glass-card">
         <h3 className="mb-6 text-xl flex items-center gap-2">
-          Grafik Arus Kas (Income vs Expense)
+          Grafik Arus Kas & Mutasi Masuk
         </h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -133,6 +133,10 @@ const Overview: React.FC<OverviewProps> = ({
                 <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
                   <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                </linearGradient>
+                <linearGradient id="colorMutation" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.15)'} />
@@ -159,7 +163,7 @@ const Overview: React.FC<OverviewProps> = ({
                           <div key={idx} className="flex items-center gap-3 mb-2 last:mb-0">
                             <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: entry.color }} />
                             <span className="text-xs font-medium dark:text-muted">
-                              {entry.name === 'income' ? 'Masuk' : 'Keluar'}:
+                              {entry.name === 'income' ? 'Masuk' : entry.name === 'expense' ? 'Keluar' : 'Mutasi'}:
                             </span>
                             <span className="text-xs font-bold dark:text-white">
                               Rp {formatIDR(entry.value as number)}
@@ -188,6 +192,15 @@ const Overview: React.FC<OverviewProps> = ({
                 strokeWidth={4}
                 fillOpacity={1}
                 fill="url(#colorExpense)"
+                animationDuration={1500}
+              />
+              <Area
+                type="monotone"
+                dataKey="mutation"
+                stroke="#3b82f6"
+                strokeWidth={4}
+                fillOpacity={1}
+                fill="url(#colorMutation)"
                 animationDuration={1500}
               />
             </AreaChart>

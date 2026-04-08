@@ -143,31 +143,35 @@ export default function App() {
   const handleStockDone = (item: any) => {
     Alert.alert('Tandai Sudah Dibeli?', `"${item.name}" akan ditandai sudah dibeli.`, [
       { text: 'Batal', style: 'cancel' },
-      { text: '✅ Ya, Sudah Dibeli', onPress: async () => {
-        await addDoc(collection(db, 'mobile_stock_actions'), {
-          action: 'done', id: item.id, processed: false, timestamp: serverTimestamp()
-        });
-      }}
+      {
+        text: '✅ Ya, Sudah Dibeli', onPress: async () => {
+          await addDoc(collection(db, 'mobile_stock_actions'), {
+            action: 'done', id: item.id, processed: false, timestamp: serverTimestamp()
+          });
+        }
+      }
     ]);
   };
 
   const handleStockDelete = (item: any) => {
     Alert.alert('Hapus Catatan?', `"${item.name}" akan dihapus permanen.`, [
       { text: 'Batal', style: 'cancel' },
-      { text: '🗑️ Hapus', style: 'destructive', onPress: async () => {
-        await addDoc(collection(db, 'mobile_stock_actions'), {
-          action: 'delete', id: item.id, processed: false, timestamp: serverTimestamp()
-        });
-      }}
+      {
+        text: '🗑️ Hapus', style: 'destructive', onPress: async () => {
+          await addDoc(collection(db, 'mobile_stock_actions'), {
+            action: 'delete', id: item.id, processed: false, timestamp: serverTimestamp()
+          });
+        }
+      }
     ]);
   };
 
   const handleAddFinanceSource = async () => {
     if (!selectedMethod || !newBalance) return;
-    
+
     // Clean
     const amount = parseInt(newBalance.replace(/\D/g, '')) || 0;
-    
+
     try {
       setLoading(true);
       await addDoc(collection(db, 'mobile_stock_actions'), {
@@ -272,17 +276,17 @@ export default function App() {
           </View>
         </View>
         <Text style={styles.cardValue}>{formatIDR(summary?.balance)}</Text>
-        
+
         {/* Breakdown Row */}
         <View style={styles.breakdownRow}>
-           <View style={styles.breakdownItem}>
-              <Text style={styles.breakdownLabel}>Kas Tunai</Text>
-              <Text style={styles.breakdownValue}>{formatIDR(summary?.transBalance)}</Text>
-           </View>
-           <View style={[styles.breakdownItem, { alignItems: 'flex-end' }]}>
-              <Text style={styles.breakdownLabel}>Dompet / QRIS</Text>
-              <Text style={styles.breakdownValue}>{formatIDR(summary?.walletBalance)}</Text>
-           </View>
+          <View style={styles.breakdownItem}>
+            <Text style={styles.breakdownLabel}>Kas Tunai</Text>
+            <Text style={styles.breakdownValue}>{formatIDR(summary?.transBalance)}</Text>
+          </View>
+          <View style={[styles.breakdownItem, { alignItems: 'flex-end' }]}>
+            <Text style={styles.breakdownLabel}>Dompet / QRIS</Text>
+            <Text style={styles.breakdownValue}>{formatIDR(summary?.walletBalance)}</Text>
+          </View>
         </View>
 
         <View style={styles.divider} />
@@ -309,8 +313,8 @@ export default function App() {
       </View>
 
       {/* Audit Trail Shortcut Card */}
-      <TouchableOpacity 
-        style={[styles.card, { backgroundColor: theme.card }]} 
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.card }]}
         onPress={() => setActiveTab('history')}
       >
         <View style={styles.row}>
@@ -318,15 +322,15 @@ export default function App() {
             <History color={theme.primary} size={24} />
           </View>
           <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={[styles.cardTitle, { color: theme.text }]}>Audit Trail Semesta</Text>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>History All Transaksi</Text>
             <Text style={[styles.cardDesc, { color: theme.subText }]}>Pantau {summary?.unifiedHistory?.length || 0} riwayat mutasi (Kas & QRIS).</Text>
           </View>
         </View>
       </TouchableOpacity>
 
       {/* Stock Summary Card */}
-      <TouchableOpacity 
-        style={[styles.card, { backgroundColor: theme.card }]} 
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.card }]}
         onPress={() => setActiveTab('stock')}
       >
         <View style={styles.row}>
@@ -444,8 +448,8 @@ export default function App() {
         <View style={styles.filterSection}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.monthScroll}>
             {months.map((m, idx) => (
-              <TouchableOpacity 
-                key={m} 
+              <TouchableOpacity
+                key={m}
                 onPress={() => handleMonthChange(idx)}
                 style={[styles.monthTab, filterMonth === idx && { backgroundColor: theme.primary, borderColor: theme.primary }]}
               >
@@ -454,26 +458,26 @@ export default function App() {
             ))}
           </ScrollView>
           <View style={styles.yearRow}>
-             <TouchableOpacity onPress={() => { const y = filterYear - 1; setFilterYear(y); requestSync(filterMonth, y); }}>
-               <Text style={[styles.yearNav, { color: theme.primary }]}>◀</Text>
-             </TouchableOpacity>
-             <Text style={[styles.yearText, { color: theme.text }]}>{filterYear}</Text>
-             <TouchableOpacity onPress={() => { const y = filterYear + 1; setFilterYear(y); requestSync(filterMonth, y); }}>
-               <Text style={[styles.yearNav, { color: theme.primary }]}>▶</Text>
-             </TouchableOpacity>
-             
-             <TouchableOpacity 
-              style={[styles.miniSyncBtn, { backgroundColor: theme.card }]} 
+            <TouchableOpacity onPress={() => { const y = filterYear - 1; setFilterYear(y); requestSync(filterMonth, y); }}>
+              <Text style={[styles.yearNav, { color: theme.primary }]}>◀</Text>
+            </TouchableOpacity>
+            <Text style={[styles.yearText, { color: theme.text }]}>{filterYear}</Text>
+            <TouchableOpacity onPress={() => { const y = filterYear + 1; setFilterYear(y); requestSync(filterMonth, y); }}>
+              <Text style={[styles.yearNav, { color: theme.primary }]}>▶</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.miniSyncBtn, { backgroundColor: theme.card }]}
               onPress={() => requestSync(filterMonth, filterYear)}
-             >
-               <RefreshCw size={14} color={theme.primary} />
-             </TouchableOpacity>
+            >
+              <RefreshCw size={14} color={theme.primary} />
+            </TouchableOpacity>
           </View>
         </View>
 
         <View style={styles.historyHeader}>
           <Text style={[styles.tabHeading, { color: theme.text, marginBottom: 0 }]}>
-             Audit Trail (Kas & Dompet)
+            Audit Trail (Kas & Dompet)
           </Text>
         </View>
 
@@ -484,22 +488,22 @@ export default function App() {
           renderItem={({ item }) => (
             <View style={[styles.listItem, { backgroundColor: theme.card, marginBottom: 12 }]}>
               <View style={[styles.listItemIcon, { backgroundColor: item.source === 'manual' ? (item.type === 'income' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)') : 'rgba(99,102,241,0.1)' }]}>
-                 {item.source === 'wallet' ? (
-                   <Wallet color={theme.primary} size={20} />
-                 ) : (
-                   item.type === 'income' ? <TrendingUp color={theme.success} size={20} /> : <TrendingDown color={theme.danger} size={20} />
-                 )}
+                {item.source === 'wallet' ? (
+                  <Wallet color={theme.primary} size={20} />
+                ) : (
+                  item.type === 'income' ? <TrendingUp color={theme.success} size={20} /> : <TrendingDown color={theme.danger} size={20} />
+                )}
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.row}>
-                   <View style={[styles.sourceBadge, { backgroundColor: item.source === 'wallet' ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)' }]}>
-                      <Text style={[styles.sourceText, { color: item.source === 'wallet' ? theme.success : theme.primary }]}>
-                         {item.source === 'wallet' ? 'QRIS' : 'KAS'}
-                      </Text>
-                   </View>
-                   <Text style={[styles.listItemTitle, { color: theme.text, marginLeft: 6 }]} numberOfLines={1}>
-                      {item.description || (item.source === 'wallet' ? 'QRIS Income' : 'Transaksi')}
-                   </Text>
+                  <View style={[styles.sourceBadge, { backgroundColor: item.source === 'wallet' ? 'rgba(34,197,94,0.1)' : 'rgba(99,102,241,0.1)' }]}>
+                    <Text style={[styles.sourceText, { color: item.source === 'wallet' ? theme.success : theme.primary }]}>
+                      {item.source === 'wallet' ? 'QRIS' : 'KAS'}
+                    </Text>
+                  </View>
+                  <Text style={[styles.listItemTitle, { color: theme.text, marginLeft: 6 }]} numberOfLines={1}>
+                    {item.description || (item.source === 'wallet' ? 'QRIS Income' : 'Transaksi')}
+                  </Text>
                 </View>
                 <Text style={[styles.listItemSubtitle, { color: theme.subText }]}>{new Date(item.date).toLocaleDateString('id-ID')} • {item.category || '-'}</Text>
               </View>
@@ -514,7 +518,7 @@ export default function App() {
             <View style={styles.emptyState}>
               <History color={theme.subText} size={48} />
               <Text style={[styles.emptyText, { color: theme.subText }]}>Audit Trail Kosong.</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={[styles.btn, { backgroundColor: theme.primary, marginTop: 20, paddingHorizontal: 30 }]}
                 onPress={() => requestSync(filterMonth, filterYear)}
               >
@@ -535,7 +539,7 @@ export default function App() {
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 150 }]}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
           <Text style={[styles.tabHeading, { color: theme.text, marginBottom: 0 }]}>Keuangan</Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => setFinanceSubTab('add')}
             style={{ backgroundColor: 'rgba(34,197,94,0.1)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, flexDirection: 'row', alignItems: 'center' }}
           >
@@ -546,12 +550,12 @@ export default function App() {
 
         {/* Section 1: Sumber Dana (Real Data) */}
         <Text style={[styles.sectionTitle, { color: theme.text, fontSize: 16, marginBottom: 12 }]}>Sumber dana</Text>
-        
+
         <View style={styles.stackedContainer}>
           {(summary?.financeSources || []).length === 0 ? (
             <View style={[styles.financeEmptyState, { backgroundColor: theme.card, padding: 30 }]}>
-               <Info color={theme.subText} size={32} />
-               <Text style={{ color: theme.subText, marginTop: 10, textAlign: 'center' }}>Belum ada sumber dana. Klik Tambah untuk mencatat saldo Bank/Dompet Bapak.</Text>
+              <Info color={theme.subText} size={32} />
+              <Text style={{ color: theme.subText, marginTop: 10, textAlign: 'center' }}>Belum ada sumber dana. Klik Tambah untuk mencatat saldo Bank/Dompet Bapak.</Text>
             </View>
           ) : (
             summary.financeSources.map((source: any, idx: number) => {
@@ -616,15 +620,15 @@ export default function App() {
         {/* Section 2: Kas Toko (Built-in) */}
         <Text style={[styles.sectionTitle, { color: theme.text, fontSize: 16, marginTop: 24, marginBottom: 12 }]}>Saldo Toko (Sistem)</Text>
         <View style={styles.stackedContainer}>
-           <TouchableOpacity style={[styles.stackedItem, styles.stackedAlone, { backgroundColor: theme.card }]}>
-              <View style={[styles.iconCircle, { backgroundColor: '#22c55e' }]}>
-                 <Wallet color="#fff" size={20} />
-              </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={[styles.itemLabel, { color: theme.text }]}>Saldo QRIS / Digital</Text>
-                <Text style={[styles.itemValue, { color: theme.subText, fontSize: 13 }]}>{formatIDR(summary?.walletBalance)}</Text>
-              </View>
-           </TouchableOpacity>
+          <TouchableOpacity style={[styles.stackedItem, styles.stackedAlone, { backgroundColor: theme.card }]}>
+            <View style={[styles.iconCircle, { backgroundColor: '#22c55e' }]}>
+              <Wallet color="#fff" size={20} />
+            </View>
+            <View style={{ flex: 1, marginLeft: 12 }}>
+              <Text style={[styles.itemLabel, { color: theme.text }]}>Saldo QRIS / Digital</Text>
+              <Text style={[styles.itemValue, { color: theme.subText, fontSize: 13 }]}>{formatIDR(summary?.walletBalance)}</Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     );
@@ -633,15 +637,15 @@ export default function App() {
   const renderAddFinanceMethod = () => (
     <View style={styles.tabContent}>
       <View style={styles.modalHeader}>
-         <TouchableOpacity onPress={() => setFinanceSubTab('main')}>
-            <ChevronLeft color={theme.text} size={28} />
-         </TouchableOpacity>
-         <Text style={[styles.modalTitle, { color: theme.text, marginLeft: 10 }]}>Tambah Metode</Text>
+        <TouchableOpacity onPress={() => setFinanceSubTab('main')}>
+          <ChevronLeft color={theme.text} size={28} />
+        </TouchableOpacity>
+        <Text style={[styles.modalTitle, { color: theme.text, marginLeft: 10 }]}>Tambah Metode</Text>
       </View>
-      
+
       <ScrollView>
         <Text style={[styles.sectionTitle, { color: theme.subText, fontSize: 14, marginBottom: 15 }]}>Pilih Bank atau E-Wallet rujukan Bapak</Text>
-        
+
         <View style={styles.stackedContainer}>
           {[
             { name: 'BRI', type: 'Bank', color: '#00529C', icon: 'Landmark' },
@@ -650,7 +654,7 @@ export default function App() {
             { name: 'DANA', type: 'E-Wallet', color: '#118EEA', icon: 'Wallet' },
             { name: 'GOPAY', type: 'E-Wallet', color: '#00AED6', icon: 'Wallet' }
           ].map((item, idx, arr) => (
-            <TouchableOpacity 
+            <TouchableOpacity
               key={item.name}
               style={[
                 styles.stackedItem,
@@ -681,34 +685,34 @@ export default function App() {
   const renderInputFinanceBalance = () => (
     <View style={styles.tabContent}>
       <View style={styles.modalHeader}>
-         <TouchableOpacity onPress={() => setFinanceSubTab('add')}>
-            <ChevronLeft color={theme.text} size={28} />
-         </TouchableOpacity>
-         <Text style={[styles.modalTitle, { color: theme.text, marginLeft: 10 }]}>Input Saldo {selectedMethod?.name}</Text>
+        <TouchableOpacity onPress={() => setFinanceSubTab('add')}>
+          <ChevronLeft color={theme.text} size={28} />
+        </TouchableOpacity>
+        <Text style={[styles.modalTitle, { color: theme.text, marginLeft: 10 }]}>Input Saldo {selectedMethod?.name}</Text>
       </View>
 
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <View style={[styles.settingGroup, { backgroundColor: theme.card, padding: 20 }]}>
-           <Text style={[styles.inputLabel, { color: theme.subText }]}>Nominal Saldo Saat Ini (Rp)</Text>
-           <TextInput
-             style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, height: 60, fontSize: 24, fontWeight: 'bold' }]}
-             keyboardType="numeric"
-             placeholder="0"
-             placeholderTextColor={theme.subText}
-             value={newBalance}
-             onChangeText={(t) => {
-                const cleaned = t.replace(/\D/g, '');
-                setNewBalance(cleaned ? 'Rp ' + parseInt(cleaned).toLocaleString('id-ID') : '');
-             }}
-             autoFocus
-           />
-           
-           <TouchableOpacity 
-             onPress={handleAddFinanceSource}
-             style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 30, height: 55 }]}
-           >
-             <Text style={styles.actionBtnText}>Simpan Catatan Saldo</Text>
-           </TouchableOpacity>
+          <Text style={[styles.inputLabel, { color: theme.subText }]}>Nominal Saldo Saat Ini (Rp)</Text>
+          <TextInput
+            style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text, height: 60, fontSize: 24, fontWeight: 'bold' }]}
+            keyboardType="numeric"
+            placeholder="0"
+            placeholderTextColor={theme.subText}
+            value={newBalance}
+            onChangeText={(t) => {
+              const cleaned = t.replace(/\D/g, '');
+              setNewBalance(cleaned ? 'Rp ' + parseInt(cleaned).toLocaleString('id-ID') : '');
+            }}
+            autoFocus
+          />
+
+          <TouchableOpacity
+            onPress={handleAddFinanceSource}
+            style={[styles.actionBtn, { backgroundColor: theme.primary, marginTop: 30, height: 55 }]}
+          >
+            <Text style={styles.actionBtnText}>Simpan Catatan Saldo</Text>
+          </TouchableOpacity>
         </View>
       </KeyboardAvoidingView>
     </View>
@@ -717,7 +721,7 @@ export default function App() {
   const renderSettings = () => (
     <View style={styles.tabContent}>
       <Text style={[styles.tabHeading, { color: theme.text }]}>Pengaturan Aplikasi</Text>
-      
+
       {/* Profile Section */}
       <View style={[styles.profileCard, { backgroundColor: theme.card }]}>
         <View style={[styles.profileIcon, { backgroundColor: theme.primary }]}>
@@ -799,7 +803,7 @@ export default function App() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bg }]}>
       <StatusBar style={isDarkMode ? "light" : "dark"} />
-      
+
       {/* Header */}
       <View style={styles.header}>
         <View>
@@ -855,20 +859,20 @@ export default function App() {
           <LayoutDashboard color={activeTab === 'dashboard' ? theme.primary : theme.subText} size={24} />
           <Text style={[styles.navText, { color: activeTab === 'dashboard' ? theme.primary : theme.subText }]}>Beranda</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('stock')}>
           <ShoppingBag color={activeTab === 'stock' ? theme.primary : theme.subText} size={24} />
           <Text style={[styles.navText, { color: activeTab === 'stock' ? theme.primary : theme.subText }]}>Stok</Text>
         </TouchableOpacity>
 
         {/* Center Wallet Button */}
-        <TouchableOpacity 
-          style={[styles.centerNavItem, { backgroundColor: activeTab === 'finance' ? theme.primary : '#333' }]} 
+        <TouchableOpacity
+          style={[styles.centerNavItem, { backgroundColor: activeTab === 'finance' ? theme.primary : '#333' }]}
           onPress={() => setActiveTab('finance')}
         >
           <Wallet color="#fff" size={28} />
           <View style={styles.centerBadge}>
-             <Text style={{ color: '#fff', fontSize: 8, fontWeight: 'bold' }}>PRO</Text>
+            <Text style={{ color: '#fff', fontSize: 8, fontWeight: 'bold' }}>PRO</Text>
           </View>
         </TouchableOpacity>
 
@@ -885,7 +889,7 @@ export default function App() {
 
       {/* Modal Quick Expense */}
       <Modal animationType="slide" transparent={true} visible={modalVisible}>
-        <KeyboardAvoidingView 
+        <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalBg}
         >
@@ -899,11 +903,11 @@ export default function App() {
             <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: theme.subText }]}>Nominal (Rp)</Text>
-                <TextInput 
-                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]} 
-                  keyboardType="numeric" 
-                  value={amount} 
-                  onChangeText={handleAmountChange} 
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]}
+                  keyboardType="numeric"
+                  value={amount}
+                  onChangeText={handleAmountChange}
                   placeholder="0"
                   placeholderTextColor={theme.subText}
                   autoFocus
@@ -911,8 +915,8 @@ export default function App() {
               </View>
               <View style={styles.inputGroup}>
                 <Text style={[styles.inputLabel, { color: theme.subText }]}>Keterangan</Text>
-                <TextInput 
-                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]} 
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.inputBg, color: theme.text }]}
                   value={desc} onChangeText={setDesc}
                 />
               </View>
@@ -1066,7 +1070,7 @@ const styles = StyleSheet.create({
   yearText: { fontSize: 18, fontWeight: '900', minWidth: 60, textAlign: 'center' },
   miniSyncBtn: { padding: 8, borderRadius: 10, borderWidth: 1, borderColor: 'rgba(148, 163, 184, 0.1)' },
   accentCircle: { width: 38, height: 38, borderRadius: 19, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-  
+
   // Finance UI Styles
   stackedContainer: { borderRadius: 24, overflow: 'hidden' },
   stackedItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.05)' },
@@ -1077,7 +1081,7 @@ const styles = StyleSheet.create({
   iconCircle: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
   itemLabel: { fontSize: 15, fontWeight: '600' },
   itemValue: { marginTop: 2 },
-  
+
   // Bottom Nav Center Button
   centerNavItem: {
     width: 65,
@@ -1102,16 +1106,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     borderRadius: 4,
   },
-  emptyState: { 
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    padding: 20 
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20
   },
-  financeEmptyState: { 
-    borderRadius: 24, 
-    alignItems: 'center', 
-    justifyContent: 'center' 
+  financeEmptyState: {
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   actionBtn: {
     height: 50,

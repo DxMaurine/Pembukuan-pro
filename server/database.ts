@@ -74,6 +74,14 @@ export type Preorder = {
   createdAt: string;
 }
 
+export type Mutation = {
+  id: number;
+  type: 'wallet_to_cash' | 'cash_to_wallet' | 'cash_to_owner' | 'wallet_to_owner';
+  amount: number;
+  description: string;
+  date: string;
+}
+
 export type Data = {
   transactions: Transaction[];
   stock: StockItem[];
@@ -83,6 +91,7 @@ export type Data = {
   preorders: Preorder[];
   financeSources: FinanceSource[];
   settings: Record<string, any>;
+  mutations: Mutation[];
 }
 
 const defaultData: Data = { 
@@ -93,7 +102,8 @@ const defaultData: Data = {
   capital: [], 
   preorders: [],
   financeSources: [],
-  settings: { password: '0000', storeName: 'DM FOTOCOPY', autoConfirm: false } 
+  settings: { password: '0000', storeName: 'DM FOTOCOPY', autoConfirm: false },
+  mutations: []
 };
 
 const dbPath = path.resolve('f:/PEMBUKUAN APP/server/db.json');
@@ -170,6 +180,7 @@ export function clearTransactions(range: 'day' | 'month' | 'year' | 'all' | 'cus
         data.wallet = [];
         data.preorders = [];
         data.stock = [];
+        data.mutations = [];
     } else {
         if (modules.includes('transactions')) data.transactions = data.transactions.filter(t => !isResetTarget(t.date));
         if (modules.includes('wallet')) data.wallet = data.wallet.filter(w => !isResetTarget(w.date));

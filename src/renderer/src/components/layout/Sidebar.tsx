@@ -13,6 +13,7 @@ import {
   Moon,
   LogOut,
   ServerCog,
+  ArrowLeftRight,
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 
@@ -68,6 +69,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       items: [
         { id: 'debt', icon: CreditCard, label: 'Hutang Piutang' },
         { id: 'wallet', icon: Wallet, label: 'Wallet & QRIS' },
+        { id: 'mutasi', icon: ArrowLeftRight, label: 'Mutasi Kas & Bank' },
         { id: 'capital', icon: Coins, label: 'Modal Toko' },
       ]
     },

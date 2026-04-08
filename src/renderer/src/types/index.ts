@@ -43,6 +43,8 @@ export interface Summary {
   totalIncome: number;
   totalExpense: number;
   balance: number;
+  transBalance?: number;
+  walletBalance?: number;
 }
 
 export interface StockItem {
@@ -57,4 +59,12 @@ export interface Settings {
   cashierNumber?: string;
   ownerNumber?: string;
   autoConfirm?: boolean;
+}
+
+export interface Mutation {
+  id: number;
+  type: 'wallet_to_cash' | 'cash_to_wallet' | 'cash_to_owner' | 'wallet_to_owner';
+  amount: number;
+  description: string;
+  date: string;
 }

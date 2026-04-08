@@ -3,7 +3,7 @@ import Swal from 'sweetalert2';
 import { Eye, EyeOff, Plus, History, Settings2, Store, Shield, Zap, Palette, Trash2, Info, Filter, FileText, Wallet, Handshake, ShoppingBag, Package } from 'lucide-react';
 
 // Types
-import { Transaction, StockItem, Summary, Settings } from './types';
+import { Transaction, StockItem, Summary, Settings, Mutation } from './types';
 
 // Utils
 import { unformatIDR } from './utils/formatters';
@@ -23,13 +23,15 @@ import DebtManager from './components/debts/DebtManager';
 import WalletManager from './components/wallet/WalletManager';
 import CapitalManager from './components/capital/CapitalManager';
 import PreorderManager from './components/preorder';
+import MutationManager from './components/mutations/MutationManager';
 // WhatsAppManager will be imported inside ServerHub
 import ServerHub from './components/serverhub/ServerHub';
 
 const { api } = window as any;
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'capital' | 'stock' | 'reports' | 'settings' | 'serverhub'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'mutasi' | 'capital' | 'stock' | 'reports' | 'settings' | 'serverhub'>('dashboard');
+  const [walletSubTab, setWalletSubTab] = useState<'saving' | 'qris'>('saving');
   const [storeName, setStoreName] = useState('Pembukuan Toko');
   const [summary, setSummary] = useState<Summary>({ totalIncome: 0, totalExpense: 0, balance: 0 });
   const [prevSummary, setPrevSummary] = useState<Summary>({ totalIncome: 0, totalExpense: 0, balance: 0 });
@@ -42,6 +44,7 @@ const App: React.FC = () => {
   const [newStockItem, setNewStockItem] = useState('');
   const [isStockUrgent, setIsStockUrgent] = useState(false);
   const [showStockModal, setShowStockModal] = useState(false);
+  const [mutations, setMutations] = useState<Mutation[]>([]);
   const [serverOffline, setServerOffline] = useState(false);
 
   // Authentication State
@@ -223,7 +226,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const [s, t, st, set, dbDebts, dbWallet, dbCapital, dbPreorders] = await Promise.all([
+      const [s, t, st, set, dbDebts, dbWallet, dbCapital, dbPreorders, dbMutations] = await Promise.all([
         api.getSummary({ startDate, endDate }),
         api.getTransactions({ startDate, endDate }),
         api.getStock(),
@@ -232,6 +235,7 @@ const App: React.FC = () => {
         api.getWallet(),
         api.getCapital(),
         api.getPreorders(),
+        api.getMutations(),
       ]);
 
       // Fetch Previous Month Comparison
@@ -250,6 +254,7 @@ const App: React.FC = () => {
       setWalletEntries(dbWallet);
       setCapitalData(dbCapital || []);
       setPreorders(dbPreorders || []);
+      setMutations(dbMutations || []);
       setReportPage(1);
       setTransacPage(1);
       setStockItems(st);
@@ -298,7 +303,10 @@ const App: React.FC = () => {
             timer: 5000,
             showConfirmButton: false,
             timerProgressBar: true,
-            iconColor: '#f43f5e'
+            iconColor: '#f43f5e',
+            customClass: {
+              popup: '!bg-white dark:!bg-bg-card !text-slate-800 dark:!text-slate-200 !border !border-slate-200 dark:!border-white/10 !shadow-xl'
+            }
           });
           loadData();
         }) : () => { };
@@ -352,14 +360,14 @@ const App: React.FC = () => {
   }, [isLoggedIn, startDate, endDate]);
 
   const chartData = useMemo(() => {
-    const dataMap = new Map<string, { date: string; income: number; expense: number }>();
+    const dataMap = new Map<string, { date: string; income: number; expense: number; mutation: number }>();
     const start = new Date(startDate);
     const end = new Date(endDate);
     const current = new Date(start);
     while (current <= end) {
       const dateStr = current.toISOString().split('T')[0];
       const label = current.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
-      dataMap.set(dateStr, { date: label, income: 0, expense: 0 });
+      dataMap.set(dateStr, { date: label, income: 0, expense: 0, mutation: 0 });
       current.setDate(current.getDate() + 1);
     }
     transactions.forEach(t => {
@@ -370,8 +378,16 @@ const App: React.FC = () => {
         else d.expense += t.amount;
       }
     });
+    mutations.forEach((m: any) => {
+      if (m.type === 'wallet_to_cash') {
+        const dateStr = String(m.date).split('T')[0];
+        if (dataMap.has(dateStr)) {
+          dataMap.get(dateStr)!.mutation += Number(m.amount);
+        }
+      }
+    });
     return Array.from(dataMap.values());
-  }, [transactions, startDate, endDate]);
+  }, [transactions, mutations, startDate, endDate]);
 
   // Unified System-Wide Activities
   const unifiedActivities = useMemo(() => {
@@ -574,7 +590,10 @@ const App: React.FC = () => {
           <Sidebar
             storeName={storeName}
             activeTab={activeTab}
-            setActiveTab={setActiveTab}
+            setActiveTab={(tab) => {
+              setActiveTab(tab);
+              if (tab === 'wallet') setWalletSubTab('saving');
+            }}
             theme={theme}
             setTheme={setTheme}
             setIsLoggedIn={setIsLoggedIn}
@@ -697,6 +716,22 @@ const App: React.FC = () => {
                   api={api}
                   storeName={storeName}
                   theme={theme}
+                  activeSubTab={walletSubTab}
+                  setActiveSubTab={setWalletSubTab}
+                />
+              )}
+
+              {activeTab === 'mutasi' && (
+                <MutationManager
+                  mutations={mutations}
+                  walletEntries={walletEntries}
+                  summary={summary}
+                  loadData={loadData}
+                  api={api}
+                  storeName={storeName}
+                  theme={theme}
+                  setActiveTab={setActiveTab}
+                  setWalletSubTab={setWalletSubTab}
                 />
               )}
 

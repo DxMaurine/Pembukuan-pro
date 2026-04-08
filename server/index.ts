@@ -106,8 +106,13 @@ function sendUnifiedSync(overrides: any = {}) {
   const totalTransExpense = data.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const totalWalletBalance = (data.wallet || []).filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
   
-  const transBalanceRunning = totalTransIncome - totalTransExpense;
-  const walletBalanceRunning = totalWalletBalance;
+  const mutWalletToCash = (data.mutations || []).filter(m => m.type === 'wallet_to_cash').reduce((s, m) => s + Number(m.amount), 0);
+  const mutCashToWallet = (data.mutations || []).filter(m => m.type === 'cash_to_wallet').reduce((s, m) => s + Number(m.amount), 0);
+  const mutCashToOwner = (data.mutations || []).filter(m => m.type === 'cash_to_owner').reduce((s, m) => s + Number(m.amount), 0);
+  const mutWalletToOwner = (data.mutations || []).filter(m => m.type === 'wallet_to_owner').reduce((s, m) => s + Number(m.amount), 0);
+
+  const transBalanceRunning = totalTransIncome - totalTransExpense + mutWalletToCash - mutCashToOwner - mutCashToWallet;
+  const walletBalanceRunning = totalWalletBalance - mutWalletToCash - mutWalletToOwner + mutCashToWallet;
 
   const lowStockItems = [...data.stock].sort((a, b) => b.id - a.id);
 
@@ -137,14 +142,19 @@ function recalculateAndSync() {
   const today = new Date().toLocaleDateString('en-CA'); 
   const filteredTransactions = data.transactions.filter(t => String(t.date).startsWith(today));
   const filteredWallet = (data.wallet || []).filter(w => String(w.date).startsWith(today));
+  const filteredMutations = (data.mutations || []).filter(m => String(m.date).startsWith(today));
   
   const transIncomeToday = filteredTransactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const transExpenseToday = filteredTransactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const walletIncomeToday = filteredWallet.filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
 
+  const mutWalletToCashToday = filteredMutations.filter(m => m.type === 'wallet_to_cash').reduce((s, m) => s + Number(m.amount), 0);
+  const mutCashToWalletToday = filteredMutations.filter(m => m.type === 'cash_to_wallet').reduce((s, m) => s + Number(m.amount), 0);
+  const mutCashToOwnerToday = filteredMutations.filter(m => m.type === 'cash_to_owner').reduce((s, m) => s + Number(m.amount), 0);
+
   return sendUnifiedSync({
-    totalIncome: transIncomeToday + walletIncomeToday,
-    totalExpense: transExpenseToday,
+    totalIncome: transIncomeToday + walletIncomeToday + mutWalletToCashToday,
+    totalExpense: transExpenseToday + mutCashToOwnerToday + mutCashToWalletToday,
     unifiedHistory: [
       ...data.transactions.map(t => ({ ...t, source: 'manual' })),
       ...(data.wallet || []).map(w => ({ ...w, source: 'wallet' }))
@@ -233,7 +243,7 @@ app.post('/api/transactions', (req, res) => {
 });
 
 app.put('/api/transactions/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params.id);
   const data = readDb();
   const index = data.transactions.findIndex((t) => t.id === id);
   if (index !== -1) {
@@ -247,7 +257,7 @@ app.put('/api/transactions/:id', (req, res) => {
 });
 
 app.delete('/api/transactions/:id', (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = Number(req.params.id);
   const data = readDb();
   data.transactions = data.transactions.filter((t) => t.id !== id);
   saveDb(data);
@@ -268,17 +278,74 @@ app.get('/api/summary', (req, res) => {
   const { startDate, endDate } = req.query;
   const data = readDb();
   let filtered = data.transactions;
-  if (startDate) filtered = filtered.filter(t => t.date >= (startDate as string));
-  if (endDate) filtered = filtered.filter(t => t.date <= (endDate as string));
+  let filteredMutations = data.mutations || [];
+  
+  if (startDate) {
+    filtered = filtered.filter(t => t.date >= (startDate as string));
+    filteredMutations = filteredMutations.filter(m => m.date >= (startDate as string));
+  }
+  if (endDate) {
+    filtered = filtered.filter(t => t.date <= (endDate as string));
+    filteredMutations = filteredMutations.filter(m => m.date <= (endDate as string));
+  }
   
   const totalIncome = filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const totalExpense = filtered.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
   
+  const mutWalletToCash = filteredMutations.filter(m => m.type === 'wallet_to_cash').reduce((s, m) => s + Number(m.amount), 0);
+  const mutCashToWallet = filteredMutations.filter(m => m.type === 'cash_to_wallet').reduce((s, m) => s + Number(m.amount), 0);
+  const mutCashToOwner = filteredMutations.filter(m => m.type === 'cash_to_owner').reduce((s, m) => s + Number(m.amount), 0);
+
+  const finalIncome = totalIncome + mutWalletToCash;
+  const finalExpense = totalExpense + mutCashToOwner + mutCashToWallet;
+
+  // Calculate absolute running balances for Dashboard and Mutation forms
+  const allTransIncome = data.transactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const allTransExpense = data.transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const allWalletBalance = (data.wallet || []).filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0);
+  
+  const allMutWalletToCash = (data.mutations || []).filter(m => m.type === 'wallet_to_cash').reduce((s, m) => s + Number(m.amount), 0);
+  const allMutCashToWallet = (data.mutations || []).filter(m => m.type === 'cash_to_wallet').reduce((s, m) => s + Number(m.amount), 0);
+  const allMutCashToOwner = (data.mutations || []).filter(m => m.type === 'cash_to_owner').reduce((s, m) => s + Number(m.amount), 0);
+  const allMutWalletToOwner = (data.mutations || []).filter(m => m.type === 'wallet_to_owner').reduce((s, m) => s + Number(m.amount), 0);
+
+  const transBalanceRunning = allTransIncome - allTransExpense + allMutWalletToCash - allMutCashToOwner - allMutCashToWallet;
+  const walletBalanceRunning = allWalletBalance - allMutWalletToCash - allMutWalletToOwner + allMutCashToWallet;
+
   res.json({
-    totalIncome,
-    totalExpense,
-    balance: totalIncome - totalExpense
+    totalIncome: finalIncome,
+    totalExpense: finalExpense,
+    balance: finalIncome - finalExpense,
+    transBalance: transBalanceRunning,
+    walletBalance: walletBalanceRunning
   });
+});
+
+// Mutations API
+app.get('/api/mutations', (req, res) => {
+  const data = readDb();
+  res.json(data.mutations || []);
+});
+
+app.post('/api/mutations', (req, res) => {
+  const data = readDb();
+  if (!data.mutations) data.mutations = [];
+  const newMut = { ...req.body, id: Date.now(), date: req.body.date || new Date().toISOString() };
+  data.mutations.push(newMut);
+  saveDb(data);
+  recalculateAndSync();
+  res.json(newMut);
+});
+
+app.delete('/api/mutations/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  if (data.mutations) {
+    data.mutations = data.mutations.filter((m: any) => m.id !== id);
+    saveDb(data);
+    recalculateAndSync();
+  }
+  res.json({ success: true });
 });
 
 // Wallet entries
@@ -293,8 +360,8 @@ app.post('/api/wallet', (req, res) => {
   data.wallet.push(newEntry);
   saveDb(data);
   
-  // TRIGGER NOTIFIKASI JIKA PENDING (INPUT DESKTOP)
-  if (newEntry.status === 'pending') {
+  // TRIGGER NOTIFIKASI HANYA JIKA TYPE QRIS & STATUS PENDING (INPUT DESKTOP)
+  if (newEntry.type === 'qris' && newEntry.status === 'pending') {
     notifyQRISInternal(newEntry, false).catch(e => console.error('[SERVER] Desktop Notify Error:', e));
   }
 

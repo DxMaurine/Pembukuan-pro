@@ -423,3 +423,62 @@ export const generatePreorderInvoicePDF = async (
   
   return pdfData;
 };
+
+export const generateMutationPDF = async (
+  storeName: string,
+  mutations: any[],
+  theme: 'light' | 'dark'
+) => {
+  const doc = new jsPDF();
+  
+  doc.setFillColor(theme === 'dark' ? 0 : 244, theme === 'dark' ? 162 : 63, theme === 'dark' ? 255 : 94);
+  doc.rect(0, 0, 210, 40, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text(storeName.toUpperCase(), 14, 20);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("LAPORAN MUTASI KAS & BANK", 14, 30);
+
+  const getMutationDetails = (type: string) => {
+    switch (type) {
+      case 'wallet_to_cash': return 'QRIS -> Kas';
+      case 'cash_to_wallet': return 'Kas -> QRIS';
+      case 'cash_to_owner': return 'Kas -> Owner';
+      case 'wallet_to_owner': return 'QRIS -> Owner';
+      default: return type;
+    }
+  };
+
+  const tableData = mutations.map((m, idx) => [
+    idx + 1,
+    new Date(m.date).toLocaleDateString('id-ID'),
+    getMutationDetails(m.type),
+    `Rp ${formatIDR(m.amount)}`,
+    m.description || '-'
+  ]);
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: 50,
+    head: [['No', 'Tanggal', 'Tipe Mutasi', 'Nominal', 'Keterangan']],
+    body: tableData,
+    headStyles: { fillColor: theme === 'dark' ? [0, 162, 255] : [244, 63, 94] },
+    columnStyles: {
+      3: { halign: 'right', fontStyle: 'bold' }
+    }
+  });
+
+  const totalQRISToCash = mutations.filter(m => m.type === 'wallet_to_cash').reduce((s, m) => s + Number(m.amount), 0);
+  const totalCashToOwner = mutations.filter(m => m.type === 'cash_to_owner').reduce((s, m) => s + Number(m.amount), 0);
+
+  const finalY = (doc as any).lastAutoTable.finalY || 100;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.text(`Total Pencairan QRIS -> Kas: Rp ${formatIDR(totalQRISToCash)}`, 14, finalY + 15);
+  doc.text(`Total Setoran Kas -> Owner: Rp ${formatIDR(totalCashToOwner)}`, 14, finalY + 22);
+
+  return doc.output('datauristring').split(',')[1];
+};
