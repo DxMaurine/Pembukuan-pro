@@ -4,8 +4,11 @@ import { StatusBar } from 'expo-status-bar';
 import { db } from './firebaseConfig';
 import { doc, onSnapshot, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { TrendingUp, TrendingDown, Wallet, Plus, X, RefreshCw, Archive, LayoutDashboard, History, ShoppingBag, Settings, Moon, Sun, Info, User, Package, CheckCircle, Trash2, Edit3, AlertCircle, ChevronLeft, CreditCard, Landmark, Coins, ChevronRight } from 'lucide-react-native';
+import Svg, { Path } from 'react-native-svg';
+import { useWindowDimensions } from 'react-native';
 
 export default function App() {
+  const { width: screenWidth } = useWindowDimensions();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'finance' | 'history' | 'settings'>('dashboard');
   const [financeSubTab, setFinanceSubTab] = useState<'main' | 'add' | 'input'>('main');
   const [selectedMethod, setSelectedMethod] = useState<any>(null);
@@ -29,6 +32,7 @@ export default function App() {
   const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [accentColor, setAccentColor] = useState('#f43f5e');
+  const [isServerOnline, setIsServerOnline] = useState(false);
 
   const colorPresets = [
     { name: 'Rose', color: '#f43f5e' },
@@ -92,6 +96,24 @@ export default function App() {
       setLoading(false);
     }
   }, []);
+
+  // Heartbeat Timer: Check if server is online every 10 seconds
+  useEffect(() => {
+    const checkStatus = () => {
+      if (summary?.heartbeat) {
+        const lastHeartbeat = new Date(summary.heartbeat).getTime();
+        const now = Date.now();
+        const diffSeconds = (now - lastHeartbeat) / 1000;
+        setIsServerOnline(diffSeconds < 25); // Online jika detak jantung kurang dari 25 detik yang lalu
+      } else {
+        setIsServerOnline(false);
+      }
+    };
+
+    checkStatus();
+    const interval = setInterval(checkStatus, 3000); // Cek status tiap 3 detik
+    return () => clearInterval(interval);
+  }, [summary]);
 
   const handleAddExpense = async () => {
     // Clean formatting before saving
@@ -810,9 +832,9 @@ export default function App() {
           <Text style={[styles.headerTitle, { color: theme.text }]}>{storeName}</Text>
           <Text style={[styles.headerSubtitle, { color: theme.subText }]}>COMPANION DASHBOARD</Text>
         </View>
-        <TouchableOpacity style={[styles.statusBadge, { backgroundColor: isDarkMode ? 'rgba(34,197,94,0.1)' : '#dcfce7' }]}>
-          <View style={[styles.statusDot, { backgroundColor: theme.success }]} />
-          <Text style={[styles.statusText, { color: theme.success }]}>Live</Text>
+        <TouchableOpacity style={[styles.statusBadge, { backgroundColor: isServerOnline ? (isDarkMode ? 'rgba(34,197,94,0.1)' : '#dcfce7') : (isDarkMode ? 'rgba(239,68,68,0.1)' : '#fee2e2') }]}>
+          <View style={[styles.statusDot, { backgroundColor: isServerOnline ? theme.success : theme.danger }]} />
+          <Text style={[styles.statusText, { color: isServerOnline ? theme.success : theme.danger }]}>{isServerOnline ? 'Online' : 'Offline'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -853,38 +875,65 @@ export default function App() {
         </View>
       )}
 
-      {/* Bottom Nav */}
-      <View style={[styles.bottomNav, { backgroundColor: theme.navBg, borderTopColor: theme.border, height: 75 }]}>
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('dashboard')}>
-          <LayoutDashboard color={activeTab === 'dashboard' ? theme.primary : theme.subText} size={24} />
-          <Text style={[styles.navText, { color: activeTab === 'dashboard' ? theme.primary : theme.subText }]}>Beranda</Text>
-        </TouchableOpacity>
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNavContainer}>
+        <View style={StyleSheet.absoluteFill}>
+          <Svg width={screenWidth} height={120} viewBox={`0 0 ${screenWidth} 120`}>
+            {/* Background Nav - Mewah Dark */}
+            <Path
+              d={`M 0 35 
+                  L ${screenWidth / 2 - 55} 35 
+                  Q ${screenWidth / 2} -5 ${screenWidth / 2 + 55} 35 
+                  L ${screenWidth} 35 
+                  L ${screenWidth} 120 
+                  L 0 120 
+                  Z`}
+              fill="#1a1a1a"
+            />
+            {/* Jahitan Benang (Stitching) */}
+            <Path
+              d={`M 0 42 
+                  L ${screenWidth / 2 - 50} 42 
+                  Q ${screenWidth / 2} 5 ${screenWidth / 2 + 50} 42 
+                  L ${screenWidth} 42`}
+              fill="none"
+              stroke="rgba(255,255,255,0.15)"
+              strokeWidth="1.5"
+              strokeDasharray="5, 3"
+            />
+          </Svg>
+        </View>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('stock')}>
-          <ShoppingBag color={activeTab === 'stock' ? theme.primary : theme.subText} size={24} />
-          <Text style={[styles.navText, { color: activeTab === 'stock' ? theme.primary : theme.subText }]}>Stok</Text>
-        </TouchableOpacity>
+        <View style={styles.bottomNavItems}>
+          <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('dashboard')}>
+            <LayoutDashboard color={activeTab === 'dashboard' ? theme.primary : theme.subText} size={24} />
+            <Text style={[styles.navText, { color: activeTab === 'dashboard' ? theme.primary : theme.subText }]}>Dasbor</Text>
+          </TouchableOpacity>
 
-        {/* Center Wallet Button */}
-        <TouchableOpacity
-          style={[styles.centerNavItem, { backgroundColor: activeTab === 'finance' ? theme.primary : '#333' }]}
-          onPress={() => setActiveTab('finance')}
-        >
-          <Wallet color="#fff" size={28} />
-          <View style={styles.centerBadge}>
-            <Text style={{ color: '#fff', fontSize: 8, fontWeight: 'bold' }}>PRO</Text>
+          <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('stock')}>
+            <Archive color={activeTab === 'stock' ? theme.primary : theme.subText} size={24} />
+            <Text style={[styles.navText, { color: activeTab === 'stock' ? theme.primary : theme.subText }]}>Barang</Text>
+          </TouchableOpacity>
+
+          <View style={styles.centerNavWrapper}>
+            <TouchableOpacity
+              style={[styles.centerNavItem, { backgroundColor: activeTab === 'finance' ? theme.primary : '#333' }]}
+              onPress={() => setActiveTab('finance')}
+            >
+              <Wallet color="#fff" size={30} />
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('history')}>
-          <History color={activeTab === 'history' ? theme.primary : theme.subText} size={24} />
-          <Text style={[styles.navText, { color: activeTab === 'history' ? theme.primary : theme.subText }]}>Riwayat</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('history')}>
+            <History color={activeTab === 'history' ? theme.primary : theme.subText} size={24} />
+            <Text style={[styles.navText, { color: activeTab === 'history' ? theme.primary : theme.subText }]}>Histori</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('settings')}>
-          <Settings color={activeTab === 'settings' ? theme.primary : theme.subText} size={24} />
-          <Text style={[styles.navText, { color: activeTab === 'settings' ? theme.primary : theme.subText }]}>Profil</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.navItem} onPress={() => setActiveTab('settings')}>
+            <Settings color={activeTab === 'settings' ? theme.primary : theme.subText} size={24} />
+            <Text style={[styles.navText, { color: activeTab === 'settings' ? theme.primary : theme.subText }]}>Sistem</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Modal Quick Expense */}
@@ -981,9 +1030,9 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, marginBottom: 20 },
   headerTitle: { fontSize: 24, fontWeight: '900' },
   headerSubtitle: { fontSize: 10, letterSpacing: 2, textTransform: 'uppercase' },
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
-  statusText: { fontSize: 10, fontWeight: '800' },
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 24 },
+  statusDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },
+  statusText: { fontSize: 12, fontWeight: '900', textTransform: 'uppercase' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 150 },
   tabContent: { flex: 1, paddingHorizontal: 20 },
   tabHeading: { fontSize: 18, fontWeight: '800', marginBottom: 16 },
@@ -1036,9 +1085,36 @@ const styles = StyleSheet.create({
 
   emptyText: { fontSize: 14, marginTop: 12, fontWeight: '600' },
   fab: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', elevation: 8 },
-  bottomNav: { flexDirection: 'row', paddingBottom: 30, paddingTop: 12, borderTopWidth: 1 },
-  navItem: { flex: 1, alignItems: 'center' },
-  navText: { fontSize: 10, marginTop: 4, fontWeight: '700' },
+  // Bottom Navigation Modern
+  bottomNavContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+  },
+  bottomNavItems: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    height: 120,
+    paddingBottom: 25,
+  },
+  centerNavWrapper: {
+    height: 120,
+    justifyContent: 'flex-start',
+    marginTop: -5,
+  },
+  navItem: {
+    width: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navText: {
+    fontSize: 10,
+    marginTop: 4,
+    fontWeight: '700',
+  },
   // Settings Tab
   profileCard: { padding: 24, borderRadius: 24, alignItems: 'center', marginBottom: 20 },
   profileIcon: { width: 64, height: 64, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
@@ -1084,10 +1160,10 @@ const styles = StyleSheet.create({
 
   // Bottom Nav Center Button
   centerNavItem: {
-    width: 65,
-    height: 65,
-    borderRadius: 33,
-    marginTop: -30,
+    width: 75,
+    height: 75,
+    borderRadius: 37.5,
+    marginTop: 52, // Dinaikkan 3 unit dari 55
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -1097,14 +1173,6 @@ const styles = StyleSheet.create({
     elevation: 8,
     borderWidth: 4,
     borderColor: '#1e1e1e'
-  },
-  centerBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#f59e0b',
-    paddingHorizontal: 4,
-    borderRadius: 4,
   },
   emptyState: {
     flex: 1,

@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal, clearTransactions } from './database';
-import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus, syncDashboardToFirebase, listenToMobileInput, syncStoreMetadata, listenToSyncRequests, listenToMobileStockActions } from './services/firebase';
+import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus, syncDashboardToFirebase, listenToMobileInput, syncStoreMetadata, listenToSyncRequests, listenToMobileStockActions, updateHeartbeat } from './services/firebase';
 import { notifyQRISInternal, notifyPreorderInternal, sendReportInternal, setStatusUpdateCallback } from './services/telegram';
 import { initWhatsApp, getWhatsAppStatus, logoutWhatsApp, sendInternalMessage, setWhatsAppCallbacks } from './services/whatsapp';
 
@@ -799,6 +799,13 @@ listenToMobileStockActions((action, data, docId) => {
     console.log(`[MOBILE-STOCK] Barang dihapus: ${item?.name}`);
   }
 });
+
+// --- HEARTBEAT SYSTEM (10s) ---
+// Notifikasi ke HP bahwa server "Live"
+setInterval(() => {
+  updateHeartbeat();
+}, 10000); // Kirim tiap 10 detik
+updateHeartbeat(); // Jalankan sekali saat start
 console.log('[FIREBASE] Listener Mobile Stock Actions Aktif');
 
 // Initial Sync

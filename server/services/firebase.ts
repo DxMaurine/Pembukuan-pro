@@ -144,3 +144,12 @@ export function listenToMobileStockActions(onAction: (action: string, data: any,
     });
   });
 }
+export async function updateHeartbeat() {
+  try {
+    await setDoc(doc(db, "mobile_sync", "dashboard"), {
+      heartbeat: new Date().toISOString()
+    }, { merge: true });
+  } catch (error) {
+    console.error("[FIREBASE] Heartbeat Error:", error);
+  }
+}
