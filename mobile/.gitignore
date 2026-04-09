@@ -11,3 +11,8 @@ firebaseConfig.ts
 # OS
 .DS_Store
 *.log
+
+# Keystore & Secrets
+*.jks
+*.bak
+keystore_base64.txt
