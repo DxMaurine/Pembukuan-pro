@@ -110,9 +110,9 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       if (item.id === id) {
         const updatedItem = { ...item, [field]: value };
         if (updatedItem.isBanner) {
-          updatedItem.total = (updatedItem.p || 0) * (updatedItem.l || 0) * (updatedItem.qty || 0) * (updatedItem.price || 0);
+          updatedItem.total = Math.round((updatedItem.p || 0) * (updatedItem.l || 0) * (updatedItem.qty || 0) * (updatedItem.price || 0));
         } else {
-          updatedItem.total = (updatedItem.qty || 0) * (updatedItem.price || 0);
+          updatedItem.total = Math.round((updatedItem.qty || 0) * (updatedItem.price || 0));
         }
         return updatedItem;
       }
@@ -121,7 +121,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
   };
 
   useEffect(() => {
-    const total = orderItems.reduce((sum, item) => sum + item.total, 0);
+    const total = Math.round(orderItems.reduce((sum, item) => sum + item.total, 0));
     setFormData(prev => ({ ...prev, totalAmount: total.toString() }));
   }, [orderItems]);
 
@@ -188,6 +188,26 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
     }
     setPreorderStep('input');
     setShowModal(true);
+  };
+
+  const handleUpdatePreorderStatus = async (preorder: Preorder, newStatus: Preorder['status']) => {
+    try {
+      await api.updatePreorder({ ...preorder, status: newStatus });
+      loadData();
+      // Update selectedPreorder so the modal UI reflects the change
+      setSelectedPreorder(prev => prev ? { ...prev, status: newStatus } : null);
+      
+      const statusText = newStatus === 'completed' ? 'Selesai' : (newStatus === 'canceled' ? 'Dibatalkan' : newStatus);
+      Swal.fire({ 
+        title: 'Status Diperbarui!', 
+        text: `Pesanan telah ditandai sebagai ${statusText}.`, 
+        icon: 'success', 
+        timer: 1500, 
+        showConfirmButton: false 
+      });
+    } catch (err) {
+      Swal.fire('Error', 'Gagal memperbarui status.', 'error');
+    }
   };
 
   const handleDelete = async (id: number) => {
@@ -738,27 +758,76 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
               </div>
 
               <div className="px-10 py-8 bg-slate-50 dark:bg-black/40 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center shrink-0 gap-10">
-                <div className="flex flex-wrap gap-12 items-center">
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic">Total Kontrak</span>
-                    <div className="text-2xl font-bold italic dark:text-white tracking-tight">Rp {formatIDR(selectedPreorder.totalAmount)}</div>
+                <div className="flex flex-wrap gap-8 items-center">
+                  {/* Status Quick Actions */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic ml-1">Update Status Pengerjaan:</span>
+                    <div className="flex gap-2">
+                      {selectedPreorder.status !== 'completed' && selectedPreorder.status !== 'canceled' && (
+                        <>
+                          {selectedPreorder.status === 'pending' && (
+                            <button 
+                              onClick={() => handleUpdatePreorderStatus(selectedPreorder, 'printing')}
+                              className="px-4 py-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold hover:bg-amber-500 hover:text-white transition-all uppercase tracking-tighter"
+                            >
+                              🚀 Mulai Cetak
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => handleUpdatePreorderStatus(selectedPreorder, 'completed')}
+                            className="px-4 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all uppercase tracking-tighter"
+                          >
+                            ✅ Tandai Selesai
+                          </button>
+                        </>
+                      )}
+                      {selectedPreorder.status !== 'canceled' && selectedPreorder.status !== 'completed' && (
+                        <button 
+                          onClick={() => handleUpdatePreorderStatus(selectedPreorder, 'canceled')}
+                          className="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[10px] font-bold hover:bg-rose-500 hover:text-white transition-all uppercase tracking-tighter"
+                        >
+                          ❌ Batalkan
+                        </button>
+                      )}
+                      {(selectedPreorder.status === 'completed' || selectedPreorder.status === 'canceled') && (
+                         <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-bold text-muted uppercase italic">
+                           {selectedPreorder.status === 'completed' ? 'Pekerjaan Telah Selesai' : 'Pesanan Telah Dibatalkan'}
+                         </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <span className="text-[10px] font-bold uppercase text-success tracking-widest block italic">Uang Muka (DP)</span>
-                    <div className="text-2xl font-bold text-success italic tracking-tight">Rp {formatIDR(selectedPreorder.downPayment)}</div>
-                  </div>
-                  <div className="bg-primary/5 dark:bg-primary/10 px-8 py-4 rounded-[1.8rem] border border-primary/20 shadow-xl shadow-primary/5">
-                    <span className="text-[11px] font-bold uppercase text-primary tracking-[0.2em] block mb-1">Sisa Pelunasan</span>
-                    <div className="text-3xl font-bold text-primary italic tracking-tighter">Rp {formatIDR(selectedPreorder.remainingAmount)}</div>
+
+                  <div className="w-px h-12 bg-slate-200 dark:bg-white/10 hidden xl:block" />
+
+                  <div className="flex gap-10 items-center">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic">Total Kontrak</span>
+                      <div className="text-xl font-bold italic dark:text-white tracking-tight leading-none text-nowrap">Rp {formatIDR(selectedPreorder.totalAmount)}</div>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-bold uppercase text-success tracking-widest block italic">DP</span>
+                      <div className="text-xl font-bold text-success italic tracking-tight leading-none text-nowrap">Rp {formatIDR(selectedPreorder.downPayment)}</div>
+                    </div>
+                    <div className="bg-primary/5 dark:bg-primary/10 px-6 py-3 rounded-2xl border border-primary/20 shadow-xl shadow-primary/5 min-w-[200px]">
+                      <span className="text-[10px] font-bold uppercase text-primary tracking-[0.2em] block mb-0.5">Sisa Pelunasan</span>
+                      <div className="text-2xl font-bold text-primary italic tracking-tighter">Rp {formatIDR(selectedPreorder.remainingAmount)}</div>
+                    </div>
                   </div>
                 </div>
-                <div className="flex gap-4 w-full md:w-auto">
-                  <button className="flex-1 md:flex-none px-8 py-4 rounded-2xl font-bold text-muted border border-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-xs tracking-widest uppercase italic" onClick={() => setShowDetailModal(false)}> TUTUP </button>
+                <div className="flex gap-3 w-full md:w-auto">
+                  <button className="flex-1 md:flex-none px-8 py-4 rounded-2xl font-bold text-muted border border-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-[10px] tracking-widest uppercase italic" onClick={() => setShowDetailModal(false)}> TUTUP </button>
                   <button
-                    className="flex-1 md:flex-none bg-primary hover:bg-primary-hover text-white px-10 py-4 rounded-2xl font-bold italic text-sm shadow-2xl shadow-primary/30 flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-all group"
+                    disabled={selectedPreorder.status !== 'completed'}
+                    className={`flex-1 md:flex-none px-10 py-4 rounded-2xl font-bold italic text-sm shadow-2xl flex items-center justify-center gap-3 transition-all group ${
+                      selectedPreorder.status === 'completed' 
+                        ? 'bg-primary hover:bg-primary-hover text-white shadow-primary/30 hover:scale-105 active:scale-95' 
+                        : 'bg-slate-200 dark:bg-white/5 text-muted cursor-not-allowed opacity-50'
+                    }`}
                     onClick={() => generatePreorderInvoicePDF('UD. DM FOTO', selectedPreorder, 'light')}
+                    title={selectedPreorder.status !== 'completed' ? 'Pesanan harus Selesai sebelum cetak nota' : 'Cetak Nota'}
                   >
-                    <FileText size={20} className="group-hover:translate-y-[-2px] transition-transform" /> CETAK NOTA
+                    <FileText size={20} className={selectedPreorder.status === 'completed' ? "group-hover:translate-y-[-2px] transition-transform" : ""} /> 
+                    {selectedPreorder.status === 'completed' ? 'CETAK NOTA' : 'NOTA TERKUNCI'}
                   </button>
                 </div>
               </div>
