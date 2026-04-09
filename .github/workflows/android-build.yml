@@ -32,7 +32,11 @@ jobs:
 
       - name: 📝 Setup Firebase Config
         working-directory: ./mobile
-        run: echo "${{ secrets.MOBILE_FIREBASE_CONFIG }}" > firebaseConfig.ts
+        shell: bash
+        env:
+          FIREBASE_CONFIG: ${{ secrets.MOBILE_FIREBASE_CONFIG }}
+        run: |
+          echo "$FIREBASE_CONFIG" > firebaseConfig.ts
 
       - name: 🛠 Prebuild Android
         working-directory: ./mobile
