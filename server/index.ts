@@ -439,6 +439,16 @@ app.get('/api/preorders', (req, res) => {
   res.json(data.preorders);
 });
 
+app.post('/api/preorders/silent', (req, res) => {
+  const data = readDb();
+  const newPreorder = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };
+  data.preorders.push(newPreorder);
+  saveDb(data);
+  recalculateAndSync();
+  // Tidak mengirim Telegram — hanya simpan ke database
+  res.json(newPreorder);
+});
+
 app.post('/api/preorders', (req, res) => {
   const data = readDb();
   const newPreorder = { ...req.body, id: Date.now(), createdAt: new Date().toISOString() };

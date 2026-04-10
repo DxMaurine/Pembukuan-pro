@@ -56,7 +56,8 @@ const api = {
 
   // Preorder Management
   getPreorders: () => rest.get('/api/preorders'),
-  addPreorder: (data: any) => rest.post('/api/preorders', data),
+  addPreorder: (data: any) => rest.post('/api/preorders', data),           // Simpan + Kirim Telegram
+  addPreorderSilent: (data: any) => rest.post('/api/preorders/silent', data), // Simpan saja, tanpa Telegram
   updatePreorder: (data: any) => rest.put(`/api/preorders/${data.id}`, data),
   deletePreorder: (id: number) => rest.delete(`/api/preorders/${id}`),
 

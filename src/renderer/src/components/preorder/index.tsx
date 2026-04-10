@@ -20,7 +20,11 @@ import {
   FileText,
   Send,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Printer,
+  Palette,
+  CheckCheck,
+  RotateCcw
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
@@ -136,34 +140,55 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
     }
   };
 
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Validasi bersama sebelum save
+  const validateForm = () => {
     const total = parseFloat(unformatIDR(formData.totalAmount)) || 0;
     const dp = parseFloat(unformatIDR(formData.downPayment)) || 0;
-
     if (orderItems.some(item => !item.name.trim())) {
       Swal.fire('Peringatan', 'Nama barang belum diisi Pak!', 'warning');
-      return;
+      return null;
     }
+    return { ...formData, totalAmount: total, downPayment: dp, remainingAmount: total - dp, items: orderItems };
+  };
 
-    const payload = { ...formData, totalAmount: total, downPayment: dp, remainingAmount: total - dp, items: orderItems };
-
+  // CATAT saja — simpan ke DB, tidak kirim Telegram
+  const handleSaveSilent = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = validateForm();
+    if (!payload) return;
     try {
       if (editingId) {
         await api.updatePreorder({ ...payload, id: editingId });
       } else {
-        await api.addPreorder(payload);
+        await api.addPreorderSilent(payload);
       }
-      setShowModal(false);
-      setEditingId(null);
-      setPreorderStep('config');
-      resetForm();
-      loadData();
-      Swal.fire({ title: 'Berhasil!', text: 'Pesanan telah disimpan.', icon: 'success', timer: 1500, showConfirmButton: false });
+      setShowModal(false); setEditingId(null); setPreorderStep('config'); resetForm(); loadData();
+      Swal.fire({ title: 'Tersimpan!', text: 'Pesanan dicatat tanpa notifikasi.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err) {
       Swal.fire('Error', 'Gagal menyimpan data.', 'error');
     }
   };
+
+  // KIRIM SPK — simpan ke DB + kirim laporan ke Telegram owner
+  const handleSaveAndSendSPK = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = validateForm();
+    if (!payload) return;
+    try {
+      if (editingId) {
+        await api.updatePreorder({ ...payload, id: editingId });
+        // Kirim notifikasi manual untuk edit
+        await api.notifyPreorder({ ...payload, id: editingId });
+      } else {
+        await api.addPreorder(payload); // otomatis trigger Telegram di server
+      }
+      setShowModal(false); setEditingId(null); setPreorderStep('config'); resetForm(); loadData();
+      Swal.fire({ title: 'SPK Terkirim!', text: 'Pesanan disimpan & laporan dikirim ke Telegram.', icon: 'success', timer: 2000, showConfirmButton: false });
+    } catch (err) {
+      Swal.fire('Error', 'Gagal menyimpan atau mengirim SPK.', 'error');
+    }
+  };
+
 
   const resetForm = () => {
     setFormData({
@@ -661,19 +686,33 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[300px]">
+                   <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[300px]">
                     <div className="flex justify-between items-end px-3">
                       <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Grand Total Bruto: </span>
                       <span className="text-2xl font-bold text-slate-900 dark:text-white italic tracking-tight leading-none">Rp {formatIDR(formData.totalAmount)}</span>
                     </div>
-                    <button
-                      type="submit"
-                      onClick={handleSave}
-                      className="w-full bg-slate-900 dark:bg-primary hover:bg-slate-800 dark:hover:bg-primary-hover text-white py-6 rounded-3xl font-bold italic text-xl shadow-2xl flex items-center justify-center gap-4 hover:scale-[1.02] active:scale-95 transition-all group"
-                    >
-                      Catat & Kirim SPK
-                      <Send size={24} className="group-hover:translate-x-1 transition-transform" />
-                    </button>
+                    {/* Dua tombol terpisah */}
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSaveSilent}
+                        className="flex-1 bg-slate-700 dark:bg-white/10 hover:bg-slate-600 dark:hover:bg-white/20 text-white py-5 rounded-2xl font-bold text-sm shadow-lg flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all group border border-white/10"
+                        title="Simpan pesanan ke database tanpa kirim notifikasi"
+                      >
+                        <FileText size={18} className="opacity-70" />
+                        Catat
+                      </button>
+                      <button
+                        type="submit"
+                        onClick={handleSaveAndSendSPK}
+                        className="flex-[2] bg-primary hover:bg-primary-hover text-white py-5 rounded-2xl font-bold text-sm shadow-2xl shadow-primary/30 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-95 transition-all group"
+                        title="Simpan pesanan & kirim laporan SPK ke Telegram owner"
+                      >
+                        Kirim SPK
+                        <Send size={18} className="group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                    <p className="text-[9px] text-muted font-bold uppercase tracking-widest text-center opacity-40">Catat = simpan saja · Kirim SPK = simpan + notif Telegram</p>
                   </div>
                 </div>
               )}
@@ -757,79 +796,159 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                 </div>
               </div>
 
-              <div className="px-10 py-8 bg-slate-50 dark:bg-black/40 border-t border-slate-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center shrink-0 gap-10">
-                <div className="flex flex-wrap gap-8 items-center">
-                  {/* Status Quick Actions */}
-                  <div className="flex flex-col gap-2">
-                    <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic ml-1">Update Status Pengerjaan:</span>
-                    <div className="flex gap-2">
-                      {selectedPreorder.status !== 'completed' && selectedPreorder.status !== 'canceled' && (
-                        <>
-                          {selectedPreorder.status === 'pending' && (
-                            <button 
-                              onClick={() => handleUpdatePreorderStatus(selectedPreorder, 'printing')}
-                              className="px-4 py-2.5 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold hover:bg-amber-500 hover:text-white transition-all uppercase tracking-tighter"
-                            >
-                              🚀 Mulai Cetak
-                            </button>
-                          )}
-                          <button 
-                            onClick={() => handleUpdatePreorderStatus(selectedPreorder, 'completed')}
-                            className="px-4 py-2.5 rounded-xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold hover:bg-emerald-500 hover:text-white transition-all uppercase tracking-tighter"
-                          >
-                            ✅ Tandai Selesai
-                          </button>
-                        </>
-                      )}
-                      {selectedPreorder.status !== 'canceled' && selectedPreorder.status !== 'completed' && (
-                        <button 
-                          onClick={() => handleUpdatePreorderStatus(selectedPreorder, 'canceled')}
-                          className="px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[10px] font-bold hover:bg-rose-500 hover:text-white transition-all uppercase tracking-tighter"
-                        >
-                          ❌ Batalkan
-                        </button>
-                      )}
-                      {(selectedPreorder.status === 'completed' || selectedPreorder.status === 'canceled') && (
-                         <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-white/5 rounded-xl border border-slate-200 dark:border-white/10 text-[10px] font-bold text-muted uppercase italic">
-                           {selectedPreorder.status === 'completed' ? 'Pekerjaan Telah Selesai' : 'Pesanan Telah Dibatalkan'}
-                         </div>
-                      )}
+              {/* ── FOOTER UNIFIED ── */}
+              <div className="shrink-0 border-t border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-black/40">
+
+                {/* Row 1 – Tracking Pipeline */}
+                <div className="px-8 pt-5 pb-4 border-b border-slate-100 dark:border-white/5">
+                  <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-muted opacity-50 block mb-3">Tracking Progres Produksi</span>
+                  {selectedPreorder.status === 'canceled' ? (
+                    <div className="flex items-center gap-2 py-2 px-4 bg-rose-500/5 border border-rose-500/20 rounded-xl text-rose-500 text-[10px] font-bold uppercase tracking-widest w-fit">
+                      <X size={13} strokeWidth={2.5} /> Pesanan Telah Dibatalkan
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 w-full">
+                      {(() => {
+                        type StepDef = { key: Preorder['status']; label: string; sub: string; Icon: React.ElementType; color: string; ring: string; bg: string; text: string; border: string };
+                        const steps: StepDef[] = [
+                          { key: 'pending',   label: 'Antrian',  sub: 'Menunggu',  Icon: Clock,       color: 'slate',   ring: 'ring-slate-400',   bg: 'bg-slate-500',   text: 'text-slate-600 dark:text-slate-300',   border: 'border-slate-300 dark:border-slate-600' },
+                          { key: 'designing', label: 'Desain',   sub: 'Proses',    Icon: Palette,     color: 'blue',    ring: 'ring-blue-400',    bg: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-300',    border: 'border-blue-300 dark:border-blue-600'   },
+                          { key: 'printing',  label: 'Cetak',    sub: 'Produksi',  Icon: Printer,     color: 'amber',   ring: 'ring-amber-400',   bg: 'bg-amber-500',   text: 'text-amber-600 dark:text-amber-300',   border: 'border-amber-300 dark:border-amber-600' },
+                          { key: 'completed', label: 'Selesai',  sub: 'Done',      Icon: CheckCheck,  color: 'emerald', ring: 'ring-emerald-400', bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-300', border: 'border-emerald-300 dark:border-emerald-600' },
+                        ];
+                        const currentIdx = steps.findIndex(s => s.key === selectedPreorder.status);
+                        return (
+                          <div className="flex items-center w-full gap-1.5">
+                            {steps.map((step, idx) => {
+                              const isDone    = idx < currentIdx;
+                              const isCurrent = idx === currentIdx;
+                              const isNext    = idx === currentIdx + 1;
+                              const StepIcon  = step.Icon;
+                              return (
+                                <React.Fragment key={step.key}>
+                                  <button
+                                    disabled={!isNext && !isDone}
+                                    onClick={async () => {
+                                      if (isNext) {
+                                        handleUpdatePreorderStatus(selectedPreorder, step.key);
+                                      } else if (isDone) {
+                                        const result = await Swal.fire({
+                                          title: 'Kembalikan Status?',
+                                          html: `Status akan diubah kembali ke <b>${step.label}</b>.<br/><small style="opacity:0.6">Gunakan jika terjadi kesalahan input.</small>`,
+                                          icon: 'warning',
+                                          showCancelButton: true,
+                                          confirmButtonText: 'Ya, Kembalikan',
+                                          cancelButtonText: 'Batal',
+                                          confirmButtonColor: '#e11d48',
+                                        });
+                                        if (result.isConfirmed) handleUpdatePreorderStatus(selectedPreorder, step.key);
+                                      }
+                                    }}
+                                    title={isDone ? `Kembali ke: ${step.label}` : isNext ? `Lanjutkan ke: ${step.label}` : step.label}
+                                    className={`group flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300 relative overflow-hidden
+                                      ${ isDone    ? `${step.bg} border-transparent cursor-pointer hover:brightness-90 hover:scale-[0.98] opacity-75 hover:opacity-100` : '' }
+                                      ${ isCurrent ? `${step.bg} border-transparent shadow-lg ${step.ring} ring-2 ring-offset-1 ring-offset-slate-50 dark:ring-offset-black/40 scale-[1.02]` : '' }
+                                      ${ isNext    ? `bg-white dark:bg-white/5 ${step.border} border-dashed cursor-pointer hover:border-solid hover:${step.bg.replace('bg-', 'bg-').replace('500', '50')} dark:hover:bg-white/10 hover:scale-[1.02]` : '' }
+                                      ${ !isDone && !isCurrent && !isNext ? 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 opacity-40 cursor-default' : '' }
+                                    `}
+                                  >
+                                    {/* Icon container */}
+                                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all
+                                      ${ isDone || isCurrent ? 'bg-white/20 text-white' : '' }
+                                      ${ isNext ? `${step.text} bg-slate-100 dark:bg-white/10` : '' }
+                                      ${ !isDone && !isCurrent && !isNext ? 'text-slate-300 dark:text-white/20 bg-slate-50 dark:bg-white/5' : '' }
+                                    `}>
+                                      { isDone
+                                        ? <RotateCcw size={15} strokeWidth={2.5} className="opacity-80 group-hover:rotate-[-180deg] transition-transform duration-500" />
+                                        : <StepIcon size={15} strokeWidth={2} />
+                                      }
+                                    </div>
+                                    {/* Label */}
+                                    <div className="flex flex-col min-w-0">
+                                      <span className={`text-[10px] font-bold uppercase tracking-widest leading-none truncate
+                                        ${ isDone || isCurrent ? 'text-white' : '' }
+                                        ${ isNext ? step.text : '' }
+                                        ${ !isDone && !isCurrent && !isNext ? 'text-slate-400 dark:text-white/30' : '' }
+                                      `}>{step.label}</span>
+                                      <span className={`text-[8px] uppercase tracking-tighter mt-0.5 font-medium
+                                        ${ isDone ? 'text-white/60' : '' }
+                                        ${ isCurrent ? 'text-white/70' : '' }
+                                        ${ isNext ? 'text-slate-400 dark:text-white/30' : '' }
+                                        ${ !isDone && !isCurrent && !isNext ? 'text-slate-300 dark:text-white/20' : '' }
+                                      `}>
+                                        { isDone ? '← Undo' : isNext ? 'Tap maju' : step.sub }
+                                      </span>
+                                    </div>
+                                    {/* Current pulse dot */}
+                                    { isCurrent && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" /> }
+                                  </button>
+                                  {idx < steps.length - 1 && (
+                                    <div className={`w-4 h-px rounded-full shrink-0 transition-all duration-500
+                                      ${ idx < currentIdx ? `${step.bg} opacity-50` : 'bg-slate-200 dark:bg-white/10' }
+                                    `} />
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Row 2 – Financials + Actions */}
+                <div className="px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {/* Left: Financial summary */}
+                  <div className="flex items-center gap-5 flex-wrap">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold uppercase text-muted tracking-widest opacity-50">Total Kontrak</span>
+                      <span className="text-base font-bold dark:text-white leading-tight">Rp {formatIDR(selectedPreorder.totalAmount)}</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200 dark:bg-white/10 shrink-0" />
+                    <div className="flex flex-col">
+                      <span className="text-[9px] font-bold uppercase text-success tracking-widest opacity-80">Uang Muka</span>
+                      <span className="text-base font-bold text-success leading-tight">Rp {formatIDR(selectedPreorder.downPayment)}</span>
+                    </div>
+                    <div className="w-px h-8 bg-slate-200 dark:bg-white/10 shrink-0" />
+                    <div className="flex flex-col bg-primary/5 dark:bg-primary/10 px-4 py-2 rounded-xl border border-primary/20">
+                      <span className="text-[9px] font-bold uppercase text-primary tracking-widest">Sisa Bayar</span>
+                      <span className="text-base font-bold text-primary leading-tight">Rp {formatIDR(selectedPreorder.remainingAmount)}</span>
                     </div>
                   </div>
 
-                  <div className="w-px h-12 bg-slate-200 dark:bg-white/10 hidden xl:block" />
-
-                  <div className="flex gap-10 items-center">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase text-muted tracking-widest block opacity-60 italic">Total Kontrak</span>
-                      <div className="text-xl font-bold italic dark:text-white tracking-tight leading-none text-nowrap">Rp {formatIDR(selectedPreorder.totalAmount)}</div>
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase text-success tracking-widest block italic">DP</span>
-                      <div className="text-xl font-bold text-success italic tracking-tight leading-none text-nowrap">Rp {formatIDR(selectedPreorder.downPayment)}</div>
-                    </div>
-                    <div className="bg-primary/5 dark:bg-primary/10 px-6 py-3 rounded-2xl border border-primary/20 shadow-xl shadow-primary/5 min-w-[200px]">
-                      <span className="text-[10px] font-bold uppercase text-primary tracking-[0.2em] block mb-0.5">Sisa Pelunasan</span>
-                      <div className="text-2xl font-bold text-primary italic tracking-tighter">Rp {formatIDR(selectedPreorder.remainingAmount)}</div>
-                    </div>
+                  {/* Right: Action buttons — all in one row, balanced */}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {selectedPreorder.status !== 'canceled' && selectedPreorder.status !== 'completed' && (
+                      <button
+                        onClick={() => handleUpdatePreorderStatus(selectedPreorder, 'canceled')}
+                        className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 text-[10px] font-bold hover:bg-rose-500 hover:text-white transition-all uppercase tracking-widest"
+                      >
+                        <X size={12} strokeWidth={2.5} /> Batalkan
+                      </button>
+                    )}
+                    <button
+                      className="px-6 py-2.5 rounded-xl font-bold text-muted border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-[10px] tracking-widest uppercase"
+                      onClick={() => setShowDetailModal(false)}
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      disabled={selectedPreorder.status !== 'completed'}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-[10px] tracking-widest uppercase transition-all group ${
+                        selectedPreorder.status === 'completed'
+                          ? 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/30 hover:scale-105 active:scale-95'
+                          : 'bg-slate-200 dark:bg-white/5 text-muted cursor-not-allowed opacity-40'
+                      }`}
+                      onClick={() => generatePreorderInvoicePDF('UD. DM FOTO', selectedPreorder, 'light')}
+                      title={selectedPreorder.status !== 'completed' ? 'Selesaikan pesanan untuk cetak nota' : 'Cetak Nota'}
+                    >
+                      <FileText size={14} className={selectedPreorder.status === 'completed' ? 'group-hover:-translate-y-0.5 transition-transform' : ''} />
+                      {selectedPreorder.status === 'completed' ? 'Cetak Nota' : 'Nota Terkunci'}
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-3 w-full md:w-auto">
-                  <button className="flex-1 md:flex-none px-8 py-4 rounded-2xl font-bold text-muted border border-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-all text-[10px] tracking-widest uppercase italic" onClick={() => setShowDetailModal(false)}> TUTUP </button>
-                  <button
-                    disabled={selectedPreorder.status !== 'completed'}
-                    className={`flex-1 md:flex-none px-10 py-4 rounded-2xl font-bold italic text-sm shadow-2xl flex items-center justify-center gap-3 transition-all group ${
-                      selectedPreorder.status === 'completed' 
-                        ? 'bg-primary hover:bg-primary-hover text-white shadow-primary/30 hover:scale-105 active:scale-95' 
-                        : 'bg-slate-200 dark:bg-white/5 text-muted cursor-not-allowed opacity-50'
-                    }`}
-                    onClick={() => generatePreorderInvoicePDF('UD. DM FOTO', selectedPreorder, 'light')}
-                    title={selectedPreorder.status !== 'completed' ? 'Pesanan harus Selesai sebelum cetak nota' : 'Cetak Nota'}
-                  >
-                    <FileText size={20} className={selectedPreorder.status === 'completed' ? "group-hover:translate-y-[-2px] transition-transform" : ""} /> 
-                    {selectedPreorder.status === 'completed' ? 'CETAK NOTA' : 'NOTA TERKUNCI'}
-                  </button>
-                </div>
+
               </div>
             </div>
           </div>
