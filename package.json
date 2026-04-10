@@ -43,7 +43,8 @@
     "recharts": "^3.8.1",
     "socket.io-client": "^4.8.3",
     "sweetalert2": "^11.26.24",
-    "tailwindcss": "^4.2.2"
+    "tailwindcss": "^4.2.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "^2.0.0",

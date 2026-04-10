@@ -597,6 +597,14 @@ app.post('/api/wa/send', async (req, res) => {
 
 async function processDanaText(text: string, docId?: string) {
   const cleanText = text.replace(/[\r\n\t]/g, ' ').trim();
+
+  // --- FILTER ANTI-PROMO ---
+  const promoKeywords = /\b(promo|voucher|emas|cashback|diskon|hadiah|kaget)\b/i;
+  if (promoKeywords.test(cleanText)) {
+    console.log(`[BLOKIR] Notifikasi diabaikan karena berisi iklan/promo: "${cleanText}"`);
+    return false;
+  }
+
   console.log(`[FIREBASE-INTAKE] Processing text: "${cleanText}"`);
 
   // Detect amounts

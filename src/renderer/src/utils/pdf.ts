@@ -2,31 +2,43 @@ import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { formatIDR } from './formatters';
 import { months } from './dateUtils';
-import { Transaction } from '../types';
 
 export const generateProfessionalPDF = async (
   storeName: string,
   filterMonth: number,
   filterYear: number,
-  transactions: Transaction[],
+  transactions: any[],
+  walletEntries: any[],
   theme: 'light' | 'dark'
 ) => {
   const doc = new jsPDF();
   let runningBalance = 0;
   
-  // Group logic (Same as before but cleaner)
-  const grouped = new Map<string, { income: number; expense: number; expenseDetails: string[] }>();
+  // Group logic
+  const grouped = new Map<string, { income: number; expense: number; incomeDetails: string[]; expenseDetails: string[] }>();
   
-  transactions.slice().reverse().forEach(t => {
+  const allEvents = [
+    ...transactions.map(t => ({ ...t })),
+    ...walletEntries.map(w => ({
+      date: w.date,
+      type: 'income',
+      amount: Number(w.amount) || 0,
+      description: `QRIS: ${w.description || 'Penerimaan Digital'}`
+    }))
+  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  allEvents.forEach(t => {
+    if (!t.date) return;
     const dateStr = new Date(t.date).toLocaleDateString('id-ID');
     if (!grouped.has(dateStr)) {
-      grouped.set(dateStr, { income: 0, expense: 0, expenseDetails: [] });
+      grouped.set(dateStr, { income: 0, expense: 0, incomeDetails: [], expenseDetails: [] });
     }
     const dayData = grouped.get(dateStr)!;
     if (t.type === 'income') {
-      dayData.income += t.amount;
+      dayData.income += Number(t.amount) || 0;
+      dayData.incomeDetails.push(`${t.description || 'Pemasukan'} (${formatIDR(t.amount || 0)})`);
     } else {
-      dayData.expense += t.amount;
+      dayData.expense += Number(t.amount) || 0;
       if (t.items && t.items.length > 0) {
         t.items.forEach((it: any) => {
           dayData.expenseDetails.push(`${it.name} (${formatIDR(it.amount)})`);
@@ -82,9 +94,17 @@ export const generateProfessionalPDF = async (
       }
     }
 
+    let incomeStr = '-';
+    if (dayData.income > 0 || dayData.incomeDetails.length > 0) {
+      incomeStr = dayData.incomeDetails.join('\n');
+      if (dayData.income > 0) {
+        incomeStr += `\n----------\nTotal: ${formatIDR(dayData.income)}`;
+      }
+    }
+
     tableData.push([
       dateStr,
-      dayData.income > 0 ? `Rp ${formatIDR(dayData.income)}` : '-',
+      incomeStr,
       expenseStr,
       `Rp ${formatIDR(runningBalance)}`
     ]);
@@ -93,7 +113,7 @@ export const generateProfessionalPDF = async (
   // @ts-ignore
   doc.autoTable({
     startY: 70,
-    head: [['Tanggal', 'Masuk', 'Keluar (Detail)', 'Sub Total']],
+    head: [['Tanggal', 'Masuk (Detail)', 'Keluar (Detail)', 'Sub Total']],
     body: tableData,
     styles: { fontSize: 9, cellPadding: 4, textColor: [40, 40, 40], overflow: 'linebreak' },
     headStyles: {
@@ -104,8 +124,8 @@ export const generateProfessionalPDF = async (
     },
     columnStyles: {
       0: { halign: 'center' },
-      1: { halign: 'right' },
-      2: { cellWidth: 80 },
+      1: { cellWidth: 60 },
+      2: { cellWidth: 65 },
       3: { halign: 'right', fontStyle: 'bold' }
     }
   });

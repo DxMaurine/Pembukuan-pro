@@ -185,7 +185,7 @@ export default function MutationManager({ mutations, summary, loadData, api, wal
             <input
               type="text"
               placeholder="Cari keterangan mutasi..."
-              className="bg-transparent border-none outline-none text-xs font-semibold placeholder:text-slate-400 dark:placeholder:text-slate-500 w-full md:w-64"
+              className="bg-transparent border-none outline-none text-xs font-semibold placeholder:text-muted dark:placeholder:text-muted w-full md:w-64"
               value={searchTerm}
               onChange={e => {
                 setSearchTerm(e.target.value);

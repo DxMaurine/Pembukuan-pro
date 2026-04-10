@@ -534,7 +534,7 @@ const App: React.FC = () => {
 
   const sendToOwner = async () => {
     try {
-      const pdfBase64 = await generateProfessionalPDF(storeName, filterMonth, filterYear, transactions, theme);
+      const pdfBase64 = await generateProfessionalPDF(storeName, filterMonth, filterYear, transactions, walletEntries, theme);
       await api.sendReport({
         pdfData: pdfBase64,
         summary: summary,
@@ -615,6 +615,7 @@ const App: React.FC = () => {
                   summary={summary}
                   prevSummary={prevSummary}
                   chartData={chartData}
+                  preorders={preorders}
                   theme={theme}
                   openBatchModal={openBatchModal}
                   filterMonth={filterMonth}
@@ -776,6 +777,7 @@ const App: React.FC = () => {
                   applyMonthFilter={applyMonthFilter}
                   sendToOwner={sendToOwner}
                   transactions={transactions}
+                  walletEntries={walletEntries}
                   currentPage={reportPage}
                   setCurrentPage={setReportPage}
                   handleEditClick={handleEditClick}

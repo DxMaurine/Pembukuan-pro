@@ -88,7 +88,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           label: 'Server Hub',
           badge: serverOnline === null ? 'checking' : serverOnline ? 'online' : 'offline',
         },
-        { id: 'reports', icon: FileText, label: 'Laporan PDF' },
+        { id: 'reports', icon: FileText, label: 'Laporan & Ekspor' },
         { id: 'transactions', icon: History, label: 'Riwayat Transaksi' },
         { id: 'settings', icon: Settings, label: 'Pengaturan App' },
       ]
@@ -127,7 +127,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <nav className="flex-1 overflow-y-auto custom-scrollbar px-4 space-y-8 pb-10">
         {navGroups.map((group, idx) => (
           <div key={idx} className="space-y-4 pt-1">
-            <h3 className="px-4 text-[10px] Font-bold uppercase tracking-[0.2em] text-muted opacity-40 mb-2">{group.title}</h3>
+            <h3 className="px-4 text-[10px] Font-bold uppercase tracking-[0.2em] text-muted opacity-90 mb-2">{group.title}</h3>
             <div className="space-y-1">
               {group.items.map((item: any) => {
                 const isActive = activeTab === item.id;
@@ -168,35 +168,41 @@ const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </nav>
 
-      <div className="p-6 mt-auto border-t border-slate-200 dark:border-white/5 space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-primary/30 transition-all group"
-            title="Ganti Tema"
-          >
-            {theme === 'dark' ? (
-              <Moon size={20} className="text-blue-400 group-hover:scale-110 transition-transform" />
-            ) : (
-              <Sun size={20} className="text-orange-500 group-hover:scale-110 transition-transform" />
-            )}
-            <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Theme</span>
-          </button>
+      <div className="mt-auto relative flex flex-col">
+        {/* Efek Stitching (Double Line) */}
+        <div className="w-full border-t border-slate-200 dark:border-white/5" />
+        <div className="w-full border-t border-dashed border-t-2 border-slate-300 dark:border-white/10 mt-[4px]" />
 
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-blue-500/20 dark:bg-blue-500/20 border border-slate-200 dark:border-white/5 hover:border-rose-500/30 transition-all group"
-            title="Keluar"
-          >
-            <LogOut size={20} className="text-rose-500 group-hover:scale-110 transition-transform" />
-            <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Keluar</span>
-          </button>
-        </div>
+        <div className="p-4 space-y-2">
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/5 hover:border-primary/30 transition-all group"
+              title="Ganti Tema"
+            >
+              {theme === 'dark' ? (
+                <Moon size={20} className="text-blue-400 group-hover:scale-110 transition-transform" />
+              ) : (
+                <Sun size={20} className="text-orange-500 group-hover:scale-110 transition-transform" />
+              )}
+              <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Theme</span>
+            </button>
 
-        <div className="text-center pt-2">
-          <p className="text-[9px] text-muted opacity-40 Font-bold uppercase tracking-[0.3em]">
-            Harmony Interface v3.1.6-Lite
-          </p>
+            <button
+              onClick={handleLogout}
+              className="flex flex-col items-center justify-center gap-2 p-3 rounded-2xl bg-primary/10 dark:bg-primary/20 border border-slate-200 dark:border-white/5 hover:border-rose-500/30 transition-all group"
+              title="Keluar"
+            >
+              <LogOut size={20} className="text-rose-500 group-hover:scale-110 transition-transform" />
+              <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Keluar</span>
+            </button>
+          </div>
+
+          <div className="text-center pt-2">
+            <p className="text-[9px] text-muted opacity-40 Font-bold uppercase tracking-[0.3em]">
+              Harmony Interface v3.1.6-Lite
+            </p>
+          </div>
         </div>
       </div>
     </aside>
