@@ -1,16 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Modal, FlatList, Switch, KeyboardAvoidingView, Platform, Animated, PanResponder, Alert } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Modal, FlatList, Switch, KeyboardAvoidingView, Platform, Animated, PanResponder, Alert, LayoutAnimation, UIManager } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { StatusBar } from 'expo-status-bar';
 import { db } from './firebaseConfig';
 import { doc, onSnapshot, collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { TrendingUp, TrendingDown, Wallet, Plus, X, RefreshCw, Archive, LayoutDashboard, History, ShoppingBag, Settings, Moon, Sun, Info, User, Package, CheckCircle, Trash2, Edit3, AlertCircle, ChevronLeft, CreditCard, Landmark, Coins, ChevronRight } from 'lucide-react-native';
+import { TrendingUp, TrendingDown, Wallet, Plus, X, RefreshCw, Archive, LayoutDashboard, History, ShoppingBag, Settings, Moon, Sun, Info, User, Package, CheckCircle, Trash2, Edit3, AlertCircle, ChevronLeft, CreditCard, Landmark, Coins, ChevronRight, Printer, Palette } from 'lucide-react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useWindowDimensions } from 'react-native';
 
 export default function App() {
   const { width: screenWidth } = useWindowDimensions();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'finance' | 'history' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'stock' | 'finance' | 'history' | 'settings' | 'preorder'>('dashboard');
   const [financeSubTab, setFinanceSubTab] = useState<'main' | 'add' | 'input'>('main');
+  const [expandedPreorder, setExpandedPreorder] = useState<string | null>(null);
+
+  const togglePreorderExpand = (id: string) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedPreorder(expandedPreorder === id ? null : id);
+  };
   const [selectedMethod, setSelectedMethod] = useState<any>(null);
   const [newBalance, setNewBalance] = useState('');
   const [isDarkMode, setIsDarkMode] = useState(true);
@@ -366,6 +376,23 @@ export default function App() {
         </View>
       </TouchableOpacity>
 
+      {/* Preorder Tracker Card */}
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.card }]}
+        onPress={() => setActiveTab('preorder')}
+      >
+        <View style={styles.row}>
+          <View style={[styles.iconBox, { backgroundColor: 'rgba(56,189,248,0.1)' }]}>
+            <Package color="#38bdf8" size={24} />
+          </View>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={[styles.cardTitle, { color: theme.text }]}>Pantau Preorder</Text>
+            <Text style={[styles.cardDesc, { color: theme.subText }]}>Lacak {summary?.preorders?.length || 0} status antrian pesanan SPK.</Text>
+          </View>
+          <ChevronRight color={theme.subText} size={20} />
+        </View>
+      </TouchableOpacity>
+
       {/* Quick Access List */}
       <View style={{ marginTop: 20 }}>
         <Text style={[styles.sectionTitle, { color: theme.text }]}>Statistik Cepat</Text>
@@ -381,6 +408,161 @@ export default function App() {
         </View>
       </View>
     </ScrollView>
+  );
+
+  const getStatusColor = (status: string) => {
+    const s = status?.toLowerCase();
+    switch (s) {
+      case 'pending': return '#94a3b8'; // slate-400
+      case 'designing': return '#3b82f6'; // blue-500
+      case 'printing': return '#f59e0b'; // amber-500 (di desk cetak itu amber/orange)
+      case 'completed': return '#22c55e'; // green-500
+      case 'canceled': return '#ef4444'; // red-500
+      default: return '#94a3b8';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    const s = status?.toLowerCase();
+    switch (s) {
+      case 'completed': return <CheckCircle color="#22c55e" size={20} />;
+      case 'canceled': return <X color="#ef4444" size={20} />;
+      case 'printing': return <Printer color="#f59e0b" size={20} />;
+      case 'designing': return <Palette color="#3b82f6" size={20} />;
+      default: return <RefreshCw color={getStatusColor(status)} size={20} />;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const s = status?.toLowerCase();
+    switch (s) {
+      case 'pending': return 'ANTRIAN';
+      case 'designing': return 'DESAIN';
+      case 'printing': return 'CETAK';
+      case 'completed': return 'SELESAI';
+      case 'canceled': return 'BATAL';
+      default: return status?.toUpperCase();
+    }
+  };
+
+  const renderPreorder = () => (
+    <View style={styles.tabContent}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 16 }}>
+        <TouchableOpacity onPress={() => setActiveTab('dashboard')} style={{ marginRight: 10 }}>
+          <ChevronLeft color={theme.text} size={28} />
+        </TouchableOpacity>
+        <Text style={[styles.tabHeading, { color: theme.text, marginBottom: 0 }]}>Tracker Preorder</Text>
+      </View>
+      <FlatList
+        data={summary?.preorders || []}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={{ paddingBottom: 150 }}
+        renderItem={({ item }) => {
+          const isExpanded = expandedPreorder === item.id.toString();
+          return (
+            <TouchableOpacity 
+              activeOpacity={0.9} 
+              onPress={() => togglePreorderExpand(item.id.toString())}
+              style={{ marginVertical: 6, borderRadius: 22, backgroundColor: theme.card, padding: 16, elevation: 1 }}
+            >
+              <View style={[styles.row, { justifyContent: 'space-between', marginBottom: 12 }]}>
+                <View style={[styles.row, { flex: 1 }]}>
+                  <View style={[styles.iconBox, { backgroundColor: `${getStatusColor(item.status)}20`, width: 36, height: 36, borderRadius: 10 }]}>
+                    {getStatusIcon(item.status)}
+                  </View>
+                  <View style={{ marginLeft: 10, flex: 1 }}>
+                    <Text style={[styles.listItemTitle, { color: theme.text }]} numberOfLines={1}>{item.customerName}</Text>
+                    <Text style={[styles.listItemSubtitle, { color: theme.subText }]} numberOfLines={1}>{item.serviceName || 'Layanan Kustom'}</Text>
+                  </View>
+                </View>
+                <View style={[styles.urgentBadge, { backgroundColor: `${getStatusColor(item.status)}15`, marginLeft: 8 }]}>
+                  <Text style={[styles.urgentText, { color: getStatusColor(item.status) }]}>{getStatusLabel(item.status)}</Text>
+                </View>
+              </View>
+
+              <View style={[styles.divider, { marginVertical: 8, opacity: 0.5 }]} />
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 }}>
+                <View>
+                  <Text style={{ fontSize: 9, color: theme.subText, textTransform: 'uppercase', letterSpacing: 1, fontWeight: '700' }}>Estimasi Selesai</Text>
+                  <Text style={{ color: theme.text, fontWeight: '600', fontSize: 13, marginTop: 2 }}>
+                    {item.dueDate ? new Date(item.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                  </Text>
+                </View>
+                <View style={{ alignItems: 'flex-end' }}>
+                  <Text style={{ fontSize: 9, color: theme.subText, textTransform: 'uppercase', letterSpacing: 1, fontWeight: '700' }}>Down Payment</Text>
+                  <Text style={{ color: item.downPayment > 0 ? theme.success : theme.subText, fontWeight: '600', fontSize: 13, marginTop: 2 }}>
+                    {item.downPayment > 0 ? formatIDR(item.downPayment) : 'Rp 0'}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Animasi Expand ke bawah */}
+              {isExpanded && (
+                <View style={{ marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: theme.border, borderStyle: 'dashed' }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text style={{ color: theme.subText, fontSize: 12 }}>Total Kontrak:</Text>
+                    <Text style={{ color: theme.text, fontSize: 13, fontWeight: 'bold' }}>{formatIDR(item.totalAmount)}</Text>
+                  </View>
+                  
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <Text style={{ color: theme.subText, fontSize: 12 }}>Sisa Bayar:</Text>
+                    <Text style={{ color: theme.danger, fontSize: 13, fontWeight: 'bold' }}>
+                      {formatIDR(item.remainingAmount || (item.totalAmount - item.downPayment))}
+                    </Text>
+                  </View>
+
+                  <View style={{ marginTop: 8, marginBottom: 8 }}>
+                    <Text style={{ color: theme.subText, fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 }}>RINCIAN BARANG:</Text>
+                    {item.items && item.items.length > 0 ? (
+                      item.items.map((it: any, idx: number) => (
+                        <View key={idx} style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', padding: 10, borderRadius: 12, marginBottom: 6, borderLeftWidth: 3, borderLeftColor: theme.primary }}>
+                          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <View style={{ flex: 1 }}>
+                              <Text style={{ color: theme.text, fontSize: 12, fontWeight: 'bold' }}>{it.name}</Text>
+                              <Text style={{ color: theme.primary, fontSize: 10, fontWeight: '700', marginTop: 1 }}>{it.bahan || 'Reguler'}</Text>
+                            </View>
+                            <Text style={{ color: theme.text, fontSize: 12, fontWeight: '700' }}>{formatIDR(it.total)}</Text>
+                          </View>
+                          
+                          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, opacity: 0.8 }}>
+                            <Package size={10} color={theme.subText} />
+                            <Text style={{ color: theme.subText, fontSize: 11, marginLeft: 4 }}>{it.isBanner ? `${it.p}x${it.l}m` : 'Bukan Banner'} • {it.qty} Qty</Text>
+                          </View>
+
+                          {it.notes && (
+                            <View style={{ marginTop: 6, paddingLeft: 8, borderLeftWidth: 1, borderLeftColor: theme.border }}>
+                              <Text style={{ color: theme.text, fontSize: 10, fontStyle: 'italic', opacity: 0.7 }}>— {it.notes}</Text>
+                            </View>
+                          )}
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={{ color: theme.text, fontSize: 12 }}>- Tidak ada rincian item -</Text>
+                    )}
+                  </View>
+
+                  <View style={{ marginTop: 4 }}>
+                    <Text style={{ color: theme.subText, fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Catatan Utama Pesanan:</Text>
+                    <View style={{ backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', padding: 12, borderRadius: 12 }}>
+                      <Text style={{ color: theme.text, fontSize: 12, fontStyle: 'italic' }}>
+                        {item.notes || 'Tidak ada catatan tambahan.'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              )}
+            </TouchableOpacity>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Package color={theme.subText} size={48} />
+            <Text style={[styles.emptyText, { color: theme.subText }]}>Belum ada pesanan masuk.</Text>
+          </View>
+        }
+      />
+    </View>
   );
 
   const renderStock = () => (
@@ -845,6 +1027,7 @@ export default function App() {
         {activeTab === 'finance' && renderFinance()}
         {activeTab === 'history' && renderHistory()}
         {activeTab === 'settings' && renderSettings()}
+        {activeTab === 'preorder' && renderPreorder()}
       </View>
 
       {/* FAB (Only Dashboard) */}

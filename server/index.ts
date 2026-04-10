@@ -125,6 +125,7 @@ function sendUnifiedSync(overrides: any = {}) {
     walletBalance: walletBalanceRunning,
     stockLowCount: lowStockItems.length,
     lowStockItems,
+    preorders: data.preorders || [],
     financeSources: data.financeSources || [],
     settings: data.settings || {},
     lastSync: new Date().toISOString(),

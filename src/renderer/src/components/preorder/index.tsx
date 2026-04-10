@@ -477,6 +477,18 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                             onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                           />
                         </div>
+
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary flex items-center gap-2 ml-1">
+                            <MessageSquare size={12} /> Catatan Utama / Instruksi Khusus
+                          </label>
+                          <textarea
+                            className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 focus:border-primary px-5 py-4 rounded-2xl outline-none font-semibold text-xs shadow-sm transition-all dark:text-white placeholder:text-slate-400 dark:placeholder:text-white/20 italic min-h-[80px] resize-none"
+                            placeholder="Tulis instruksi umum (misal: pengerjaan express, diambil jam 4 sore, dsb)..."
+                            value={formData.notes}
+                            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          />
+                        </div>
                       </div>
                     </div>
 
