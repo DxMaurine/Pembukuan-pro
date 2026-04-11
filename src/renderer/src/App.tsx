@@ -1293,7 +1293,7 @@ const App: React.FC = () => {
 
                         <div className="space-y-2 mb-10">
                           <div className="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest">
-                            Version 3.1.6-Lite Stable
+                            Version 3.1.8-Lite Stable
                           </div>
                           <p className="text-xs text-muted font-medium italic">"Elevating bookkeeping to an art form."</p>
                         </div>
