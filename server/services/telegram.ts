@@ -9,12 +9,28 @@ import fs from 'fs';
 import { sendInternalMessage } from './whatsapp';
 import { readDb } from '../database';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
+const data = readDb();
+const settings = data.settings || {};
 
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || settings.telegramToken || '';
+const CHAT_ID = process.env.TELEGRAM_CHAT_ID || settings.telegramChatId || '';
 
-console.log('[TELEGRAM] >> Bot aktif di Server!');
+let bot: TelegramBot;
+
+if (BOT_TOKEN) {
+  bot = new TelegramBot(BOT_TOKEN, { polling: true });
+  console.log('[TELEGRAM] >> Bot aktif di Server!');
+} else {
+  console.warn('[TELEGRAM] >> Bot dinonaktifkan: Token tidak ditemukan di .env atau Database.');
+  // Mock bot to prevent crashes on method calls
+  bot = {
+    sendMessage: async () => ({}),
+    sendDocument: async () => ({}),
+    editMessageText: async () => ({}),
+    answerCallbackQuery: async () => ({}),
+    on: () => {}
+  } as any;
+}
 
 export async function notifyQRISInternal(entry: any, autoConfirm: boolean = false) {
   try {

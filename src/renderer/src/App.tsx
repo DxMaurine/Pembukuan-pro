@@ -59,6 +59,8 @@ const App: React.FC = () => {
   const [resetStart, setResetStart] = useState(getLocalDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
   const [resetEnd, setResetEnd] = useState(getLocalDate(new Date()));
   const [selectedModules, setSelectedModules] = useState(['transactions', 'wallet', 'debts', 'preorders', 'stock']);
+  const [telegramToken, setTelegramToken] = useState('');
+  const [telegramChatId, setTelegramChatId] = useState('');
 
   // Update System State
   const [updateStatus, setUpdateStatus] = useState<string>('');
@@ -326,6 +328,8 @@ const App: React.FC = () => {
       setStockItems(st);
       if (set.storeName) setStoreName(set.storeName);
       if (set.autoConfirm !== undefined) setAutoConfirm(set.autoConfirm);
+      if (set.telegramToken) setTelegramToken(set.telegramToken);
+      if (set.telegramChatId) setTelegramChatId(set.telegramChatId);
       const pin = set.password || '0000';
       setSavedPassword(pin);
       localStorage.setItem('cachedPin', pin);
@@ -1027,6 +1031,49 @@ const App: React.FC = () => {
                             </div>
                             <p className="text-[11px] leading-relaxed font-medium text-muted">
                               Sistem mencatat sebagai 'Pending'. Wajib diverifikasi via Telegram dengan menekan tombol 'DITERIMA'.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Telegram Configuration Section */}
+                        <div className="mt-8 pt-8 border-t border-slate-200 dark:border-white/10">
+                          <div className="flex items-center gap-3 mb-6 font-bold">
+                            <Shield size={20} className="text-primary" />
+                            <h4 className="text-xs font-bold uppercase tracking-widest text-primary italic">Konfigurasi Bot Telegram</h4>
+                          </div>
+
+                          <div className="space-y-4 max-w-xl">
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-0.5">Token Bot Telegram (API KEY):</label>
+                              <input
+                                type="password"
+                                className="form-input w-full font-mono text-xs font-bold"
+                                placeholder="123456789:ABCDEF..."
+                                value={telegramToken}
+                                onChange={(e) => setTelegramToken(e.target.value)}
+                              />
+                            </div>
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-0.5">ID Chat Admin/Group:</label>
+                              <input
+                                type="text"
+                                className="form-input w-full font-mono text-xs font-bold"
+                                placeholder="-100123456789"
+                                value={telegramChatId}
+                                onChange={(e) => setTelegramChatId(e.target.value)}
+                              />
+                            </div>
+                            <button
+                              onClick={async () => {
+                                await api.saveSettings({ telegramToken, telegramChatId });
+                                Swal.fire({ title: 'Tersimpan!', text: 'Kredensial Telegram diperbarui. Restart aplikasi untuk menerapkan.', icon: 'success', timer: 2000, showConfirmButton: false });
+                              }}
+                              className="btn btn-primary px-8 py-3.5 rounded-2xl font-bold uppercase tracking-widest text-[10px] mt-2 shadow-lg shadow-primary/20"
+                            >
+                              Simpan Pengaturan Bot
+                            </button>
+                            <p className="text-[10px] text-muted italic mt-3 opacity-60">
+                              *Kredensial disimpan aman di database aplikasi. Pastikan Restart aplikasi agar bot mulai berjalan kembali.
                             </p>
                           </div>
                         </div>

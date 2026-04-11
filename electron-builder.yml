@@ -18,10 +18,6 @@ extraResources:
     to: server/node_modules
   - from: server/package.json
     to: server/package.json
-  - from: server/.env
-    to: server/.env
-  - from: server/.env
-    to: server/dist/.env
   - from: resources/icon.png
     to: resources/icon.png
 nsis:
