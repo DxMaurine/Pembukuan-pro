@@ -252,7 +252,7 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-text-main leading-tight uppercase tracking-tight">System Control Hub</h1>
-            <p className="text-xs text-text-muted font-bold tracking-widest opacity-60 uppercase mt-0.5">Notification Engine & Server Monitor</p>
+            <p className="text-sm text-muted opacity-60 italic mt-1">Notification Engine & Server Monitor</p>
           </div>
         </div>
 

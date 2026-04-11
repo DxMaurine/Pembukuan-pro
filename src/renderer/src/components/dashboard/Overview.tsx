@@ -234,7 +234,7 @@ const Overview: React.FC<OverviewProps> = ({
               <h3 className="text-sm font-bold uppercase tracking-widest">
                 Snapshot Antrian Produksi
               </h3>
-              <p className="text-[10px] text-muted font-bold uppercase tracking-widest mt-0.5 opacity-60">
+              <p className="text-[10px] text-muted font-bold uppercase tracking-widest mt-0.5 opacity-60 italic">
                 Total aktif: <span className="text-primary">{totalActive} pesanan</span>
               </p>
             </div>

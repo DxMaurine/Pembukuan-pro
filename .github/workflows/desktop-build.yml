@@ -1,0 +1,38 @@
+name: Desktop Build & Release
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - 'mobile/**'
+      - '.github/workflows/android-build.yml'
+  workflow_dispatch:
+
+jobs:
+  release:
+    runs-on: windows-latest
+    
+    steps:
+      - name: 🏗 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 📂 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 📦 Install root dependencies
+        run: npm ci
+
+      - name: 📦 Install server dependencies
+        working-directory: ./server
+        run: npm ci
+
+      - name: 🛠 Build Server
+        run: npm run build:server
+
+      - name: 🚀 Build & Publish Electron App
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run build:win -- -p always

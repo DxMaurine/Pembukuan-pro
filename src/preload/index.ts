@@ -112,6 +112,30 @@ const api = {
     const listener = (_event: any, data: string) => callback(data)
     ipcRenderer.on('server:log', listener)
     return () => ipcRenderer.removeListener('server:log', listener)
+  },
+
+  // --- Update Operations ---
+  checkForUpdates: () => ipcRenderer.send('app:check-for-updates'),
+  quitAndInstall: () => ipcRenderer.send('app:quit-and-install'),
+  onUpdateMessage: (callback: (message: string) => void) => {
+    const listener = (_event: any, message: string) => callback(message)
+    ipcRenderer.on('app:update-message', listener)
+    return () => ipcRenderer.removeListener('app:update-message', listener)
+  },
+  onUpdateAvailable: (callback: (info: any) => void) => {
+    const listener = (_event: any, info: any) => callback(info)
+    ipcRenderer.on('app:update-available', listener)
+    return () => ipcRenderer.removeListener('app:update-available', listener)
+  },
+  onDownloadProgress: (callback: (percent: number) => void) => {
+    const listener = (_event: any, percent: number) => callback(percent)
+    ipcRenderer.on('app:download-progress', listener)
+    return () => ipcRenderer.removeListener('app:download-progress', listener)
+  },
+  onUpdateDownloaded: (callback: (info: any) => void) => {
+    const listener = (_event: any, info: any) => callback(info)
+    ipcRenderer.on('app:update-downloaded', listener)
+    return () => ipcRenderer.removeListener('app:update-downloaded', listener)
   }
 }
 

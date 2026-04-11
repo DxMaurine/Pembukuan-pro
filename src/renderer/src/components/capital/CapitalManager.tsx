@@ -65,7 +65,7 @@ const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, 
           <h1 className="text-3xl font-semibold flex items-center gap-3">
             <Coins className="text-primary" size={32} /> Modal Toko
           </h1>
-          <p className="text-muted dark:text-muted mt-1">Kelola saldo awal operasional setiap bulan.</p>
+          <p className="text-muted dark:text-muted mt-1 italic opacity-60 text-sm">Kelola saldo awal operasional setiap bulan.</p>
         </div>
         <button className="btn btn-primary" onClick={() => setShowModal(true)}>
           <Plus size={18} /> Set Modal Baru
@@ -90,11 +90,11 @@ const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, 
         </div>
 
         <div className="glass-card p-8 flex flex-col justify-center gap-4 bg-slate-50 dark:bg-white/5 border-dashed border-2">
-            <div className="flex items-center gap-3 text-muted">
-                <Info size={16} />
-                <span className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Penting:</span>
-            </div>
-            <p className="text-xs text-muted leading-relaxed">Pastikan modal awal dicatat setiap awal bulan sebelum transaksi pertama masuk.</p>
+          <div className="flex items-center gap-3 text-muted">
+            <Info size={16} />
+            <span className="text-[10px] font-bold uppercase tracking-widest leading-relaxed">Penting:</span>
+          </div>
+          <p className="text-xs text-muted leading-relaxed">Pastikan modal awal dicatat setiap awal bulan sebelum transaksi pertama masuk.</p>
         </div>
       </div>
 
@@ -143,8 +143,8 @@ const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, 
                             Rp {formatIDR(cap.amount)}
                           </td>
                           <td className="py-4 text-right">
-                            <button 
-                              onClick={() => handleEditClick(cap)} 
+                            <button
+                              onClick={() => handleEditClick(cap)}
                               className="btn p-2 bg-slate-200 dark:bg-white/10 shadow-none hover:bg-primary/20 hover:text-primary transition-colors border-none opacity-0 group-hover:opacity-100"
                             >
                               <Pencil size={12} />
@@ -215,21 +215,21 @@ const CapitalManager: React.FC<CapitalManagerProps> = ({ capitalData, loadData, 
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted opacity-80 block mb-2">Pilih Periode:</label>
                   <div className="grid grid-cols-2 gap-3">
-                    <select className="form-input text-sm py-3" value={formData.month} onChange={e => setFormData({...formData, month: parseInt(e.target.value)})}>
+                    <select className="form-input text-sm py-3" value={formData.month} onChange={e => setFormData({ ...formData, month: parseInt(e.target.value) })}>
                       {months.map((m, i) => <option key={i} value={i}>{m}</option>)}
                     </select>
-                    <select className="form-input text-sm py-3" value={formData.year} onChange={e => setFormData({...formData, year: parseInt(e.target.value)})}>
+                    <select className="form-input text-sm py-3" value={formData.year} onChange={e => setFormData({ ...formData, year: parseInt(e.target.value) })}>
                       {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
                     </select>
                   </div>
                 </div>
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted opacity-80 block mb-2">Nominal Modal (Rp):</label>
-                  <input required autoFocus className="form-input text-2xl font-black py-4 text-center text-primary" value={formatIDR(formData.amount)} onChange={e => setFormData({...formData, amount: unformatIDR(e.target.value)})} placeholder="Rp 0" />
+                  <input required autoFocus className="form-input text-2xl font-black py-4 text-center text-primary" value={formatIDR(formData.amount)} onChange={e => setFormData({ ...formData, amount: unformatIDR(e.target.value) })} placeholder="Rp 0" />
                 </div>
                 <div>
                   <label className="text-[10px] font-black uppercase tracking-widest text-muted opacity-80 block mb-2">Tanggal Berlaku:</label>
-                  <input type="date" className="form-input py-3" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                  <input type="date" className="form-input py-3" value={formData.date} onChange={e => setFormData({ ...formData, date: e.target.value })} />
                 </div>
               </div>
               <div className="flex gap-4 pt-4">

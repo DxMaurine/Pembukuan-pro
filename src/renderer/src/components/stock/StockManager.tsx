@@ -45,7 +45,7 @@ const StockManager: React.FC<StockManagerProps> = ({
           <h1 className="text-3xl font-semibold flex items-center gap-3">
             <Archive className="text-primary" size={32} /> Stock Hub
           </h1>
-          <p className="text-muted dark:text-muted mt-1 uppercase tracking-widest font-bold text-[10px] opacity-60">Pencatatan Barang Habis & Opname v3.1.6-Lite</p>
+          <p className="text-muted dark:text-muted mt-1 text-sm opacity-60 italic">Pencatatan Barang Habis & Opname</p>
         </div>
         <div className="flex gap-4">
           <button className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10" onClick={sendStockToOwner}>
@@ -74,13 +74,12 @@ const StockManager: React.FC<StockManagerProps> = ({
               {/* Quick Add Row (Excel Mode) */}
               <tr className={`${isStockUrgent ? 'bg-rose-500/5 dark:bg-rose-500/10' : 'bg-primary/5 dark:bg-primary/10'} transition-colors group`}>
                 <td className="px-6 py-4 text-center">
-                  <button 
+                  <button
                     onClick={() => setIsStockUrgent(!isStockUrgent)}
-                    className={`w-8 h-8 rounded-xl transition-all flex items-center justify-center ${
-                      isStockUrgent 
-                        ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-110' 
-                        : 'bg-primary/20 text-primary hover:bg-primary/30'
-                    }`}
+                    className={`w-8 h-8 rounded-xl transition-all flex items-center justify-center ${isStockUrgent
+                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20 scale-110'
+                      : 'bg-primary/20 text-primary hover:bg-primary/30'
+                      }`}
                     title={isStockUrgent ? "Status: MENDESAK" : "Klik untuk tandai MENDESAK"}
                   >
                     {isStockUrgent ? <AlertCircle size={16} strokeWidth={3} /> : <Plus size={16} strokeWidth={3} />}
@@ -275,26 +274,23 @@ const StockManager: React.FC<StockManagerProps> = ({
                     />
                   </div>
 
-                  <div 
-                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${
-                      isStockUrgent 
-                      ? 'bg-rose-50 border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/30' 
+                  <div
+                    className={`flex items-center gap-4 p-4 rounded-2xl border transition-all cursor-pointer ${isStockUrgent
+                      ? 'bg-rose-50 border-rose-200 dark:bg-rose-500/10 dark:border-rose-500/30'
                       : 'bg-slate-50 border-slate-200 dark:bg-white/5 dark:border-white/10'
-                    }`}
+                      }`}
                     onClick={() => setIsStockUrgent(!isStockUrgent)}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                      isStockUrgent ? 'bg-rose-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-muted'
-                    }`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isStockUrgent ? 'bg-rose-500 text-white' : 'bg-slate-200 dark:bg-white/10 text-muted'
+                      }`}>
                       <AlertCircle size={20} />
                     </div>
                     <div className="flex-1">
                       <p className="text-sm font-bold">Tandai MENDESAK</p>
                       <p className="text-[10px] text-muted italic">Prioritas tinggi untuk segera dibeli.</p>
                     </div>
-                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                      isStockUrgent ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-300 dark:border-white/20'
-                    }`}>
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isStockUrgent ? 'bg-rose-500 border-rose-500 text-white' : 'border-slate-300 dark:border-white/20'
+                      }`}>
                       {isStockUrgent && <CheckCircle2 size={14} strokeWidth={3} />}
                     </div>
                   </div>

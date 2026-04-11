@@ -1,6 +1,7 @@
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { autoUpdater } from 'electron-updater'
 import { fork, ChildProcess, execSync } from 'child_process'
 import fs from 'fs'
 
@@ -160,6 +161,44 @@ app.whenReady().then(() => {
   })
 
   createWindow()
+
+  // Check for updates on startup
+  if (!is.dev) {
+    autoUpdater.checkForUpdatesAndNotify()
+  }
+
+  // --- Manual Update IPC Listeners ---
+  ipcMain.on('app:check-for-updates', () => {
+    if (is.dev) {
+      if (mainWindow) mainWindow.webContents.send('app:update-message', 'Update tidak tersedia di mode development.')
+      return
+    }
+    autoUpdater.checkForUpdates()
+  })
+
+  ipcMain.on('app:quit-and-install', () => {
+    autoUpdater.quitAndInstall()
+  })
+
+  // autoUpdater listeners
+  autoUpdater.on('checking-for-update', () => {
+    if (mainWindow) mainWindow.webContents.send('app:update-message', 'Mengecek pembaruan...')
+  })
+  autoUpdater.on('update-available', (info) => {
+    if (mainWindow) mainWindow.webContents.send('app:update-available', info)
+  })
+  autoUpdater.on('update-not-available', () => {
+    if (mainWindow) mainWindow.webContents.send('app:update-message', 'Versi aplikasi sudah yang terbaru.')
+  })
+  autoUpdater.on('error', (err) => {
+    if (mainWindow) mainWindow.webContents.send('app:update-message', `Error: ${err.message}`)
+  })
+  autoUpdater.on('download-progress', (progressObj) => {
+    if (mainWindow) mainWindow.webContents.send('app:download-progress', progressObj.percent)
+  })
+  autoUpdater.on('update-downloaded', (info) => {
+    if (mainWindow) mainWindow.webContents.send('app:update-downloaded', info)
+  })
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()

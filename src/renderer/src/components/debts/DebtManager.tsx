@@ -134,7 +134,7 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
           <h1 className="text-3xl font-semibold flex items-center gap-3">
             <Users className="text-primary" size={32} /> Hutang Piutang
           </h1>
-          <p className="text-muted dark:text-muted mt-1">Kelola data pinjaman dan penagihan pelanggan.</p>
+          <p className="text-muted dark:text-muted mt-1 italic opacity-60 text-sm">Kelola data pinjaman dan penagihan pelanggan.</p>
         </div>
         <div className="flex gap-4">
           <button className="btn btn-secondary border-slate-300 dark:border-white/10" onClick={sendDebtReport}>

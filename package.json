@@ -30,6 +30,7 @@
     "@tailwindcss/vite": "^4.2.2",
     "@whiskeysockets/baileys": "^7.0.0-rc.9",
     "axios": "^1.14.0",
+    "electron-updater": "^6.8.3",
     "firebase": "^12.11.0",
     "jspdf": "^2.5.1",
     "jspdf-autotable": "^3.8.2",

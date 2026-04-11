@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
-import { Eye, EyeOff, Plus, History, Settings2, Store, Shield, Zap, Palette, Trash2, Info, Filter, FileText, Wallet, Handshake, ShoppingBag, Package } from 'lucide-react';
+import { Eye, EyeOff, Plus, History, Settings2, Store, Shield, Zap, Palette, Trash2, Info, Filter, FileText, Wallet, Handshake, ShoppingBag, Package, RefreshCw, CheckCircle2, Download } from 'lucide-react';
 
 // Types
 import { Transaction, StockItem, Summary, Settings, Mutation } from './types';
@@ -59,6 +59,11 @@ const App: React.FC = () => {
   const [resetStart, setResetStart] = useState(getLocalDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1)));
   const [resetEnd, setResetEnd] = useState(getLocalDate(new Date()));
   const [selectedModules, setSelectedModules] = useState(['transactions', 'wallet', 'debts', 'preorders', 'stock']);
+
+  // Update System State
+  const [updateStatus, setUpdateStatus] = useState<string>('');
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
+  const [updateDownloaded, setUpdateDownloaded] = useState<boolean>(false);
 
   // Theme support
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -140,6 +145,67 @@ const App: React.FC = () => {
     document.documentElement.style.setProperty('--primary-active', preset.active);
     localStorage.setItem('accentColor', preset.primary);
   }, [accentColor]);
+
+  // --- Update System Listeners ---
+  useEffect(() => {
+    if (!api.onUpdateMessage) return; // Prevent crash in dev if not set up
+
+    const removeMsg = api.onUpdateMessage((msg: string) => {
+      setUpdateStatus(msg);
+      // If error or not available, clear after a while
+      if (msg.includes('Error') || msg.includes('yang terbaru')) {
+        setTimeout(() => setUpdateStatus(''), 5000);
+      }
+    });
+
+    const removeAvailable = api.onUpdateAvailable((info: any) => {
+      setUpdateStatus(`Versi baru tersedia: ${info.version}`);
+      Swal.fire({
+        title: 'Pembaruan Tersedia',
+        text: `Versi ${info.version} sudah dirilis. Unduh sekarang?`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonText: 'Unduh Sekarang'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // autoUpdater already starts downloading usually if configured
+        }
+      });
+    });
+
+    const removeProgress = api.onDownloadProgress((percent: number) => {
+      setDownloadProgress(Math.floor(percent));
+    });
+
+    const removeDownloaded = api.onUpdateDownloaded((info: any) => {
+      setUpdateDownloaded(true);
+      setUpdateStatus(`Pembaruan ${info.version} siap dipasang.`);
+      Swal.fire({
+        title: 'Pembaruan Siap!',
+        text: 'Instalasi sudah selesai diunduh. Restart aplikasi sekarang?',
+        icon: 'success',
+        showCancelButton: true,
+        confirmButtonText: 'Restart Sekarang'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          api.quitAndInstall();
+        }
+      });
+    });
+
+    return () => {
+      removeMsg();
+      removeAvailable();
+      removeProgress();
+      removeDownloaded();
+    };
+  }, []);
+
+  const handleManualCheckUpdate = () => {
+    setUpdateStatus('Mengecek...');
+    setDownloadProgress(0);
+    api.checkForUpdates();
+  };
 
   // Form States
   const [showModal, setShowModal] = useState(false);
@@ -629,6 +695,7 @@ const App: React.FC = () => {
                   preorders={preorders}
                   loadData={loadData}
                   api={api}
+                  storeName={storeName}
                 />
               )}
 
@@ -639,7 +706,7 @@ const App: React.FC = () => {
                       <h1 className="text-3xl font-semibold flex items-center gap-3">
                         <History className="text-primary" size={32} /> Semua Transaksi
                       </h1>
-                      <p className="text-muted dark:text-muted mt-1">Cari dan kelola histori keuangan Anda.</p>
+                      <p className="text-sm text-muted dark:text-muted mt-1 italic">Cari dan kelola histori keuangan Anda.</p>
                     </div>
                     <div className="flex gap-4">
                       <button
@@ -791,7 +858,7 @@ const App: React.FC = () => {
                     <h1 className="text-3xl font-semibold flex items-center gap-3">
                       <Settings2 className="text-primary" size={32} /> Pengaturan Sistem
                     </h1>
-                    <p className="text-sm text-muted mt-1 uppercase tracking-widest font-bold opacity-60">Konfigurasi Harmony Interface System</p>
+                    <p className="text-sm text-muted mt-1 italic opacity-60">Konfigurasi Harmony Interface System</p>
                   </header>
 
                   {/* Horizontal Tab Navigation */}
@@ -821,14 +888,14 @@ const App: React.FC = () => {
                   {/* Settings Content Area */}
                   <div className="mt-2 animate-scale-up">
                     {settingsTab === 'identity' && (
-                      <div className="glass-card max-w-2xl">
+                      <div className="glass-card max-w-3xl">
                         <div className="flex items-center gap-4 mb-8">
                           <div className="p-3 bg-primary/10 rounded-2xl text-primary">
                             <Store size={24} />
                           </div>
                           <div>
                             <h3 className="text-xl font-bold">Profil & Identitas</h3>
-                            <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Detail visual unit bisnis Anda</p>
+                            <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60 italic">Detail visual unit bisnis Anda</p>
                           </div>
                         </div>
 
@@ -866,7 +933,7 @@ const App: React.FC = () => {
                           </div>
                           <div>
                             <h3 className="text-xl font-bold">Keamanan Sistem</h3>
-                            <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Proteksi akses data sensitif</p>
+                            <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60 italic">Proteksi akses data sensitif</p>
                           </div>
                         </div>
 
@@ -913,7 +980,7 @@ const App: React.FC = () => {
                     )}
 
                     {settingsTab === 'automation' && (
-                      <div className="glass-card max-w-2xl border-primary/20 dark:bg-primary/5">
+                      <div className="glass-card max-w-3xl border-primary/20 dark:bg-primary/5">
                         <div className="flex justify-between items-start mb-8">
                           <div className="flex items-center gap-4">
                             <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-500">
@@ -921,7 +988,7 @@ const App: React.FC = () => {
                             </div>
                             <div>
                               <h3 className="text-xl font-bold">Otomasi Mode</h3>
-                              <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Status: {autoConfirm ? 'AUTO-PILOT' : 'MANUAL CONTROL'}</p>
+                              <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60 italic">Status: {autoConfirm ? 'AUTO-PILOT' : 'MANUAL CONTROL'}</p>
                             </div>
                           </div>
                           <button
@@ -967,7 +1034,7 @@ const App: React.FC = () => {
                     )}
 
                     {settingsTab === 'visual' && (
-                      <div className="glass-card max-w-2xl">
+                      <div className="glass-card max-w-3xl">
                         <div className="flex items-center gap-4 mb-8">
                           <div className="p-3 bg-violet-500/10 rounded-2xl text-violet-500">
                             <Palette size={24} />
@@ -1016,7 +1083,7 @@ const App: React.FC = () => {
                               </div>
                               <div>
                                 <h3 className="text-xl font-bold text-amber-600 dark:text-amber-400">🛡️ Filter Pembersihan Data</h3>
-                                <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Reset Periode Khusus dengan Checklist</p>
+                                <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60 italic">Reset Periode Khusus dengan Checklist</p>
                               </div>
                             </div>
 
@@ -1082,7 +1149,7 @@ const App: React.FC = () => {
                             <div className="space-y-4 p-5 bg-white dark:bg-white/5 rounded-3xl border border-slate-200 dark:border-white/10 shadow-sm">
                               <div className="flex justify-between items-center mb-4">
                                 <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary">2. Pilih Modul Data</h4>
-                                <button 
+                                <button
                                   onClick={() => setSelectedModules(['transactions', 'wallet', 'debts', 'preorders', 'stock'])}
                                   className="text-[9px] font-bold uppercase text-primary hover:underline"
                                 >
@@ -1161,7 +1228,7 @@ const App: React.FC = () => {
                               }}
                               className="btn bg-amber-500 hover:bg-amber-600 text-white px-12 py-4 rounded-2xl font-bold uppercase tracking-[0.15em] shadow-xl shadow-amber-500/20 flex items-center gap-3 transition-all active:scale-95 group"
                             >
-                              <Trash2 size={20} className="group-hover:rotate-12 transition-transform" /> 
+                              <Trash2 size={20} className="group-hover:rotate-12 transition-transform" />
                               Bersihkan Data Terpilih
                             </button>
                           </div>
@@ -1170,7 +1237,7 @@ const App: React.FC = () => {
                     )}
 
                     {settingsTab === 'about' && (
-                      <div className="glass-card max-w-2xl flex flex-col items-center text-center py-12">
+                      <div className="glass-card max-w-4xl flex flex-col items-center text-center py-12">
                         <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-6 animate-pulse">
                           <Settings2 size={48} />
                         </div>
@@ -1187,7 +1254,7 @@ const App: React.FC = () => {
                         <div className="grid grid-cols-2 gap-8 w-full max-w-sm">
                           <div className="space-y-1">
                             <p className="text-[10px] font-bold text-muted uppercase tracking-widest">Platform</p>
-                            <p className="text-sm font-bold">Electron Desktop</p>
+                            <p className="text-sm font-bold">Windows Desktop</p>
                           </div>
                           <div className="space-y-1">
                             <p className="text-[10px] font-bold text-muted uppercase tracking-widest">Database</p>
@@ -1195,8 +1262,45 @@ const App: React.FC = () => {
                           </div>
                         </div>
 
+                        <div className="space-y-6 w-full max-w-sm mt-8">
+                          {updateStatus && (
+                            <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 animate-fade-in">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-2 flex items-center justify-center gap-2">
+                                {downloadProgress > 0 && downloadProgress < 100 ? <RefreshCw className="animate-spin" size={12} /> : <CheckCircle2 size={12} />}
+                                {updateStatus}
+                              </p>
+                              {downloadProgress > 0 && downloadProgress < 100 && (
+                                <div className="w-full h-2 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-primary transition-all duration-300"
+                                    style={{ width: `${downloadProgress}%` }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {updateDownloaded ? (
+                            <button
+                              onClick={() => api.quitAndInstall()}
+                              className="btn btn-primary w-full py-4 rounded-2xl font-bold uppercase tracking-[0.15em] shadow-lg shadow-primary/20 flex items-center justify-center gap-2"
+                            >
+                              <RefreshCw size={18} /> Restart & Update
+                            </button>
+                          ) : (
+                            <button
+                              onClick={handleManualCheckUpdate}
+                              disabled={updateStatus === 'Mengecek...'}
+                              className="btn bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 w-full py-4 rounded-2xl font-bold uppercase tracking-[0.15em] hover:bg-slate-50 dark:hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                            >
+                              <Download size={18} className={updateStatus === 'Mengecek...' ? 'animate-spin' : ''} />
+                              Cek Pembaruan Sistem
+                            </button>
+                          )}
+                        </div>
+
                         <div className="mt-12 pt-8 border-t border-border/10 w-full">
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-30">© 2026 PICCAART STUDIO • ALL RIGHTS RESERVED</p>
+                          <p className="text-sm text-muted opacity-30">© 2026 PiccaDev Team• All Rights Reserved</p>
                         </div>
                       </div>
                     )}

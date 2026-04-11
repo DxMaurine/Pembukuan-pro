@@ -109,7 +109,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
           <h1 className="text-3xl font-semibold flex items-center gap-3">
             <FileText className="text-primary" size={32} /> Laporan Keuangan
           </h1>
-          <p className="text-muted dark:text-muted mt-1 text-sm">
+          <p className="text-muted dark:text-muted mt-1 text-sm italic">
             Analitik, ekspor, dan kirim laporan per periode.
           </p>
         </div>

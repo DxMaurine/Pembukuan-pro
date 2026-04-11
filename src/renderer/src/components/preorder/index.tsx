@@ -61,9 +61,10 @@ interface PreorderManagerProps {
   preorders: Preorder[];
   loadData: () => void;
   api: any;
+  storeName: string;
 }
 
-const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, api }) => {
+const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, api, storeName }) => {
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPreorder, setSelectedPreorder] = useState<Preorder | null>(null);
@@ -952,7 +953,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                           ? 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/30 hover:scale-105 active:scale-95'
                           : 'bg-slate-200 dark:bg-white/5 text-muted cursor-not-allowed opacity-40'
                       }`}
-                      onClick={() => generatePreorderInvoicePDF('UD. DM FOTO', selectedPreorder, 'light')}
+                      onClick={() => generatePreorderInvoicePDF(storeName, selectedPreorder, 'light')}
                       title={selectedPreorder.status !== 'completed' ? 'Selesaikan pesanan untuk cetak nota' : 'Cetak Nota'}
                     >
                       <FileText size={14} className={selectedPreorder.status === 'completed' ? 'group-hover:-translate-y-0.5 transition-transform' : ''} />

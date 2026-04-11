@@ -127,7 +127,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
           <h1 className="text-3xl font-semibold flex items-center gap-3">
             <QrCode className="text-primary" size={32} /> Wallet & QRIS
           </h1>
-          <p className="text-muted dark:text-muted mt-1 italic text-sm opacity-60">Pantau saldo digital dan transaksi QR code toko Bapak.</p>
+          <p className="text-muted dark:text-muted mt-1 italic text-sm opacity-60">Pantau saldo digital dan transaksi QR code.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
           <button onClick={sendWalletReport} className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 flex items-center gap-2 px-6 py-3.5 rounded-xl shadow-sm hover:scale-105 transition-transform font-bold text-[10px] uppercase tracking-widest text-slate-700 dark:text-slate-300">
@@ -295,7 +295,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                       >
                         <ChevronLeft size={18} />
                       </button>
-                      
+
                       <div className="flex items-center gap-1.5 px-4">
                         <span className="text-sm font-black text-primary">{currentPage}</span>
                         <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>

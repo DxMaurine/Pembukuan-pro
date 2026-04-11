@@ -1,5 +1,9 @@
 appId: com.dmfotocopy.pembukuan
 productName: DM Pembukuan Pro
+publish:
+  provider: github
+  owner: DxMaurine
+  repo: Pembukuan-pro
 directories:
   output: dist
   buildResources: resources
