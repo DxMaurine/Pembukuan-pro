@@ -1,44 +1,38 @@
-# 📱 Panduan Build APK - DM POS Mobile
+# 📱 Panduan Build & Update - DM ADMIN PRO
 
-Dokumen ini berisi instruksi cara membangun (build) aplikasi mobile untuk HP Android Bapak.
+Dokumen ini berisi instruksi cara membangun (build) dan memperbarui aplikasi DM POS (Desktop & Mobile).
 
-## 🚀 1. Cara Otomatis (GitHub Actions) - DIREKOMENDASIKAN
-Mulai sekarang, Bapak cukup mengirimkan kode ke GitHub, dan server GitHub akan otomatis membuatkan APK-nya secara **Gratis**.
+## 🖥 1. Aplikasi Desktop (Windows) - AUTOMATED
+Build Desktop sekarang sudah otomatis dilakukan oleh GitHub setiap kali Bapak melakukan `git push`.
 
-**Langkah-langkah:**
-1. Pastikan Bapak sudah menyimpan rahasia (Secrets) di GitHub (Hanya perlu sekali).
-2. Di terminal (folder root atau mobile), jalankan:
-   ```bash
-   git add .
-   git commit -m "Update UI atau perbaikan fitur"
-   git push origin main
-   ```
-3. Buka GitHub Bapak di browser, pilih tab **Actions**.
-4. Lihat proses **Android Build**. Tunggu sampai warna Hijau.
-5. Klik build tersebut, scroll ke bawah, download file **app-release** (zip berisi APK).
+**Langkah-langkah Update:**
+1. Di aplikasi Bapak, buka menu **Pengaturan > Tentang**.
+2. Klik tombol **Cek Pembaruan Sistem**.
+3. Jika ada versi baru, aplikasi akan mengunduh dan meminta **Restart** secara otomatis.
+4. **Konfigurasi Bot**: Untuk Telegram, bapak tidak perlu lagi edit file `.env`. Cukup isi Token dan Chat ID di menu **Pengaturan > Otomasi**.
 
 ---
 
-## 🛠 2. Cara Manual (EAS Build) - JIKA GITHUB ERROR
-Jika GitHub sedang gangguan atau Bapak ingin build resmi lewat Expo (memakai kuota EAS):
+## 🚀 2. Aplikasi Mobile (Android) - GITHUB ACTIONS
+Sama seperti desktop, APK Android akan dibangun otomatis oleh GitHub jika ada perubahan di folder `mobile/`.
 
 **Langkah-langkah:**
-1. Masuk ke folder `mobile`:
-   ```bash
-   cd mobile
-   ```
-2. Jalankan build dengan membersihkan cache (agar tidak error 429):
-   ```bash
-   npx -y eas-cli build --platform android --profile production --clear-cache
-   ```
-3. Tunggu sampai muncul link APK dari Expo.
+1. Jalankan `git push origin main`.
+2. Buka repo GitHub di browser, pilih tab **Actions**.
+3. Lihat proses **Android Build**. Tunggu sampai warna Hijau.
+4. Klik build tersebut, scroll ke bawah, download file **app-release** (zip berisi APK).
+
+---
+
+## 🛠 3. Build Manual (Hanya jika GitHub Error)
+- **Desktop**: Jalankan `npm run build:win` di terminal root.
+- **Mobile**: Jalankan `npx eas-cli build --platform android --profile production` di folder `mobile`.
 
 ---
 
 ## ⚠️ PENTING (Keamanan)
-- **File Kunci**: File `.jks` atau `.bak` (keystore) sudah otomatis diabaikan oleh `.gitignore`. **JANGAN PERNAH** menghapus baris tersebut agar kunci Bapak tidak bocor ke publik.
-- **Base64**: Jika Bapak kehilangan data di GitHub Secrets, Bapak perlu mengubah file kunci ke Base64 lagi menggunakan:
-  `base64 nama_file_kunci.jks > keystore_base64.txt` (di Git Bash).
+- **File .env**: File `.env` sekarang diabaikan oleh installer untuk melindungi data bapak agar tidak tertimpa saat update.
+- **Database**: Database bapak (`db.json`) tersimpan aman di folder `AppData` dan tidak akan terhapus meskipun aplikasi diinstall ulang.
 
 ---
-*DM POS Lite - v3.1.6*
+*DM ADMIN PRO - v3.1.8-Lite*
