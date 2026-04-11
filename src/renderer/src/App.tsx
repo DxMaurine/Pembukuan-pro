@@ -1300,7 +1300,7 @@ const App: React.FC = () => {
                         </div>
 
                         <div className="mt-12 pt-8 border-t border-border/10 w-full">
-                          <p className="text-sm text-muted opacity-30">© 2026 PiccaDev Team• All Rights Reserved</p>
+                          <p className="text-sm text-muted opacity-30">© 2026 DM ADMIN PRO• All Rights Reserved</p>
                         </div>
                       </div>
                     )}
