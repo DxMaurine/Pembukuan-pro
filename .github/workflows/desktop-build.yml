@@ -11,6 +11,8 @@ on:
 jobs:
   release:
     runs-on: windows-latest
+    permissions:
+      contents: write
     
     steps:
       - name: 🏗 Checkout repository
@@ -31,6 +33,12 @@ jobs:
 
       - name: 🛠 Build Server
         run: npm run build:server
+
+      - name: 📝 Create dummy .env for packaging
+        shell: bash
+        run: |
+          touch server/.env
+          echo "PORT=3000" > server/.env
 
       - name: 🚀 Build & Publish Electron App
         env:
