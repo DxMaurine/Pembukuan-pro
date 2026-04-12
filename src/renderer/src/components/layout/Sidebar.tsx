@@ -14,8 +14,12 @@ import {
   LogOut,
   ServerCog,
   ArrowLeftRight,
+  PlusCircle,
 } from 'lucide-react';
+
 import Swal from 'sweetalert2';
+import packageJson from '../../../../../package.json';
+
 
 interface SidebarProps {
   storeName: string;
@@ -67,12 +71,14 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       title: 'Financial',
       items: [
+        { id: 'other_income', icon: PlusCircle, label: 'Pemasukan ( non-sales )' },
         { id: 'debt', icon: CreditCard, label: 'Hutang Piutang' },
         { id: 'wallet', icon: Wallet, label: 'Wallet & QRIS' },
         { id: 'mutasi', icon: ArrowLeftRight, label: 'Mutasi Kas & Bank' },
         { id: 'capital', icon: Coins, label: 'Modal Toko' },
       ]
     },
+
     {
       title: 'Inventory',
       items: [
@@ -115,10 +121,10 @@ const Sidebar: React.FC<SidebarProps> = ({
             <LayoutDashboard size={24} />
           </div>
           <div>
-            <h2 className="text-xl Font-bold tracking-tight text-muted/90 leading-none uppercase">{storeName}</h2>
+            <h2 className="text-xl font-bold tracking-tight text-muted/90 leading-none">{storeName}</h2>
             <div className="flex items-center gap-1.5 mt-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-[10px] Font-bold uppercase tracking-widest text-muted opacity-60">Admin Pro v3.1.6-Lite</span>
+              <span className="text-xs text-muted dark:text-muted opacity-60">Admin Pro V{packageJson.version}</span>
             </div>
           </div>
         </div>
@@ -127,7 +133,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       <nav className="flex-1 overflow-y-auto custom-scrollbar px-4 space-y-8 pb-10">
         {navGroups.map((group, idx) => (
           <div key={idx} className="space-y-4 pt-1">
-            <h3 className="px-4 text-[10px] Font-bold uppercase tracking-[0.2em] text-muted opacity-90 mb-2">{group.title}</h3>
+            <h3 className="px-4 text-[10px] font-bold uppercase tracking-[0.2em] text-muted opacity-90 mb-2">{group.title}</h3>
             <div className="space-y-1">
               {group.items.map((item: any) => {
                 const isActive = activeTab === item.id;
@@ -185,7 +191,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <Sun size={20} className="text-orange-500 group-hover:scale-110 transition-transform" />
               )}
-              <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Theme</span>
+              <span className="text-[11px] font-black capitalize tracking-widest text-muted">Theme</span>
             </button>
 
             <button
@@ -194,14 +200,15 @@ const Sidebar: React.FC<SidebarProps> = ({
               title="Keluar"
             >
               <LogOut size={20} className="text-rose-500 group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] Font-black Capitalize tracking-widest text-muted">Keluar</span>
+              <span className="text-[11px] font-black capitalize tracking-widest text-muted">Keluar</span>
             </button>
           </div>
 
           <div className="text-center pt-2">
-            <p className="text-[9px] text-muted opacity-40 Font-bold uppercase tracking-[0.3em]">
-              Harmony Interface v3.1.6-Lite
+            <p className="text-xs text-muted dark:text-muted opacity-40">
+              Harmony Interface v{packageJson.version}
             </p>
+
           </div>
         </div>
       </div>

@@ -138,7 +138,7 @@ const Overview: React.FC<OverviewProps> = ({
           <h1 className="text-3xl font-bold flex items-center gap-3 text-slate-800 dark:text-white">
             <TrendingUp className="text-primary" size={32} /> Ringkasan Bisnis
           </h1>
-          <p className="text-muted dark:text-muted mt-1 font-bold text-[10px] uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-4 py-1.5 rounded-full border border-slate-200 dark:border-white/10 inline-block shadow-inner">
+          <p className="text-muted dark:text-muted mt-1 font-bold text-[10px] uppercase tracking-widest bg-slate-100 dark:bg-white/5 px-4 py-1.5 rounded-full border border-slate-200 dark:border-white/10 inline-block shadow-inner mt-2">
             {months[filterMonth]} {filterYear}
           </p>
         </div>

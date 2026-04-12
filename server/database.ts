@@ -61,6 +61,16 @@ export type Capital = {
   date: string;
 }
 
+export type Donation = {
+  id: number;
+  donator: string;
+  amount: number;
+  description: string;
+  date: string;
+  category?: string;
+}
+
+
 export type Preorder = {
   id: number;
   customerName: string;
@@ -76,11 +86,12 @@ export type Preorder = {
 
 export type Mutation = {
   id: number;
-  type: 'wallet_to_cash' | 'cash_to_wallet' | 'cash_to_owner' | 'wallet_to_owner';
+  type: 'wallet_to_cash' | 'cash_to_wallet' | 'cash_to_owner' | 'wallet_to_owner' | 'non_sales_to_owner' | 'donation_to_owner';
   amount: number;
   description: string;
   date: string;
 }
+
 
 export type Data = {
   transactions: Transaction[];
@@ -92,7 +103,9 @@ export type Data = {
   financeSources: FinanceSource[];
   settings: Record<string, any>;
   mutations: Mutation[];
+  donations: Donation[];
 }
+
 
 const defaultData: Data = { 
   transactions: [], 
@@ -103,8 +116,10 @@ const defaultData: Data = {
   preorders: [],
   financeSources: [],
   settings: { password: '0000', storeName: 'DM FOTOCOPY', autoConfirm: false },
-  mutations: []
+  mutations: [],
+  donations: []
 };
+
 
 const dbPath = path.resolve('f:/PEMBUKUAN APP/server/db.json');
 

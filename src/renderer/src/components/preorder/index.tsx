@@ -222,14 +222,14 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       loadData();
       // Update selectedPreorder so the modal UI reflects the change
       setSelectedPreorder(prev => prev ? { ...prev, status: newStatus } : null);
-      
+
       const statusText = newStatus === 'completed' ? 'Selesai' : (newStatus === 'canceled' ? 'Dibatalkan' : newStatus);
-      Swal.fire({ 
-        title: 'Status Diperbarui!', 
-        text: `Pesanan telah ditandai sebagai ${statusText}.`, 
-        icon: 'success', 
-        timer: 1500, 
-        showConfirmButton: false 
+      Swal.fire({
+        title: 'Status Diperbarui!',
+        text: `Pesanan telah ditandai sebagai ${statusText}.`,
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
       });
     } catch (err) {
       Swal.fire('Error', 'Gagal memperbarui status.', 'error');
@@ -297,8 +297,8 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
         <Search className="text-muted shrink-0" size={18} />
         <input
           type="text"
-          placeholder="Cari pesanan..."
-          className="bg-transparent border-none outline-none w-full font-bold text-xs uppercase"
+          placeholder="Cari pesanan... misal: banner pak ujang, sticker A3.."
+          className="bg-transparent border-none outline-none w-full text-sm text-muted dark:text-muted placeholder:text-sm placeholder:opacity-50 placeholder:italic"
           value={searchTerm}
           onChange={(e) => {
             setSearchTerm(e.target.value);
@@ -521,7 +521,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                         onClick={() => setPreorderStep('config')}
                         className="text-[10px] font-bold text-primary hover:underline uppercase tracking-tighter"
                       >
-                         Ubah Data Dasar ✎
+                        Ubah Data Dasar ✎
                       </button>
                     </div>
 
@@ -699,7 +699,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                     </div>
                   </div>
 
-                   <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[300px]">
+                  <div className="flex flex-col gap-4 w-full xl:w-auto xl:min-w-[300px]">
                     <div className="flex justify-between items-end px-3">
                       <span className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted opacity-60">Grand Total Bruto: </span>
                       <span className="text-2xl font-bold text-slate-900 dark:text-white italic tracking-tight leading-none">Rp {formatIDR(formData.totalAmount)}</span>
@@ -824,19 +824,19 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                       {(() => {
                         type StepDef = { key: Preorder['status']; label: string; sub: string; Icon: React.ElementType; color: string; ring: string; bg: string; text: string; border: string };
                         const steps: StepDef[] = [
-                          { key: 'pending',   label: 'Antrian',  sub: 'Menunggu',  Icon: Clock,       color: 'slate',   ring: 'ring-slate-400',   bg: 'bg-slate-500',   text: 'text-slate-600 dark:text-slate-300',   border: 'border-slate-300 dark:border-slate-600' },
-                          { key: 'designing', label: 'Desain',   sub: 'Proses',    Icon: Palette,     color: 'blue',    ring: 'ring-blue-400',    bg: 'bg-blue-500',    text: 'text-blue-600 dark:text-blue-300',    border: 'border-blue-300 dark:border-blue-600'   },
-                          { key: 'printing',  label: 'Cetak',    sub: 'Produksi',  Icon: Printer,     color: 'amber',   ring: 'ring-amber-400',   bg: 'bg-amber-500',   text: 'text-amber-600 dark:text-amber-300',   border: 'border-amber-300 dark:border-amber-600' },
-                          { key: 'completed', label: 'Selesai',  sub: 'Done',      Icon: CheckCheck,  color: 'emerald', ring: 'ring-emerald-400', bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-300', border: 'border-emerald-300 dark:border-emerald-600' },
+                          { key: 'pending', label: 'Antrian', sub: 'Menunggu', Icon: Clock, color: 'slate', ring: 'ring-slate-400', bg: 'bg-slate-500', text: 'text-slate-600 dark:text-slate-300', border: 'border-slate-300 dark:border-slate-600' },
+                          { key: 'designing', label: 'Desain', sub: 'Proses', Icon: Palette, color: 'blue', ring: 'ring-blue-400', bg: 'bg-blue-500', text: 'text-blue-600 dark:text-blue-300', border: 'border-blue-300 dark:border-blue-600' },
+                          { key: 'printing', label: 'Cetak', sub: 'Produksi', Icon: Printer, color: 'amber', ring: 'ring-amber-400', bg: 'bg-amber-500', text: 'text-amber-600 dark:text-amber-300', border: 'border-amber-300 dark:border-amber-600' },
+                          { key: 'completed', label: 'Selesai', sub: 'Done', Icon: CheckCheck, color: 'emerald', ring: 'ring-emerald-400', bg: 'bg-emerald-500', text: 'text-emerald-600 dark:text-emerald-300', border: 'border-emerald-300 dark:border-emerald-600' },
                         ];
                         const currentIdx = steps.findIndex(s => s.key === selectedPreorder.status);
                         return (
                           <div className="flex items-center w-full gap-1.5">
                             {steps.map((step, idx) => {
-                              const isDone    = idx < currentIdx;
+                              const isDone = idx < currentIdx;
                               const isCurrent = idx === currentIdx;
-                              const isNext    = idx === currentIdx + 1;
-                              const StepIcon  = step.Icon;
+                              const isNext = idx === currentIdx + 1;
+                              const StepIcon = step.Icon;
                               return (
                                 <React.Fragment key={step.key}>
                                   <button
@@ -859,19 +859,19 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                                     }}
                                     title={isDone ? `Kembali ke: ${step.label}` : isNext ? `Lanjutkan ke: ${step.label}` : step.label}
                                     className={`group flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl border transition-all duration-300 relative overflow-hidden
-                                      ${ isDone    ? `${step.bg} border-transparent cursor-pointer hover:brightness-90 hover:scale-[0.98] opacity-75 hover:opacity-100` : '' }
-                                      ${ isCurrent ? `${step.bg} border-transparent shadow-lg ${step.ring} ring-2 ring-offset-1 ring-offset-slate-50 dark:ring-offset-black/40 scale-[1.02]` : '' }
-                                      ${ isNext    ? `bg-white dark:bg-white/5 ${step.border} border-dashed cursor-pointer hover:border-solid hover:${step.bg.replace('bg-', 'bg-').replace('500', '50')} dark:hover:bg-white/10 hover:scale-[1.02]` : '' }
-                                      ${ !isDone && !isCurrent && !isNext ? 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 opacity-40 cursor-default' : '' }
+                                      ${isDone ? `${step.bg} border-transparent cursor-pointer hover:brightness-90 hover:scale-[0.98] opacity-75 hover:opacity-100` : ''}
+                                      ${isCurrent ? `${step.bg} border-transparent shadow-lg ${step.ring} ring-2 ring-offset-1 ring-offset-slate-50 dark:ring-offset-black/40 scale-[1.02]` : ''}
+                                      ${isNext ? `bg-white dark:bg-white/5 ${step.border} border-dashed cursor-pointer hover:border-solid hover:${step.bg.replace('bg-', 'bg-').replace('500', '50')} dark:hover:bg-white/10 hover:scale-[1.02]` : ''}
+                                      ${!isDone && !isCurrent && !isNext ? 'bg-white dark:bg-white/5 border-slate-100 dark:border-white/5 opacity-40 cursor-default' : ''}
                                     `}
                                   >
                                     {/* Icon container */}
                                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-all
-                                      ${ isDone || isCurrent ? 'bg-white/20 text-white' : '' }
-                                      ${ isNext ? `${step.text} bg-slate-100 dark:bg-white/10` : '' }
-                                      ${ !isDone && !isCurrent && !isNext ? 'text-slate-300 dark:text-white/20 bg-slate-50 dark:bg-white/5' : '' }
+                                      ${isDone || isCurrent ? 'bg-white/20 text-white' : ''}
+                                      ${isNext ? `${step.text} bg-slate-100 dark:bg-white/10` : ''}
+                                      ${!isDone && !isCurrent && !isNext ? 'text-slate-300 dark:text-white/20 bg-slate-50 dark:bg-white/5' : ''}
                                     `}>
-                                      { isDone
+                                      {isDone
                                         ? <RotateCcw size={15} strokeWidth={2.5} className="opacity-80 group-hover:rotate-[-180deg] transition-transform duration-500" />
                                         : <StepIcon size={15} strokeWidth={2} />
                                       }
@@ -879,25 +879,25 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                                     {/* Label */}
                                     <div className="flex flex-col min-w-0">
                                       <span className={`text-[10px] font-bold uppercase tracking-widest leading-none truncate
-                                        ${ isDone || isCurrent ? 'text-white' : '' }
-                                        ${ isNext ? step.text : '' }
-                                        ${ !isDone && !isCurrent && !isNext ? 'text-slate-400 dark:text-white/30' : '' }
+                                        ${isDone || isCurrent ? 'text-white' : ''}
+                                        ${isNext ? step.text : ''}
+                                        ${!isDone && !isCurrent && !isNext ? 'text-slate-400 dark:text-white/30' : ''}
                                       `}>{step.label}</span>
                                       <span className={`text-[8px] uppercase tracking-tighter mt-0.5 font-medium
-                                        ${ isDone ? 'text-white/60' : '' }
-                                        ${ isCurrent ? 'text-white/70' : '' }
-                                        ${ isNext ? 'text-slate-400 dark:text-white/30' : '' }
-                                        ${ !isDone && !isCurrent && !isNext ? 'text-slate-300 dark:text-white/20' : '' }
+                                        ${isDone ? 'text-white/60' : ''}
+                                        ${isCurrent ? 'text-white/70' : ''}
+                                        ${isNext ? 'text-slate-400 dark:text-white/30' : ''}
+                                        ${!isDone && !isCurrent && !isNext ? 'text-slate-300 dark:text-white/20' : ''}
                                       `}>
-                                        { isDone ? '← Undo' : isNext ? 'Tap maju' : step.sub }
+                                        {isDone ? '← Undo' : isNext ? 'Tap maju' : step.sub}
                                       </span>
                                     </div>
                                     {/* Current pulse dot */}
-                                    { isCurrent && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" /> }
+                                    {isCurrent && <div className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-white/60 animate-pulse" />}
                                   </button>
                                   {idx < steps.length - 1 && (
                                     <div className={`w-4 h-px rounded-full shrink-0 transition-all duration-500
-                                      ${ idx < currentIdx ? `${step.bg} opacity-50` : 'bg-slate-200 dark:bg-white/10' }
+                                      ${idx < currentIdx ? `${step.bg} opacity-50` : 'bg-slate-200 dark:bg-white/10'}
                                     `} />
                                   )}
                                 </React.Fragment>
@@ -948,11 +948,10 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                     </button>
                     <button
                       disabled={selectedPreorder.status !== 'completed'}
-                      className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-[10px] tracking-widest uppercase transition-all group ${
-                        selectedPreorder.status === 'completed'
-                          ? 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/30 hover:scale-105 active:scale-95'
-                          : 'bg-slate-200 dark:bg-white/5 text-muted cursor-not-allowed opacity-40'
-                      }`}
+                      className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-[10px] tracking-widest uppercase transition-all group ${selectedPreorder.status === 'completed'
+                        ? 'bg-primary hover:bg-primary-hover text-white shadow-lg shadow-primary/30 hover:scale-105 active:scale-95'
+                        : 'bg-slate-200 dark:bg-white/5 text-muted cursor-not-allowed opacity-40'
+                        }`}
                       onClick={() => generatePreorderInvoicePDF(storeName, selectedPreorder, 'light')}
                       title={selectedPreorder.status !== 'completed' ? 'Selesaikan pesanan untuk cetak nota' : 'Cetak Nota'}
                     >

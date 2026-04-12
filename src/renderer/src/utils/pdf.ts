@@ -575,3 +575,73 @@ export const generateMutationPDF = async (
 
   return doc.output('datauristring').split(',')[1];
 };
+
+export const generateDonationPDF = async (
+  storeName: string,
+  donations: any[],
+  theme: 'light' | 'dark'
+) => {
+  const doc = new jsPDF();
+  const accentColor = theme === 'dark' ? [0, 162, 255] : [16, 185, 129]; // Emerald for donations
+
+  doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text(storeName.toUpperCase(), 14, 20);
+
+  doc.setTextColor(60, 60, 60);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text("LAPORAN SALURAN DONASI & SOSIAL", 14, 28);
+
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(9);
+  doc.text(`Tgl Laporan: ${new Date().toLocaleDateString('id-ID')}`, 196, 20, { align: 'right' });
+
+  doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
+  doc.setLineWidth(0.5);
+  doc.line(14, 32, 196, 32);
+
+  const tableData = donations.map((d, idx) => [
+    idx + 1,
+    new Date(d.date).toLocaleDateString('id-ID'),
+    d.donator || '-',
+    `Rp ${formatIDR(d.amount)}`,
+    d.description || '-'
+  ]);
+
+  // @ts-ignore
+  doc.autoTable({
+    startY: 40,
+    head: [['No', 'Tanggal', 'Donatur', 'Nominal', 'Keterangan/Peruntukan']],
+    body: tableData,
+    headStyles: { fillColor: accentColor },
+    columnStyles: {
+      3: { halign: 'right', fontStyle: 'bold' }
+    }
+  });
+
+  const totalDonation = donations.reduce((s, d) => s + Number(d.amount), 0);
+  const finalY = (doc as any).lastAutoTable.finalY || 100;
+
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(14, finalY + 10, 182, 20, 3, 3, 'F');
+  
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(40, 40, 40);
+  doc.text(`TOTAL SALDO DONASI TERKUMPUL:`, 20, finalY + 23);
+  doc.text(`Rp ${formatIDR(totalDonation)}`, 190, finalY + 23, { align: 'right' });
+
+  // Footer
+  const pageCount = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(180, 180, 180);
+    doc.text(`Laporan ini diterbitkan secara otomatis oleh Sistem Pembukuan Digital ${storeName} - Halaman ${i} dari ${pageCount}`, 105, 285, { align: 'center' });
+  }
+
+  return doc.output('datauristring').split(',')[1];
+};
+

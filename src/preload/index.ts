@@ -66,6 +66,13 @@ const api = {
   addMutation: (data: any) => rest.post('/api/mutations', data),
   deleteMutation: (id: number) => rest.delete(`/api/mutations/${id}`),
 
+  // Donations
+  getDonations: () => rest.get('/api/donations'),
+  addDonation: (data: any) => rest.post('/api/donations', data),
+  updateDonation: (data: any) => rest.put(`/api/donations/${data.id}`, data),
+  deleteDonation: (id: number) => rest.delete(`/api/donations/${id}`),
+
+
   // Services
   sendReport: (data: any) => rest.post('/api/service/send-report', data),
   notifyQRIS: (data: any) => rest.post('/api/service/notify-qris', data),

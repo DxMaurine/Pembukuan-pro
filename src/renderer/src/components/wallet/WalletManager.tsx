@@ -165,17 +165,17 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
               <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${activeSubTab === 'saving' ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : 'bg-slate-500/10 text-slate-500'}`}>
                 <PiggyBank size={22} />
               </div>
-              <span className="text-[9px] font-black text-muted tracking-widest uppercase opacity-60">TABUNGAN AKTIF</span>
+              <span className="text-[10px] font-black text-muted tracking-widest uppercase opacity-60">TABUNGAN AKTIF</span>
             </div>
             <div>
-              <div className="text-[9px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Saldo:</div>
+              <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Saldo:</div>
               <h3 className="text-2xl font-black italic tracking-tighter text-slate-800 dark:text-white leading-none">Rp {formatIDR(totalSaving)}</h3>
             </div>
             <div className="flex gap-2 mt-2 pt-3 border-t border-slate-200/50 dark:border-white/5">
               {activeSubTab === 'saving' ? (
                 <>
-                  <button onClick={() => quickAddSaving(10000)} className="btn px-3 py-1.5 text-[9px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+10K</button>
-                  <button onClick={() => quickAddSaving(20000)} className="btn px-3 py-1.5 text-[9px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+20K</button>
+                  <button onClick={() => quickAddSaving(10000)} className="btn px-3 py-1.5 text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+10K</button>
+                  <button onClick={() => quickAddSaving(20000)} className="btn px-3 py-1.5 text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+20K</button>
                 </>
               ) : (
                 <div className="h-[25px]"></div>
@@ -198,15 +198,15 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
               <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${activeSubTab === 'qris' ? 'bg-blue-500/20 text-blue-500 shadow-lg shadow-blue-500/10 shadow-inner' : 'bg-slate-500/10 text-slate-500'}`}>
                 <QrCode size={22} />
               </div>
-              <span className="text-[9px] font-black text-muted tracking-widest uppercase opacity-60">TOTAL MONITOR QRIS</span>
+              <span className="text-[10px] font-black text-muted tracking-widest uppercase opacity-60">TOTAL MONITOR QRIS</span>
             </div>
             <div>
-              <div className="text-[9px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Dana Masuk:</div>
+              <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Dana Masuk:</div>
               <h3 className="text-2xl font-black italic tracking-tighter text-blue-600 dark:text-blue-400 leading-none">Rp {formatIDR(totalQRIS)}</h3>
             </div>
             <div className="flex items-center gap-2 mt-2 pt-3 border-t border-slate-200/50 dark:border-white/5">
               <Clock size={10} className="text-muted opacity-50" />
-              <p className="text-[8px] text-muted italic font-medium opacity-50 leading-tight">Segera campur ke kas utama laci.</p>
+              <p className="text-[10px] text-muted italic font-medium opacity-50 leading-tight">Segera campur ke kas utama laci.</p>
             </div>
           </div>
         </div>
@@ -219,7 +219,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
             <div className="p-1.5 bg-white/20 rounded-lg"><Plus size={20} /></div>
             <div className="flex flex-col items-center">
               <span className="font-black uppercase tracking-[0.15em] text-[10px] mb-0.5">Tambah Data</span>
-              <span className="text-[8px] opacity-70 font-medium tracking-tight">Klik untuk mencatat saldo</span>
+              <span className="text-[10px] opacity-70 font-medium tracking-tight">Klik untuk mencatat saldo</span>
             </div>
           </button>
         </div>

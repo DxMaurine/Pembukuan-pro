@@ -64,12 +64,12 @@ export default function MutationManager({ mutations, summary, loadData, api, wal
 
   const getMutationDetails = (type: string) => {
     switch (type) {
-      case 'wallet_to_cash': return { label: 'QRIS ke Kas', icon: Wallet, color: 'text-sky-500' };
-      case 'cash_to_wallet': return { label: 'Kas ke QRIS', icon: Building, color: 'text-amber-500' };
-      case 'cash_to_owner': return { label: 'Kas ke Owner', icon: User, color: 'text-rose-500' };
       case 'wallet_to_owner': return { label: 'QRIS ke Owner', icon: TrendingUp, color: 'text-purple-500' };
+      case 'non_sales_to_owner': return { label: 'Non-Sales ke Owner', icon: User, color: 'text-emerald-500' };
+      case 'donation_to_owner': return { label: 'Donasi ke Owner', icon: Building, color: 'text-pink-500' };
       default: return { label: 'Mutasi', icon: ArrowLeftRight, color: 'text-slate-500' };
     }
+
   };
 
   const handleSubmit = async (e?: React.FormEvent) => {
@@ -198,7 +198,7 @@ export default function MutationManager({ mutations, summary, loadData, api, wal
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-white/5 text-[9px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted">
+              <tr className="border-b border-slate-200 dark:border-white/5 text-[9px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted bg-slate-50 dark:bg-white/5">
                 <th className="p-4">Tanggal</th>
                 <th className="p-4">Tipe Mutasi</th>
                 <th className="p-4">Nominal</th>
@@ -325,7 +325,10 @@ export default function MutationManager({ mutations, summary, loadData, api, wal
                       <option value="cash_to_wallet">Setoran Kasir ➡️ QRIS / Bank</option>
                       <option value="cash_to_owner">Setoran Kasir ➡️ OWNER</option>
                       <option value="wallet_to_owner">QRIS / Bank ➡️ OWNER</option>
+                      <option value="non_sales_to_owner">Pemasukan Non-Sales ➡️ OWNER</option>
+                      <option value="donation_to_owner">Saldo Donasi ➡️ OWNER / PENYALURAN</option>
                     </select>
+
                   </div>
 
                   <div className="p-5 bg-slate-100 dark:bg-white/5 rounded-3xl border border-slate-200/50 dark:border-white/10 space-y-4 shadow-inner">
@@ -370,8 +373,11 @@ export default function MutationManager({ mutations, summary, loadData, api, wal
                     <span className="text-sm font-bold text-primary italic">
                       {formData.type === 'wallet_to_cash' ? 'Cairkan QRIS ke Kasir' :
                         formData.type === 'cash_to_wallet' ? 'Mutasi Kasir ke Bank' :
-                          formData.type === 'cash_to_owner' ? 'Setoran Kasir ke Owner' : 'Transfer QRIS ke Owner'}
+                          formData.type === 'cash_to_owner' ? 'Setoran Kasir ke Owner' :
+                            formData.type === 'wallet_to_owner' ? 'Transfer QRIS ke Owner' :
+                              formData.type === 'non_sales_to_owner' ? 'Setoran Non-Sales ke Owner' : 'Penyaluran Donasi'}
                     </span>
+
                   </div>
                   <div className="text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 px-4 py-2 rounded-full shadow-sm">
                     PERIODE DATA: {qrisStart} s/d {qrisEnd}

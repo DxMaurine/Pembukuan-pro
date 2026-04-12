@@ -115,7 +115,18 @@ const TransactionModal: React.FC<TransactionModalProps> = ({
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     placeholder="Contoh: Operasional, Penjualan"
+                    list="category-suggestions"
                   />
+                  <datalist id="category-suggestions">
+                    <option value="Penjualan" />
+                    <option value="Operasional" />
+                    <option value="Lain-lain" />
+                    <option value="Pribadi / Jajan" />
+                    <option value="Modal Toko" />
+                    <option value="Listrik / Air" />
+                    <option value="Sewa Tempat" />
+                  </datalist>
+
                 </div>
               </div>
 

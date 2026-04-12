@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import { Eye, EyeOff, Plus, History, Settings2, Store, Shield, Zap, Palette, Trash2, Info, Filter, FileText, Wallet, Handshake, ShoppingBag, Package, RefreshCw, CheckCircle2, Download } from 'lucide-react';
-
+import packageJson from '../../../package.json';
 // Types
 import { Transaction, StockItem, Summary, Settings, Mutation } from './types';
 
@@ -22,6 +22,7 @@ import BatchModal from './components/modals/BatchModal';
 import DebtManager from './components/debts/DebtManager';
 import WalletManager from './components/wallet/WalletManager';
 import CapitalManager from './components/capital/CapitalManager';
+import OtherIncomeManager from './components/otherIncome/OtherIncomeManager';
 import PreorderManager from './components/preorder';
 import MutationManager from './components/mutations/MutationManager';
 // WhatsAppManager will be imported inside ServerHub
@@ -30,7 +31,8 @@ import ServerHub from './components/serverhub/ServerHub';
 const { api } = window as any;
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'mutasi' | 'capital' | 'stock' | 'reports' | 'settings' | 'serverhub'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'mutasi' | 'capital' | 'stock' | 'reports' | 'settings' | 'serverhub' | 'other_income'>('dashboard');
+
   const [walletSubTab, setWalletSubTab] = useState<'saving' | 'qris'>('saving');
   const [storeName, setStoreName] = useState('Pembukuan Toko');
   const [summary, setSummary] = useState<Summary>({ totalIncome: 0, totalExpense: 0, balance: 0 });
@@ -39,6 +41,8 @@ const App: React.FC = () => {
   const [debts, setDebts] = useState<any[]>([]);
   const [walletEntries, setWalletEntries] = useState<any[]>([]);
   const [capitalData, setCapitalData] = useState<any[]>([]);
+  const [donations, setDonations] = useState<any[]>([]);
+  const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
   const [preorders, setPreorders] = useState<any[]>([]);
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const [newStockItem, setNewStockItem] = useState('');
@@ -111,7 +115,6 @@ const App: React.FC = () => {
   }, []);
 
   // Date Filtering
-  const [filterMonth, setFilterMonth] = useState(new Date().getMonth());
   const [filterYear, setFilterYear] = useState(new Date().getFullYear());
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
@@ -294,7 +297,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const [s, t, st, set, dbDebts, dbWallet, dbCapital, dbPreorders, dbMutations] = await Promise.all([
+      const [s, t, st, set, dbDebts, dbWallet, dbCapital, dbPreorders, dbMutations, dbDonations] = await Promise.all([
         api.getSummary({ startDate, endDate }),
         api.getTransactions({ startDate, endDate }),
         api.getStock(),
@@ -304,9 +307,23 @@ const App: React.FC = () => {
         api.getCapital(),
         api.getPreorders(),
         api.getMutations(),
+        api.getDonations()
       ]);
 
-      // Fetch Previous Month Comparison
+      setSummary(s);
+      setTransactions(t);
+      setStockItems(st);
+      if (set.storeName) setStoreName(set.storeName);
+      if (set.password) setSavedPassword(set.password);
+      setAutoConfirm(set.autoConfirm || false);
+      setDebts(dbDebts);
+      setWalletEntries(dbWallet);
+      setCapitalData(dbCapital || []);
+      setPreorders(dbPreorders || []);
+      setMutations(dbMutations || []);
+      setDonations(dbDonations || []);
+
+      // Fetch Previous Month Comparison for Dashboard Trends
       const currentStart = new Date(startDate);
       const prevMonthStart = new Date(currentStart.getFullYear(), currentStart.getMonth() - 1, 1);
       const prevMonthEnd = new Date(currentStart.getFullYear(), currentStart.getMonth(), 0);
@@ -314,19 +331,9 @@ const App: React.FC = () => {
         startDate: getLocalDate(prevMonthStart),
         endDate: getLocalDate(prevMonthEnd)
       });
-
-      setSummary(s);
       setPrevSummary(prevS);
-      setTransactions(t);
-      setDebts(dbDebts);
-      setWalletEntries(dbWallet);
-      setCapitalData(dbCapital || []);
-      setPreorders(dbPreorders || []);
-      setMutations(dbMutations || []);
-      setReportPage(1);
-      setTransacPage(1);
-      setStockItems(st);
-      if (set.storeName) setStoreName(set.storeName);
+      
+      // Additional settings
       if (set.autoConfirm !== undefined) setAutoConfirm(set.autoConfirm);
       if (set.telegramToken) setTelegramToken(set.telegramToken);
       if (set.telegramChatId) setTelegramChatId(set.telegramChatId);
@@ -334,13 +341,17 @@ const App: React.FC = () => {
       setSavedPassword(pin);
       localStorage.setItem('cachedPin', pin);
       if (set.storeName) localStorage.setItem('cachedStoreName', set.storeName);
-      setServerOffline(false); // Server kembali online
+      
+      setServerOffline(false);
+      setIsAuthLoading(false);
     } catch (err: any) {
       console.error('[APP] loadData gagal — server mungkin offline:', err?.message);
       setServerOffline(true);
+      setIsAuthLoading(false);
     }
-    setIsAuthLoading(false);
   };
+
+
 
 
   useEffect(() => {
@@ -664,6 +675,8 @@ const App: React.FC = () => {
               setActiveTab(tab);
               if (tab === 'wallet') setWalletSubTab('saving');
             }}
+
+
             theme={theme}
             setTheme={setTheme}
             setIsLoggedIn={setIsLoggedIn}
@@ -807,7 +820,24 @@ const App: React.FC = () => {
                 />
               )}
 
+              {activeTab === 'other_income' && (
+                <OtherIncomeManager
+                  transactions={transactions}
+                  donations={donations}
+                  loadData={loadData}
+                  api={api}
+                  storeName={storeName}
+                  theme={theme}
+                  onOpenMainModal={() => {
+                    resetFormData();
+                    setFormData(prev => ({ ...prev, type: 'income', category: 'Lain-lain', date: getLocalDate() }));
+                    setShowModal(true);
+                  }}
+                />
+              )}
+
               {activeTab === 'capital' && (
+
                 <CapitalManager
                   capitalData={capitalData}
                   loadData={loadData}
@@ -866,7 +896,7 @@ const App: React.FC = () => {
                   </header>
 
                   {/* Horizontal Tab Navigation */}
-                  <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/5 self-start">
+                  <div className="flex flex-wrap gap-2 p-1.5 bg-primary/10 dark:bg-primary/10 rounded-2xl border border-slate-200 dark:border-white/5 self-start">
                     {[
                       { id: 'identity', label: 'Identitas', icon: Store },
                       { id: 'security', label: 'Keamanan', icon: Shield },
@@ -1292,8 +1322,8 @@ const App: React.FC = () => {
                         <p className="text-[11px] font-bold uppercase tracking-[0.4em] opacity-40 mb-8">Harmony Interface System</p>
 
                         <div className="space-y-2 mb-10">
-                          <div className="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-bold uppercase tracking-widest">
-                            Version 3.1.8-Lite Stable
+                          <div className="px-4 py-1.5 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[14px] font-bold uppercase tracking-widest">
+                            V{packageJson.version}
                           </div>
                           <p className="text-xs text-muted font-medium italic">"Elevating bookkeeping to an art form."</p>
                         </div>
@@ -1318,7 +1348,7 @@ const App: React.FC = () => {
                               </p>
                               {downloadProgress > 0 && downloadProgress < 100 && (
                                 <div className="w-full h-2 bg-slate-200 dark:bg-white/5 rounded-full overflow-hidden">
-                                  <div 
+                                  <div
                                     className="h-full bg-primary transition-all duration-300"
                                     style={{ width: `${downloadProgress}%` }}
                                   />

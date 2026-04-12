@@ -594,7 +594,50 @@ app.post('/api/wa/send', async (req, res) => {
     res.json({ success: true });
 });
 
+// Donations
+app.get('/api/donations', (req, res) => {
+  const data = readDb();
+  res.json(data.donations || []);
+});
+
+app.post('/api/donations', (req, res) => {
+  const data = readDb();
+  if (!data.donations) data.donations = [];
+  const newDonation = { ...req.body, id: Date.now(), date: req.body.date || new Date().toISOString() };
+  data.donations.push(newDonation);
+  saveDb(data);
+  recalculateAndSync();
+  res.json(newDonation);
+});
+
+app.put('/api/donations/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  if (data.donations) {
+    const index = data.donations.findIndex((d: any) => d.id === id);
+    if (index !== -1) {
+      data.donations[index] = { ...data.donations[index], ...req.body };
+      saveDb(data);
+      recalculateAndSync();
+      return res.json(data.donations[index]);
+    }
+  }
+  res.status(404).json({ error: 'Donation not found' });
+});
+
+app.delete('/api/donations/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  if (data.donations) {
+    data.donations = data.donations.filter((d: any) => d.id !== id);
+    saveDb(data);
+    recalculateAndSync();
+  }
+  res.json({ success: true });
+});
+
 // --- HELPER FUNCTIONS ---
+
 
 async function processDanaText(text: string, docId?: string) {
   const cleanText = text.replace(/[\r\n\t]/g, ' ').trim();
