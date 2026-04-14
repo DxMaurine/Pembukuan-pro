@@ -83,6 +83,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: 'Inventory',
       items: [
         { id: 'stock', icon: Package, label: 'Stok Barang Habis' },
+        { id: 'price_management', icon: ArrowLeftRight, label: 'Harga & Pelanggan' },
       ]
     },
     {

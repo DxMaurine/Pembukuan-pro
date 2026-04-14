@@ -25,13 +25,14 @@ import CapitalManager from './components/capital/CapitalManager';
 import OtherIncomeManager from './components/otherIncome/OtherIncomeManager';
 import PreorderManager from './components/preorder';
 import MutationManager from './components/mutations/MutationManager';
+import PriceManager from './components/prices/PriceManager';
 // WhatsAppManager will be imported inside ServerHub
 import ServerHub from './components/serverhub/ServerHub';
 
 const { api } = window as any;
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'mutasi' | 'capital' | 'stock' | 'reports' | 'settings' | 'serverhub' | 'other_income'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'preorder' | 'transactions' | 'debt' | 'wallet' | 'mutasi' | 'capital' | 'stock' | 'reports' | 'settings' | 'serverhub' | 'other_income' | 'price_management'>('dashboard');
 
   const [walletSubTab, setWalletSubTab] = useState<'saving' | 'qris'>('saving');
   const [storeName, setStoreName] = useState('Pembukuan Toko');
@@ -49,6 +50,8 @@ const App: React.FC = () => {
   const [isStockUrgent, setIsStockUrgent] = useState(false);
   const [showStockModal, setShowStockModal] = useState(false);
   const [mutations, setMutations] = useState<Mutation[]>([]);
+  const [prices, setPrices] = useState<any[]>([]);
+  const [customers, setCustomers] = useState<any[]>([]);
   const [serverOffline, setServerOffline] = useState(false);
 
   // Authentication State
@@ -297,7 +300,7 @@ const App: React.FC = () => {
     }
 
     try {
-      const [s, t, st, set, dbDebts, dbWallet, dbCapital, dbPreorders, dbMutations, dbDonations] = await Promise.all([
+      const [s, t, st, set, dbDebts, dbWallet, dbCapital, dbPreorders, dbMutations, dbDonations, dbPrices, dbCustomers] = await Promise.all([
         api.getSummary({ startDate, endDate }),
         api.getTransactions({ startDate, endDate }),
         api.getStock(),
@@ -307,7 +310,9 @@ const App: React.FC = () => {
         api.getCapital(),
         api.getPreorders(),
         api.getMutations(),
-        api.getDonations()
+        api.getDonations(),
+        api.getPrices ? api.getPrices() : [],
+        api.getCustomers ? api.getCustomers() : []
       ]);
 
       setSummary(s);
@@ -322,6 +327,8 @@ const App: React.FC = () => {
       setPreorders(dbPreorders || []);
       setMutations(dbMutations || []);
       setDonations(dbDonations || []);
+      setPrices(dbPrices || []);
+      setCustomers(dbCustomers || []);
 
       // Fetch Previous Month Comparison for Dashboard Trends
       const currentStart = new Date(startDate);
@@ -858,6 +865,15 @@ const App: React.FC = () => {
                   sendStockToOwner={sendStockToOwner}
                   isStockUrgent={isStockUrgent}
                   setIsStockUrgent={setIsStockUrgent}
+                />
+              )}
+
+              {activeTab === 'price_management' && (
+                <PriceManager 
+                  prices={prices}
+                  customers={customers}
+                  loadData={loadData}
+                  api={api}
                 />
               )}
 

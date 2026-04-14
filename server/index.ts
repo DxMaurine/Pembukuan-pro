@@ -3,6 +3,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+// Trigger re-compile
 import fs from 'fs';
 import path from 'path';
 
@@ -634,6 +635,130 @@ app.delete('/api/donations/:id', (req, res) => {
     recalculateAndSync();
   }
   res.json({ success: true });
+});
+
+// Customers
+app.get('/api/customers', (req, res) => {
+  const data = readDb();
+  res.json(data.customers || []);
+});
+
+app.post('/api/customers', (req, res) => {
+  const data = readDb();
+  if (!data.customers) data.customers = [];
+  const newCustomer = { ...req.body, id: Date.now() };
+  data.customers.push(newCustomer);
+  saveDb(data);
+  res.json(newCustomer);
+});
+
+app.put('/api/customers/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  if (data.customers) {
+    const index = data.customers.findIndex((c: any) => c.id === id);
+    if (index !== -1) {
+      data.customers[index] = { ...data.customers[index], ...req.body };
+      saveDb(data);
+      return res.json(data.customers[index]);
+    }
+  }
+  res.status(404).json({ error: 'Customer not found' });
+});
+
+app.delete('/api/customers/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  if (data.customers) {
+    data.customers = data.customers.filter((c: any) => c.id !== id);
+    saveDb(data);
+  }
+  res.json({ success: true });
+});
+
+// Prices
+app.get('/api/prices', (req, res) => {
+  const data = readDb();
+  res.json(data.prices || []);
+});
+
+app.post('/api/prices', async (req, res) => {
+  const data = readDb();
+  if (!data.prices) data.prices = [];
+  
+  const oldPrice = Number(req.body.oldPrice) || 0;
+  const newPrice = Number(req.body.newPrice) || 0;
+  const diff = newPrice - oldPrice;
+  const diffPercent = oldPrice !== 0 ? (diff / oldPrice) * 100 : 0;
+
+  const newPriceItem = { 
+    ...req.body, 
+    id: Date.now(), 
+    diffPercent,
+    updatedAt: new Date().toISOString() 
+  };
+  
+  data.prices.push(newPriceItem);
+  saveDb(data);
+
+  res.json(newPriceItem);
+});
+
+app.put('/api/prices/:id', async (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  if (data.prices) {
+    const index = data.prices.findIndex((p: any) => p.id === id);
+    if (index !== -1) {
+      const oldPrice = Number(req.body.oldPrice) || 0;
+      const newPrice = Number(req.body.newPrice) || 0;
+      const diff = newPrice - oldPrice;
+      const diffPercent = oldPrice !== 0 ? (diff / oldPrice) * 100 : 0;
+
+      data.prices[index] = { 
+        ...data.prices[index], 
+        ...req.body, 
+        diffPercent,
+        updatedAt: new Date().toISOString() 
+      };
+      saveDb(data);
+
+      return res.json(data.prices[index]);
+    }
+  }
+  res.status(404).json({ error: 'Price item not found' });
+});
+
+app.delete('/api/prices/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  const data = readDb();
+  if (data.prices) {
+    data.prices = data.prices.filter((p: any) => p.id !== id);
+    saveDb(data);
+  }
+  res.json({ success: true });
+});
+
+app.post('/api/service/notify-price', async (req, res) => {
+  const { priceId } = req.body;
+  const data = readDb();
+  const priceItem = data.prices?.find((p: any) => p.id === priceId);
+  
+  if (!priceItem) return res.status(404).json({ error: 'Price item not found' });
+  if (!data.settings?.cashierNumber) return res.status(400).json({ error: 'Cashier number not set' });
+
+  try {
+    const p = priceItem as any;
+    const diff = p.newPrice - p.oldPrice;
+    const scopeLabel = p.scope === 'pelanggan' ? `Pelanggan: ${p.customerName || 'N/A'}` : p.scope.toUpperCase();
+    const trendIcon = diff > 0 ? '📈' : (diff < 0 ? '📉' : '➖');
+    const waMsg = `📢 *UPDATE HARGA BARANG*\n\n📦 *Info Barang:* ${p.itemName}\n🌐 *Scope:* ${scopeLabel}\n\n💰 *Harga Lama:* Rp ${p.oldPrice.toLocaleString('id-ID')}\n💰 *Harga Baru:* Rp ${p.newPrice.toLocaleString('id-ID')}\n\n${trendIcon} *Selisih:* ${p.diffPercent.toFixed(1)}%\n\n_Mohon sesuaikan saat transaksi. Terima kasih._`;
+    
+    await sendInternalMessage(waMsg, data.settings.cashierNumber);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to send WhatsApp notification' });
+  }
 });
 
 // --- HELPER FUNCTIONS ---

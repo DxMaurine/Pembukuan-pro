@@ -92,6 +92,26 @@ export type Mutation = {
   date: string;
 }
 
+export type Customer = {
+  id: number;
+  name: string;
+  phone?: string;
+  address?: string;
+  type: 'umum' | 'pelanggan';
+}
+
+export type PriceItem = {
+  id: number;
+  itemName: string;
+  scope: 'global' | 'pelanggan' | 'umum';
+  customerId?: number;
+  customerName?: string;
+  oldPrice: number;
+  newPrice: number;
+  diffPercent: number;
+  updatedAt: string;
+}
+
 
 export type Data = {
   transactions: Transaction[];
@@ -104,6 +124,8 @@ export type Data = {
   settings: Record<string, any>;
   mutations: Mutation[];
   donations: Donation[];
+  customers: Customer[];
+  prices: PriceItem[];
 }
 
 
@@ -117,7 +139,9 @@ const defaultData: Data = {
   financeSources: [],
   settings: { password: '0000', storeName: 'DM FOTOCOPY', autoConfirm: false },
   mutations: [],
-  donations: []
+  donations: [],
+  customers: [],
+  prices: []
 };
 
 

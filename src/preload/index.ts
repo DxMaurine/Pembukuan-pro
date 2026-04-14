@@ -71,12 +71,25 @@ const api = {
   addDonation: (data: any) => rest.post('/api/donations', data),
   updateDonation: (data: any) => rest.put(`/api/donations/${data.id}`, data),
   deleteDonation: (id: number) => rest.delete(`/api/donations/${id}`),
+  
+  // Customers
+  getCustomers: () => rest.get('/api/customers'),
+  addCustomer: (data: any) => rest.post('/api/customers', data),
+  updateCustomer: (data: any) => rest.put(`/api/customers/${data.id}`, data),
+  deleteCustomer: (id: number) => rest.delete(`/api/customers/${id}`),
+
+  // Prices
+  getPrices: () => rest.get('/api/prices'),
+  addPrice: (data: any) => rest.post('/api/prices', data),
+  updatePrice: (data: any) => rest.put(`/api/prices/${data.id}`, data),
+  deletePrice: (id: number) => rest.delete(`/api/prices/${id}`),
 
 
   // Services
   sendReport: (data: any) => rest.post('/api/service/send-report', data),
   notifyQRIS: (data: any) => rest.post('/api/service/notify-qris', data),
   notifyPreorder: (data: any) => rest.post('/api/service/notify-preorder', data),
+  notifyPrice: (data: any) => rest.post('/api/service/notify-price', data),
 
   // WhatsApp Operations
   waGetStatus: () => rest.get('/api/wa/status'),
