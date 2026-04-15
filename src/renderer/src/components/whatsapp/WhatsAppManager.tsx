@@ -133,12 +133,12 @@ const WhatsAppManager: React.FC<WhatsAppManagerProps> = ({ api }) => {
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-bg-surface rounded-2xl border border-border text-center">
-                    <p className="text-[9px] font-bold uppercase text-text-muted mb-0.5 tracking-widest">Sesi</p>
+                  <div className="p-3 bg-white dark:bg-bg-surface rounded-2xl border border-slate-200 dark:border-border text-center">
+                    <p className="text-[9px] font-bold uppercase text-slate-400 dark:text-text-muted mb-0.5 tracking-widest">Sesi</p>
                     <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase">Aktif</p>
                   </div>
-                  <div className="p-3 bg-bg-surface rounded-2xl border border-border text-center">
-                    <p className="text-[9px] font-bold uppercase text-text-muted mb-0.5 tracking-widest">Privasi</p>
+                  <div className="p-3 bg-white dark:bg-bg-surface rounded-2xl border border-slate-200 dark:border-border text-center">
+                    <p className="text-[9px] font-bold uppercase text-slate-400 dark:text-text-muted mb-0.5 tracking-widest">Privasi</p>
                     <p className="text-xs font-bold text-blue-600 dark:text-blue-500 flex items-center justify-center gap-1 uppercase">
                       <ShieldCheck size={12} /> E2EE
                     </p>
@@ -159,8 +159,8 @@ const WhatsAppManager: React.FC<WhatsAppManagerProps> = ({ api }) => {
                   <div className="p-6 bg-bg-surface rounded-3xl shadow-xl space-y-4 text-center border border-border">
                     <img src={qrImage} alt="WhatsApp QR Code" className="w-[200px] h-[200px]" />
                     <div className="space-y-1">
-                      <p className="text-xs font-bold text-text-muted uppercase tracking-widest">Scan QR Code</p>
-                      <p className="text-[14px] text-text-muted">Gunakan WhatsApp di HP Anda</p>
+                      <p className="text-xs font-bold text-slate-500 dark:text-text-muted uppercase tracking-widest">Scan QR Code</p>
+                      <p className="text-[14px] text-slate-600 dark:text-text-muted">Gunakan WhatsApp di HP Anda</p>
                     </div>
                   </div>
                 ) : (
@@ -171,7 +171,7 @@ const WhatsAppManager: React.FC<WhatsAppManagerProps> = ({ api }) => {
                 )}
 
                 <div className="mt-8 space-y-4 w-full">
-                  <div className="flex items-start gap-3 p-4 bg-amber-500/5 dark:bg-amber-500/10 rounded-2xl border border-amber-500/20 text-amber-600 dark:text-amber-400">
+                  <div className="flex items-start gap-3 p-4 bg-amber-500/10 rounded-2xl border border-amber-500/20 text-amber-700 dark:text-amber-400">
                     <AlertCircle size={20} className="shrink-0 mt-0.5" />
                     <p className="text-xs font-bold leading-relaxed">Buka WhatsApp &gt; Perangkat Tertaut &gt; Tautkan Perangkat, lalu arahkan kamera ke kode QR.</p>
                   </div>
@@ -242,13 +242,13 @@ const WhatsAppManager: React.FC<WhatsAppManagerProps> = ({ api }) => {
                 <div className="relative group">
                   <input
                     type="text"
-                    className="form-input w-full text-base font-bold pl-4 py-3 rounded-2xl bg-bg-surface border-border focus:border-amber-500 transition-all text-amber-600 dark:text-amber-500"
+                    className="form-input w-full text-base font-bold pl-4 py-3 rounded-2xl bg-white dark:bg-bg-surface border-slate-200 dark:border-border focus:border-amber-500 transition-all text-amber-700 dark:text-amber-500"
                     placeholder="Contoh: 08123456789"
                     value={ownerNumber}
                     onChange={(e) => setOwnerNumber(e.target.value)}
                   />
                 </div>
-                <p className="text-[11px] text-amber-500/60 font-bold ml-1 uppercase tracking-tighter">Anda WA dari nomor ini & Robot akan memprosesnya.</p>
+                <p className="text-[11px] text-amber-600 dark:text-amber-500/60 font-bold ml-1 uppercase tracking-tighter">Anda WA dari nomor ini & Robot akan memprosesnya.</p>
               </div>
 
               <div className="space-y-3 pt-2">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, History, Info, Plus, Trash2, Coffee } from 'lucide-react';
+import { X, History, Info, Plus, Coffee, Minus } from 'lucide-react';
 import { months, getYearOptions } from '../../utils/dateUtils';
 import { formatIDR, unformatIDR } from '../../utils/formatters';
 
@@ -81,7 +81,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[110] px-4">
-      <div className={`glass-card w-full ${batchStep === 'config' ? 'max-w-[500px]' : 'max-w-[750px]'} relative p-8 animate-scale-up transition-all duration-300`}>
+      <div className={`glass-card w-full ${batchStep === 'config' ? 'max-w-[600px]' : 'max-w-[900px]'} relative py-14 px-12 animate-scale-up transition-all duration-300`}>
         <button
           className="btn absolute top-6 right-6 p-2 shadow-none bg-transparent hover:bg-slate-200 dark:hover:bg-white/10"
           onClick={() => setShowBatchModal(false)}
@@ -104,7 +104,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block mb-2 text-sm font-medium">Bulan</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted block mb-2 px-1">Pilih Bulan:</label>
                 <select
                   className="form-input"
                   value={batchConfig.month}
@@ -118,7 +118,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
                 </select>
               </div>
               <div>
-                <label className="block mb-2 text-sm font-medium">Tahun</label>
+                <label className="text-[10px] font-bold uppercase tracking-widest text-muted block mb-2 px-1">Pilih Tahun:</label>
                 <select
                   className="form-input"
                   value={batchConfig.year}
@@ -142,7 +142,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
                     type="number"
                     min="1"
                     max={batchConfig.limitDay}
-                    className="form-input px-4 py-3 text-center font-black text-xl"
+                    className="form-input px-4 py-3 text-center font-bold text-xl"
                     value={batchConfig.startDay}
                     onChange={(e) => setBatchConfig({ ...batchConfig, startDay: Math.min(parseInt(e.target.value) || 1, batchConfig.limitDay) })}
                   />
@@ -153,7 +153,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
                     type="number"
                     min={batchConfig.startDay}
                     max={batchConfig.totalDays}
-                    className="form-input px-4 py-3 text-center font-black text-xl"
+                    className="form-input px-4 py-3 text-center font-bold text-xl"
                     value={batchConfig.limitDay}
                     onChange={(e) => setBatchConfig({ ...batchConfig, limitDay: Math.max(parseInt(e.target.value) || 1, batchConfig.startDay) })}
                   />
@@ -193,7 +193,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
+          <div className="space-y-12">
             <div className="flex justify-between items-center bg-slate-100 dark:bg-white/5 p-4 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-inner">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-muted">Sedang Input:</span>
@@ -201,7 +201,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
               </div>
               <div className="flex items-center gap-3">
                 {isCurrentDayLibur && (
-                  <div className="text-[10px] font-black bg-amber-500 text-white px-3 py-1.5 rounded-lg shadow-sm animate-bounce">
+                  <div className="text-[10px] font-bold bg-amber-500 text-white px-3 py-1.5 rounded-lg shadow-sm animate-bounce">
                     HARI LIBUR
                   </div>
                 )}
@@ -222,14 +222,14 @@ const BatchModal: React.FC<BatchModalProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               {/* Left Column: Income */}
               <div className="space-y-6">
                 <div>
-                  <label className="block mb-2 text-sm font-medium">Total Pemasukan (Rp)</label>
-                  <input
-                    type="text"
-                    className="form-input text-xl font-bold text-success text-center py-4"
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted block mb-2 px-1">Total Pemasukan (Rp)</label>
+                    <input
+                      type="text"
+                      className="form-input text-3xl font-bold text-emerald-500 text-center py-6 rounded-2xl"
                     placeholder="Rp 0"
                     autoFocus
                     value={formatIDR(batchData[currentDay]?.income || '')}
@@ -256,17 +256,17 @@ const BatchModal: React.FC<BatchModalProps> = ({
               {/* Right Column: Detailed Expenses */}
               <div className="flex flex-col">
                 <div className="flex justify-between items-center mb-3">
-                  <label className="text-sm font-medium">Rincian Pengeluaran</label>
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Rincian Pengeluaran Hari Ini:</label>
                   <button
                     type="button"
-                    className="btn btn-primary py-1 px-3 text-xs"
+                    className="btn btn-primary py-2 px-4 text-[10px] font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
                     onClick={addBatchExpenseItem}
                   >
-                    <Plus size={14} /> Add Item
+                    <Plus size={14} /> Tambah Item
                   </button>
                 </div>
 
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                   {(batchData[currentDay]?.expenseItems || []).length === 0 ? (
                     <div className="text-center py-10 opacity-30 text-xs text-muted dark:text-muted border-2 border-dashed rounded-2xl border-slate-300">
                       Belum ada rincian belanja.
@@ -298,10 +298,10 @@ const BatchModal: React.FC<BatchModalProps> = ({
                           />
                         </div>
                         <button
-                          className="btn btn-danger p-2.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="btn btn-danger p-2.5 shrink-0 rounded-xl transition-all"
                           onClick={() => removeBatchExpenseItem(idx)}
                         >
-                          <Trash2 size={16} />
+                          <Minus size={16} />
                         </button>
                       </div>
                     ))
@@ -310,7 +310,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
               </div>
             </div>
 
-            <div className="mt-8 flex gap-4 pt-6 border-t border-slate-200 dark:border-white/5">
+            <div className="mt-12 flex gap-4 pt-8 border-t border-slate-200 dark:border-white/5">
               <button
                 className="btn flex-1 justify-center py-4 rounded-2xl font-bold transition-all hover:bg-slate-200 dark:hover:bg-white/10"
                 onClick={() => {
@@ -325,12 +325,20 @@ const BatchModal: React.FC<BatchModalProps> = ({
               </button>
 
               {currentDay < batchConfig.limitDay ? (
-                <button
-                  className="btn btn-primary flex-1 justify-center py-4 rounded-2xl font-bold shadow-lg shadow-primary/20"
-                  onClick={() => setCurrentDay((d: number) => d + 1)}
-                >
-                  Hari Berikutnya
-                </button>
+                <div className="flex flex-1 gap-4">
+                  <button
+                    className="btn bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 flex-1 justify-center py-4 rounded-2xl font-bold hover:bg-emerald-500 hover:text-white transition-all"
+                    onClick={submitBatch}
+                  >
+                    Simpan & Selesai
+                  </button>
+                  <button
+                    className="btn btn-primary flex-1 justify-center py-4 rounded-2xl font-bold shadow-lg shadow-primary/20"
+                    onClick={() => setCurrentDay((d: number) => d + 1)}
+                  >
+                    Hari Berikutnya
+                  </button>
+                </div>
               ) : (
                 <button
                   className="btn btn-primary flex-1 justify-center py-4 rounded-2xl font-bold bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20"

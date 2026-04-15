@@ -160,16 +160,16 @@ export default function OtherIncomeManager({ transactions, donations, loadData, 
                      <FileText size={16} /> Kirim ke Owner
                   </button>
                )}
-               <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1.5 rounded-2xl border border-slate-200/50 dark:border-border/50">
+               <div className="flex bg-slate-100 dark:bg-white/5 p-1.5 rounded-2xl border border-slate-200/50 dark:border-white/10">
                   <button
                      onClick={() => { setActiveSubTab('general'); setCurrentPage(1); }}
-                     className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeSubTab === 'general' ? 'bg-white dark:bg-primary shadow-xl scale-105' : 'text-muted'}`}
+                     className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeSubTab === 'general' ? 'bg-white dark:bg-primary text-slate-900 dark:text-white shadow-xl scale-105' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                   >
-                     <TrendingUp size={18} /> UMUM & LAINNYA
+                     <TrendingUp size={18} /> UMUM &amp; LAINNYA
                   </button>
                   <button
                      onClick={() => { setActiveSubTab('donation'); setCurrentPage(1); }}
-                     className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeSubTab === 'donation' ? 'bg-white dark:bg-emerald-500 shadow-xl scale-105' : 'text-muted'}`}
+                     className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-bold transition-all ${activeSubTab === 'donation' ? 'bg-white dark:bg-emerald-500 text-slate-900 dark:text-white shadow-xl scale-105' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
                   >
                      <Heart size={18} /> SALURAN DONASI
                   </button>
@@ -191,11 +191,11 @@ export default function OtherIncomeManager({ transactions, donations, loadData, 
                      <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${activeSubTab === 'general' ? 'bg-primary/20 text-primary shadow-lg shadow-primary/10' : 'bg-slate-500/10 text-slate-500'}`}>
                         <TrendingUp size={22} />
                      </div>
-                     <span className="text-[10px] font-black text-muted tracking-widest uppercase opacity-60">PEMASUKAN UMUM</span>
+                     <span className="text-[10px] font-bold text-muted tracking-widest uppercase opacity-60">PEMASUKAN UMUM</span>
                   </div>
                   <div>
                      <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Pemasukan Non-Sales:</div>
-                     <h3 className="text-2xl font-black italic tracking-tighter text-slate-800 dark:text-white leading-none">Rp {formatIDR(totalGeneral)}</h3>
+                     <h3 className="text-2xl font-bold italic tracking-tighter text-slate-800 dark:text-white leading-none">Rp {formatIDR(totalGeneral)}</h3>
                   </div>
                   <div className="flex items-center gap-2 mt-2 pt-3 border-t border-slate-200/50 dark:border-white/5">
                      <TrendingUp size={10} className="text-muted opacity-50" />
@@ -217,11 +217,11 @@ export default function OtherIncomeManager({ transactions, donations, loadData, 
                      <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${activeSubTab === 'donation' ? 'bg-emerald-500/20 text-emerald-500 shadow-lg shadow-emerald-500/10' : 'bg-slate-500/10 text-slate-500'}`}>
                         <Heart size={22} />
                      </div>
-                     <span className="text-[10px] font-black text-muted tracking-widest uppercase opacity-60">SALURAN DONASI</span>
+                     <span className="text-[10px] font-bold text-muted tracking-widest uppercase opacity-60">SALURAN DONASI</span>
                   </div>
                   <div>
                      <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Saldo Donasi Sosial:</div>
-                     <h3 className="text-2xl font-black italic tracking-tighter text-emerald-600 dark:text-emerald-400 leading-none">Rp {formatIDR(totalDonation)}</h3>
+                     <h3 className="text-2xl font-bold italic tracking-tighter text-emerald-600 dark:text-emerald-400 leading-none">Rp {formatIDR(totalDonation)}</h3>
                   </div>
                   <div className="flex items-center gap-2 mt-2 pt-3 border-t border-slate-200/50 dark:border-white/5">
                      <Info size={10} className="text-muted opacity-50" />
@@ -243,7 +243,7 @@ export default function OtherIncomeManager({ transactions, donations, loadData, 
                >
                   <div className="p-1.5 bg-white/20 rounded-lg"><Plus size={20} /></div>
                   <div className="flex flex-col items-center">
-                     <span className="font-black uppercase tracking-[0.15em] text-[10px] mb-0.5">Tambah Data</span>
+                     <span className="font-bold uppercase tracking-[0.15em] text-[10px] mb-0.5">Tambah Data</span>
                      <span className="text-[10px] opacity-70 font-medium tracking-tight">Klik untuk mencatat saldo</span>
                   </div>
                </button>
@@ -339,7 +339,7 @@ export default function OtherIncomeManager({ transactions, donations, loadData, 
                   >
                      <ChevronLeft />
                   </button>
-                  <span className="text-sm font-black italic">Halaman {currentPage} dari {totalPages}</span>
+                  <span className="text-sm font-bold italic">Halaman {currentPage} dari {totalPages}</span>
                   <button
                      disabled={currentPage === totalPages}
                      onClick={() => setCurrentPage(p => p + 1)}
@@ -409,7 +409,7 @@ export default function OtherIncomeManager({ transactions, donations, loadData, 
                                  {formData.donator}
                               </span>
                            </div>
-                           <div className="text-sm font-bold px-5 py-2.5 rounded-2xl shadow-sm border bg-white dark:bg-black/20 text-emerald-500 border-emerald-500/10 leading-none flex items-center gap-2">
+                           <div className="text-sm font-bold px-5 py-2.5 rounded-2xl shadow-sm border bg-slate-50 dark:bg-black/20 text-emerald-500 border-emerald-500/10 leading-none flex items-center gap-2">
                               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Terpercaya
                            </div>
                         </div>

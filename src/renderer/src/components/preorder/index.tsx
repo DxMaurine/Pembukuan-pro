@@ -62,9 +62,11 @@ interface PreorderManagerProps {
   loadData: () => void;
   api: any;
   storeName: string;
+  forceOpenModal?: boolean;
+  onModalClose?: () => void;
 }
 
-const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, api, storeName }) => {
+const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, api, storeName, forceOpenModal, onModalClose }) => {
   const [showModal, setShowModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPreorder, setSelectedPreorder] = useState<Preorder | null>(null);
@@ -87,6 +89,16 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
   const [orderItems, setOrderItems] = useState<OrderItem[]>([
     { id: Math.random().toString(36).substr(2, 9), name: '', bahan: '', p: 1, l: 1, qty: 1, price: 0, total: 0, isBanner: false, notes: '' }
   ]);
+
+  useEffect(() => {
+    if (forceOpenModal) {
+      setEditingId(null);
+      setPreorderStep('config');
+      resetForm();
+      setShowModal(true);
+      if (onModalClose) onModalClose();
+    }
+  }, [forceOpenModal]);
 
   useEffect(() => {
     if (orderItems.length > 0) {
@@ -381,9 +393,9 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                   </button>
 
                   <div className="flex items-center gap-1.5 px-4">
-                    <span className="text-sm font-black text-primary">{currentPage}</span>
+                    <span className="text-sm font-bold text-primary">{currentPage}</span>
                     <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>
-                    <span className="text-sm font-black text-muted">{totalPages}</span>
+                    <span className="text-sm font-bold text-muted">{totalPages}</span>
                   </div>
 
                   <button
@@ -403,7 +415,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
       {showModal ? createPortal(
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center z-[110] px-4 py-4 overflow-hidden">
           <div className="w-full flex justify-center items-center">
-            <div className={`w-full ${preorderStep === 'config' ? 'max-w-[480px]' : 'max-w-5xl'} max-h-[95vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[1.8rem] overflow-hidden shadow-2xl transition-all duration-500 ease-in-out`}>
+            <div className={`w-full ${preorderStep === 'config' ? 'max-w-[650px]' : 'max-w-5xl'} max-h-[95vh] relative flex flex-col animate-scale-up bg-bg-light dark:bg-bg-dark border border-slate-200 dark:border-border rounded-[1.8rem] overflow-hidden shadow-2xl transition-all duration-500 ease-in-out`}>
 
               <div className="px-8 py-5 bg-slate-900 dark:bg-black text-white flex justify-between items-center shrink-0 border-b border-white/5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-full bg-primary/10 -skew-x-12 transform translate-x-32" />
@@ -421,7 +433,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                 </button>
               </div>
 
-              <div className="flex-1 overflow-y-auto p-8 space-y-10 scrollbar-thin scrollbar-thumb-primary/20">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-primary/20">
                 {preorderStep === 'config' ? (
                   /* --- STEP 1: CONFIGURATION (PORTRAIT) --- */
                   <div className="space-y-8 animate-fade-in py-4">
@@ -432,8 +444,8 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                       <p className="text-xs text-muted leading-relaxed italic">Input Nama Pelanggan dan Status Antrian terlebih dahulu sebelum memasukkan detail barang cetakan.</p>
                     </div>
 
-                    <div className="space-y-6">
-                      <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+                      <div className="col-span-2 space-y-2">
                         <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary flex items-center gap-2 ml-1">
                           <User size={12} /> Nama Pelanggan / Instansi
                         </label>
@@ -446,8 +458,6 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                           onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                         />
                       </div>
-
-                      <div className="grid grid-cols-1 gap-6">
                         <div className="space-y-2">
                           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted dark:text-muted flex items-center gap-2 ml-1">
                             <Clock size={12} /> Status Antrian
@@ -479,7 +489,7 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                           />
                         </div>
 
-                        <div className="space-y-2">
+                        <div className="col-span-2 space-y-2">
                           <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary flex items-center gap-2 ml-1">
                             <MessageSquare size={12} /> Catatan Utama / Instruksi Khusus
                           </label>
@@ -491,7 +501,6 @@ const PreorderManager: React.FC<PreorderManagerProps> = ({ preorders, loadData, 
                           />
                         </div>
                       </div>
-                    </div>
 
                     <button
                       type="button"

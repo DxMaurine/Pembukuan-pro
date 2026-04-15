@@ -28,6 +28,7 @@ import MutationManager from './components/mutations/MutationManager';
 import PriceManager from './components/prices/PriceManager';
 // WhatsAppManager will be imported inside ServerHub
 import ServerHub from './components/serverhub/ServerHub';
+import FloatingActions from './components/layout/FloatingActions';
 
 const { api } = window as any;
 
@@ -73,6 +74,7 @@ const App: React.FC = () => {
   const [updateStatus, setUpdateStatus] = useState<string>('');
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [updateDownloaded, setUpdateDownloaded] = useState<boolean>(false);
+  const [forceOpenPreorder, setForceOpenPreorder] = useState(false);
 
   // Theme support
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -213,6 +215,23 @@ const App: React.FC = () => {
     setUpdateStatus('Mengecek...');
     setDownloadProgress(0);
     api.checkForUpdates();
+  };
+
+  const handleQuickSale = () => {
+    resetFormData();
+    setFormData(prev => ({ ...prev, type: 'income', category: 'Penjualan', date: getLocalDate() }));
+    setShowModal(true);
+  };
+
+  const handleQuickExpense = () => {
+    resetFormData();
+    setFormData(prev => ({ ...prev, type: 'expense', category: 'Operasional', date: getLocalDate() }));
+    setShowModal(true);
+  };
+
+  const handleQuickPreorder = () => {
+    setForceOpenPreorder(true);
+    setActiveTab('preorder');
   };
 
   // Form States
@@ -707,7 +726,6 @@ const App: React.FC = () => {
                   chartData={chartData}
                   preorders={preorders}
                   theme={theme}
-                  openBatchModal={openBatchModal}
                   filterMonth={filterMonth}
                   filterYear={filterYear}
                   applyMonthFilter={applyMonthFilter}
@@ -720,6 +738,8 @@ const App: React.FC = () => {
                   loadData={loadData}
                   api={api}
                   storeName={storeName}
+                  forceOpenModal={forceOpenPreorder}
+                  onModalClose={() => setForceOpenPreorder(false)}
                 />
               )}
 
@@ -744,13 +764,13 @@ const App: React.FC = () => {
 
                   <div className="glass-card flex flex-col md:flex-row gap-6 items-center">
                     <div className="flex-1 w-full group">
-                      <div className="flex items-center gap-3 px-4 bg-white dark:bg-bg-dark/20 border border-slate-300 dark:border-border rounded-xl">
+                      <div className="flex items-center gap-3 px-4 bg-slate-50 dark:bg-white/5 border border-slate-300 dark:border-white/10 rounded-xl">
                         <input id="main-search" type="text" className="bg-transparent border-none outline-none py-3.5 w-full font-medium text-muted dark:text-muted placeholder-muted dark:placeholder-text-muted" placeholder="Cari deskripsi atau kategori..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                       </div>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
-                      <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1 rounded-xl border border-slate-200/50 dark:border-border/50">
+                      <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-xl border border-slate-200/50 dark:border-white/10">
                         {['all', 'income', 'expense'].map((type: any) => (
                           <button
                             key={type}
@@ -766,7 +786,7 @@ const App: React.FC = () => {
                       </div>
 
                       <select
-                        className="bg-slate-100 dark:bg-bg-dark/40 px-4 py-2 rounded-xl border border-slate-200/50 dark:border-border/50 text-xs font-bold outline-none cursor-pointer"
+                        className="bg-slate-100 dark:bg-white/5 px-4 py-2 rounded-xl border border-slate-200/50 dark:border-white/10 text-xs font-bold outline-none cursor-pointer"
                         value={moduleFilter}
                         onChange={(e) => setModuleFilter(e.target.value as any)}
                       >
@@ -804,6 +824,7 @@ const App: React.FC = () => {
               {activeTab === 'wallet' && (
                 <WalletManager
                   entries={walletEntries}
+                  mutations={mutations}
                   loadData={loadData}
                   api={api}
                   storeName={storeName}
@@ -924,10 +945,11 @@ const App: React.FC = () => {
                       <button
                         key={cat.id}
                         onClick={() => setSettingsTab(cat.id as any)}
-                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${settingsTab === cat.id
-                          ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
-                          : 'text-slate-500 hover:text-slate-800 dark:text-muted dark:hover:text-white hover:bg-white dark:hover:bg-white/5'
-                          }`}
+                        className={`flex items-center gap-2.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                          settingsTab === cat.id
+                            ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-105'
+                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
+                        }`}
                       >
                         <cat.icon size={16} />
                         {cat.label.toUpperCase()}
@@ -1402,6 +1424,14 @@ const App: React.FC = () => {
               )}
             </div>
           </main>
+
+          {/* Global Floating Action Button */}
+          <FloatingActions 
+            onQuickSale={handleQuickSale}
+            onQuickExpense={handleQuickExpense}
+            onQuickPreorder={handleQuickPreorder}
+            openBatchModal={openBatchModal}
+          />
         </div>
       )}
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Lock, KeyRound, Unlock } from 'lucide-react';
 import Swal from 'sweetalert2';
+import packageJson from '../../../../../package.json';
 
 interface LoginScreenProps {
   isLoggedIn: boolean;
@@ -29,9 +30,9 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
       e.preventDefault();
       e.stopPropagation();
     }
-    
+
     if (isSubmitting || !loginInput.trim()) return;
-    
+
     setIsSubmitting(true);
 
     if (loginInput === savedPassword) {
@@ -106,7 +107,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({
         </div>
 
         <p className="text-xs text-slate-400 font-bold uppercase tracking-widest opacity-50">
-          Harmony Security v3.1.6-Lite
+          Harmony Security v{packageJson.version}
         </p>
       </div>
     </div>

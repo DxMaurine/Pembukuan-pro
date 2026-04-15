@@ -1,94 +1,230 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ============================================================
+   DESIGN TOKENS — Light Mode (default)
+   ============================================================ */
 :root {
-  --primary: #f43f5e;
+  /* Brand */
+  --primary:        #f43f5e;
   --primary-active: #e11d48;
+
+  /* Backgrounds */
+  --bg-base:        #f8fafc; /* Slate 50  */
+  --bg-card:        #ffffff;
+  --bg-surface:     #f1f5f9; /* Slate 100 */
+  --bg-overlay:     rgba(255, 255, 255, 0.85);
+
+  /* Borders */
+  --border-color:   #e2e8f0; /* Slate 200 */
+  --border-focus:   #f43f5e;
+
+  /* Text */
+  --text-heading:   #0f172a; /* Slate 900 */
+  --text-body:      #1e293b; /* Slate 800 */
+  --text-sub:       #475569; /* Slate 600 */
+  --text-muted:     #94a3b8; /* Slate 400 */
+  --text-on-primary:#ffffff;
+
+  /* Semantic */
+  --color-success:  #10b981;
+  --color-danger:   #ef4444;
+  --color-warning:  #f59e0b;
+
+  /* Shadows */
+  --shadow-card:    0 1px 3px rgba(15,23,42,0.06), 0 4px 16px rgba(15,23,42,0.04);
+  --shadow-hover:   0 4px 20px rgba(15,23,42,0.10);
+  --shadow-raised:  4px 4px 10px rgba(0,0,0,0.08),-4px -4px 10px rgba(255,255,255,0.9);
+
+  /* ── Legacy aliases (backward compat) ──────────────────── */
+  --bg-light:       var(--bg-base);
+  --bg-dark:        #121212; /* fixed value so dark:bg-bg-dark works in light mode too */
+  --border:         var(--border-color);
 }
 
+/* ============================================================
+   DESIGN TOKENS — Dark Mode
+   ============================================================ */
+.dark {
+  /* Brand stays the same — rose */
+  --primary:        #f43f5e;
+  --primary-active: #e11d48;
+
+  /* Backgrounds — warm charcoal, subtle layering */
+  --bg-base:        #1c1d22; /* main page bg  */
+  --bg-card:        #24252b; /* card / sidebar */
+  --bg-surface:     #2e2f38; /* input / hover  */
+  --bg-overlay:     rgba(28, 29, 34, 0.90);
+
+  /* Borders */
+  --border-color:   rgba(255, 255, 255, 0.08);
+  --border-focus:   #f43f5e;
+
+  /* Text */
+  --text-heading:   #f1f5f9; /* Slate 100 */
+  --text-body:      #cbd5e1; /* Slate 300 */
+  --text-sub:       #94a3b8; /* Slate 400 */
+  --text-muted:     #6b7280; /* Gray 500   */
+  --text-on-primary:#ffffff;
+
+  /* Shadows */
+  --shadow-card:    0 2px 6px rgba(0,0,0,0.30);
+  --shadow-hover:   0 6px 20px rgba(0,0,0,0.40);
+  --shadow-raised:  4px 4px 12px rgba(0,0,0,0.5),-2px -2px 8px rgba(255,255,255,0.03);
+
+  /* ── Legacy aliases ────────────────────────────────────── */
+  --bg-light:       var(--bg-base);
+  --bg-dark:        var(--bg-base);
+  --border:         var(--border-color);
+}
+
+/* ============================================================
+   TAILWIND THEME BRIDGE
+   ============================================================ */
 @theme {
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-  --color-primary: var(--primary);
+  --color-primary:       var(--primary);
   --color-primary-hover: var(--primary-active);
-  --color-secondary: #ec4899;
-  --color-success: #10b981;
-  --color-danger: #ef4444;
-  --color-warning: #f59e0b;
+  --color-secondary:     #ec4899;
+  --color-success:       var(--color-success);
+  --color-danger:        var(--color-danger);
+  --color-warning:       var(--color-warning);
 
-  /* Photoshop Harmony Dark */
-  --color-bg-dark: #1e1e1e;
-  --color-bg-card: #2d2d2d;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-text-muted: #8c8c8c;
-  --color-muted: #8c8c8c;
+  /* expose tokens to Tailwind utility classes */
+  --color-bg-base:       var(--bg-base);
+  --color-bg-card:       var(--bg-card);
+  --color-bg-surface:    var(--bg-surface);
+  --color-border:        var(--border-color);
+  --color-text-heading:  var(--text-heading);
+  --color-text-body:     var(--text-body);
+  --color-text-sub:      var(--text-sub);
+  --color-text-muted:    var(--text-muted);
 
-  /* Sophisticated Bone White */
-  --color-bg-light: #f5f5f2;
-  --color-card-light: #ffffff;
+  /* ── Legacy aliases exposed to Tailwind ─────────────────── */
+  --color-bg-light:     var(--bg-base);
+  --color-bg-dark:      var(--bg-base);   /* dynamically resolved per theme */
+  --color-muted:        var(--text-muted);
 }
 
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
 @layer base {
   body {
-    @apply m-0 min-w-[320px] min-h-screen overflow-hidden text-black bg-bg-light transition-colors duration-300 dark:text-[#d4d4d4] dark:bg-bg-dark;
+    @apply m-0 min-w-[320px] min-h-screen overflow-hidden transition-colors duration-300;
+    background-color: var(--bg-base);
+    color: var(--text-body);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Root styles */
   #root {
     @apply w-screen h-screen flex place-content-center;
   }
 
-  h1, h2, h3 {
+  h1, h2, h3, h4, h5, h6 {
     @apply m-0 font-semibold;
+    color: var(--text-heading);
+  }
+
+  p, span, label {
+    color: var(--text-body);
   }
 }
 
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
 @layer utilities {
+
+  /* --- Title gradient ----------------------------------- */
   .title-gradient {
-    @apply bg-gradient-to-r from-rose-500 via-pink-500 to-orange-500 bg-clip-text text-transparent;
-    @apply dark:from-rose-400 dark:via-pink-400 dark:to-orange-300;
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, #f43f5e, #ec4899, #f97316);
+  }
+  .dark .title-gradient {
+    background-image: linear-gradient(135deg, #fb7185, #f472b6, #fdba74);
   }
 
+  /* --- Cards -------------------------------------------- */
   .glass-card {
-    @apply bg-white dark:bg-bg-card backdrop-blur-md border border-slate-200 dark:border-border rounded-3xl p-6 shadow-sm dark:shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1),0_2px_4px_-1px_rgba(0,0,0,0.06)] transition-all ease-out duration-300;
-    @apply hover:-translate-y-0.5 hover:shadow-lg hover:shadow-rose-500/5 hover:border-rose-200 dark:hover:border-primary/30 dark:hover:shadow-[0_10px_15px_-3px_rgba(0,0,0,0.2)];
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-card);
+    @apply backdrop-blur-md rounded-3xl p-6 transition-all ease-out duration-300;
+    @apply hover:-translate-y-0.5;
+  }
+  .glass-card:hover {
+    box-shadow: var(--shadow-hover);
   }
 
+  /* --- Base button -------------------------------------- */
   .btn {
-    @apply px-4 py-2 rounded-xl border border-transparent font-semibold cursor-pointer transition-all duration-200 inline-flex items-center gap-2;
-    @apply bg-rose-50/50 hover:bg-rose-200/80 hover:border-rose-300 text-black hover:text-black dark:bg-white/5 dark:hover:bg-white/10 dark:text-white dark:hover:text-white;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:scale-100;
+    @apply px-4 py-2 rounded-xl border font-semibold cursor-pointer transition-all duration-200 inline-flex items-center gap-2;
+    background-color: var(--bg-surface);
+    color: var(--text-body);
+    border-color: var(--border-color);
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn:hover {
+    background-color: var(--border-color);
+    color: var(--text-heading);
   }
 
+  /* --- Primary button ----------------------------------- */
   .btn-primary {
-    @apply bg-primary text-white shadow-md shadow-primary/20 hover:brightness-110 hover:scale-[1.02] active:scale-95;
+    @apply text-white shadow-md hover:brightness-110 hover:scale-[1.02] active:scale-95;
+    background-color: var(--primary);
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(244, 63, 94, 0.30);
   }
 
+  /* --- Success button ----------------------------------- */
   .btn-success {
-    @apply bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-md shadow-emerald-500/20 hover:brightness-110 hover:scale-[1.02];
+    @apply text-white shadow-md hover:brightness-110 hover:scale-[1.02];
+    background-image: linear-gradient(135deg, #10b981, #059669);
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
   }
 
-  /* Raised 3D Effect Button */
+  /* --- Danger button ------------------------------------ */
+  .btn-danger {
+    @apply text-white shadow-md hover:brightness-110 hover:scale-[1.02];
+    background-color: var(--color-danger);
+    border-color: transparent;
+  }
+
+  /* --- 3-D Raised button -------------------------------- */
   .btn-timbul {
     @apply relative px-4 py-3 rounded-full font-bold transition-all duration-200 active:scale-95;
-    @apply bg-white text-slate-700 shadow-[4px_4px_10px_rgba(0,0,0,0.1),-4px_-4px_10px_rgba(255,255,255,0.8)];
-    @apply dark:bg-[#333] dark:text-gray-300 dark:shadow-[4px_4px_10px_rgba(0,0,0,0.5),-2px_-2px_8px_rgba(255,255,255,0.05)];
-    @apply hover:shadow-[6px_6px_15px_rgba(0,0,0,0.12),-6px_-6px_15px_rgba(255,255,255,0.9)];
-    @apply dark:hover:shadow-[6px_6px_15px_rgba(0,0,0,0.6),-3px_-3px_10px_rgba(255,255,255,0.08)];
+    background-color: var(--bg-card);
+    color: var(--text-body);
+    box-shadow: var(--shadow-raised);
+  }
+  .btn-timbul:hover {
+    color: var(--text-heading);
   }
 
-  .btn-danger {
-    @apply bg-danger text-white hover:brightness-110 shadow-md shadow-danger/20 hover:scale-[1.02];
-  }
-
+  /* --- Form inputs -------------------------------------- */
   .form-input {
-    @apply bg-white dark:bg-bg-card border border-slate-300 dark:border-border rounded-xl p-3 text-slate-800 dark:text-[#d4d4d4] outline-none transition-colors duration-200 w-full focus:border-primary focus:ring-1 focus:ring-primary disabled:opacity-50 disabled:bg-slate-100 dark:disabled:bg-white/5;
+    @apply rounded-xl p-3 outline-none transition-colors duration-200 w-full;
+    background-color: var(--bg-card);
+    color: var(--text-body);
+    border: 1px solid var(--border-color);
+    @apply disabled:opacity-50;
+  }
+  .form-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.12);
+  }
+  .form-input:disabled {
+    background-color: var(--bg-surface);
   }
 
+  /* --- Animations --------------------------------------- */
   .animate-fade-in {
     animation: fadeIn 0.4s ease forwards;
   }
@@ -98,93 +234,155 @@
   }
 }
 
-
-@keyframes scaleUp {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
+/* ============================================================
+   KEYFRAMES
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Global SweetAlert2 Rounding & Theme Sync */
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ============================================================
+   SWEETALERT 2 — THEME SYNC
+   ============================================================ */
 .swal2-popup {
   border-radius: 1.5rem !important;
-  /* matches rounded-3xl */
-  @apply bg-bg-light text-slate-700 dark:bg-bg-card dark:text-[#d4d4d4] dark:border dark:border-white/10;
+  background-color: var(--bg-card) !important;
+  color: var(--text-body) !important;
+  border: 1px solid var(--border-color) !important;
 }
 
 .swal2-title {
-  @apply !font-bold !text-slate-800 dark:!text-white;
+  color: var(--text-heading) !important;
+  font-weight: 700 !important;
+}
+
+.swal2-html-container {
+  color: var(--text-sub) !important;
 }
 
 .swal2-styled.swal2-confirm {
-  @apply !rounded-xl !font-bold !px-6 !py-3 !shadow-lg !shadow-primary/20 !bg-primary hover:!brightness-110;
+  @apply !rounded-xl !font-bold !px-6 !py-3;
+  background-color: var(--primary) !important;
+  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.30) !important;
+}
+.swal2-styled.swal2-confirm:hover {
+  filter: brightness(1.1) !important;
 }
 
 .swal2-styled.swal2-cancel {
-  @apply !rounded-xl !font-bold !px-6 !py-3 !bg-slate-200 dark:!bg-white/10 !text-slate-700 dark:!text-gray-300 hover:!bg-slate-300 dark:hover:!bg-white/20;
+  @apply !rounded-xl !font-bold !px-6 !py-3;
+  background-color: var(--bg-surface) !important;
+  color: var(--text-body) !important;
+}
+.swal2-styled.swal2-cancel:hover {
+  background-color: var(--border-color) !important;
 }
 
-/* SweetAlert2 Icon Color Overrides - Total Zero Blue */
+/* SweetAlert2 icon — brand color override (no more default blue) */
 .swal2-icon.swal2-info,
 .swal2-icon.swal2-question {
-  border-color: var(--color-primary) !important;
-  color: var(--color-primary) !important;
+  border-color: var(--primary) !important;
+  color: var(--primary) !important;
 }
-
 .swal2-icon.swal2-info::before,
 .swal2-icon.swal2-info::after,
 .swal2-icon.swal2-question::before,
 .swal2-icon.swal2-question::after {
-  background-color: var(--color-primary) !important;
+  background-color: var(--primary) !important;
 }
-
 .swal2-icon.swal2-info .swal2-info-content,
 .swal2-icon.swal2-question .swal2-question-content {
-  color: var(--color-primary) !important;
+  color: var(--primary) !important;
 }
 
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Custom Minimalist Scrollbar */
+/* ============================================================
+   SCROLLBAR — Minimalist
+   ============================================================ */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
   background: transparent;
 }
-
 ::-webkit-scrollbar-thumb {
-  @apply bg-slate-300/50 dark:bg-white/10 rounded-full transition-all;
+  border-radius: 9999px;
+  background-color: var(--border-color);
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-slate-400 dark:bg-white/20;
+  background-color: var(--text-muted);
 }
 
-/* For Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.5) transparent;
+  scrollbar-color: var(--border-color) transparent;
 }
 
-.dark * {
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+/* ============================================================
+   GLOBAL DARK MODE FIXES — Select, Inputs, Tabs, Sidebar
+   ============================================================ */
+
+/* Native <select> dropdown — background & text auto-adapt */
+select {
+  background-color: var(--bg-surface);
+  color: var(--text-body);
+  border-color: var(--border-color);
+}
+
+/* Native <option> inside dropdown panel */
+option {
+  background-color: var(--bg-card);
+  color: var(--text-body);
+}
+
+/* Sidebar aside — fix bg-text-dark class that became invalid */
+aside {
+  background-color: var(--bg-card);
+  border-right-color: var(--border-color);
+}
+
+/* Tab group container — fix dark:bg-bg-dark/40 and dark:bg-bg-dark/20 */
+.tab-group,
+[class*="bg-slate-100"][class*="rounded"] {
+  background-color: var(--bg-surface);
+  border-color: var(--border-color);
+}
+
+/* Active tab pill — light: white card, dark: card surface */
+.tab-active {
+  background-color: var(--bg-card);
+  color: var(--text-heading);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+}
+
+/* Search bar wrapper that uses inline bg-white */
+.search-wrapper {
+  background-color: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+/* Info/stat card surfaces used in several modules */
+.info-surface {
+  background-color: var(--bg-surface);
+  border-color: var(--border-color);
+}
+
+/* ============================================================
+   FIX: Tailwind bg-white in dark mode globally
+   Any element that has ONLY bg-white with no dark:bg- override
+   This targets the sidebar explicitly
+   ============================================================ */
+.dark aside {
+  background-color: var(--bg-card) !important;
+}
+
+/* Fix tab switcher containers using old broken token */
+.dark [class*="dark:bg-bg-dark"] {
+  background-color: var(--bg-surface);
 }

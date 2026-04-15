@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { History, TrendingUp, TrendingDown, ShoppingBag } from 'lucide-react';
+import { TrendingUp, TrendingDown, ShoppingBag } from 'lucide-react';
 import {
   AreaChart,
   Area,
@@ -21,7 +21,6 @@ interface OverviewProps {
   chartData: any[];
   preorders: any[];
   theme: 'light' | 'dark';
-  openBatchModal: () => void;
   filterMonth: number;
   filterYear: number;
   applyMonthFilter: (m: number, y: number) => void;
@@ -33,7 +32,6 @@ const Overview: React.FC<OverviewProps> = ({
   chartData,
   preorders,
   theme,
-  openBatchModal,
   filterMonth,
   filterYear,
   applyMonthFilter,
@@ -143,28 +141,22 @@ const Overview: React.FC<OverviewProps> = ({
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-1.5 rounded-2xl shadow-sm text-muted dark:text-muted">
-            <select
-              className="bg-transparent border-none outline-none text-xs font-bold px-3 py-2 cursor-pointer hover:text-primary transition-colors text-inherit"
-              value={filterMonth}
-              onChange={(e) => applyMonthFilter(parseInt(e.target.value), filterYear)}
-            >
-              {months.map((m, i) => <option key={i} value={i} className="bg-white dark:bg-[#1a1a1a] text-slate-800 dark:text-slate-200">{m}</option>)}
-            </select>
-            <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1"></div>
-            <select
-              className="bg-transparent border-none outline-none text-xs font-bold px-3 py-2 cursor-pointer hover:text-primary transition-colors text-inherit"
-              value={filterYear}
-              onChange={(e) => applyMonthFilter(filterMonth, parseInt(e.target.value))}
-            >
-              {yearOptions.map(y => <option key={y} value={y} className="bg-white dark:bg-[#1a1a1a] text-slate-800 dark:text-slate-200">{y}</option>)}
-            </select>
-          </div>
-
-          <button className="btn btn-primary px-6 py-3.5 text-sm font-bold rounded-2xl shadow-lg shadow-primary/20 flex items-center gap-2 hover:scale-[1.02] transition-transform active:scale-95" onClick={openBatchModal}>
-            <History size={18} /> Input Bulanan
-          </button>
+        <div className="flex items-center bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 p-1.5 rounded-2xl shadow-sm text-muted dark:text-muted">
+          <select
+            className="bg-transparent border-none outline-none text-xs font-bold px-3 py-2 cursor-pointer hover:text-primary transition-colors text-inherit"
+            value={filterMonth}
+            onChange={(e) => applyMonthFilter(parseInt(e.target.value), filterYear)}
+          >
+            {months.map((m, i) => <option key={i} value={i} className="bg-white dark:bg-[#1a1a1a] text-slate-800 dark:text-slate-200">{m}</option>)}
+          </select>
+          <div className="w-px h-6 bg-slate-200 dark:bg-white/10 mx-1"></div>
+          <select
+            className="bg-transparent border-none outline-none text-xs font-bold px-3 py-2 cursor-pointer hover:text-primary transition-colors text-inherit"
+            value={filterYear}
+            onChange={(e) => applyMonthFilter(filterMonth, parseInt(e.target.value))}
+          >
+            {yearOptions.map(y => <option key={y} value={y} className="bg-white dark:bg-[#1a1a1a] text-slate-800 dark:text-slate-200">{y}</option>)}
+          </select>
         </div>
       </header>
 

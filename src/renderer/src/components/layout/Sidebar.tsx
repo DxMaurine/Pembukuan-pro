@@ -65,29 +65,30 @@ const Sidebar: React.FC<SidebarProps> = ({
       title: 'Main Menu',
       items: [
         { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-        { id: 'preorder', icon: ShoppingBag, label: 'Preorder' },
+        { id: 'preorder', icon: ShoppingBag, label: 'Antrian Pesanan' },
+        { id: 'transactions', icon: History, label: 'Buku Kas & Histori' },
       ]
     },
     {
-      title: 'Financial',
+      title: 'Keuangan & Digital',
       items: [
-        { id: 'other_income', icon: PlusCircle, label: 'Pemasukan ( non-sales )' },
-        { id: 'debt', icon: CreditCard, label: 'Hutang Piutang' },
         { id: 'wallet', icon: Wallet, label: 'Wallet & QRIS' },
         { id: 'mutasi', icon: ArrowLeftRight, label: 'Mutasi Kas & Bank' },
+        { id: 'debt', icon: CreditCard, label: 'Hutang Piutang' },
         { id: 'capital', icon: Coins, label: 'Modal Toko' },
+        { id: 'other_income', icon: PlusCircle, label: 'Pemasukan Lain & Donasi' },
       ]
     },
 
     {
-      title: 'Inventory',
+      title: 'Inventori',
       items: [
         { id: 'stock', icon: Package, label: 'Stok Barang Habis' },
-        { id: 'price_management', icon: ArrowLeftRight, label: 'Harga & Pelanggan' },
+        { id: 'price_management', icon: ArrowLeftRight, label: 'Harga & Konsumen' },
       ]
     },
     {
-      title: 'System',
+      title: 'Sistem',
       items: [
         {
           id: 'serverhub',
@@ -96,7 +97,6 @@ const Sidebar: React.FC<SidebarProps> = ({
           badge: serverOnline === null ? 'checking' : serverOnline ? 'online' : 'offline',
         },
         { id: 'reports', icon: FileText, label: 'Laporan & Ekspor' },
-        { id: 'transactions', icon: History, label: 'Riwayat Transaksi' },
         { id: 'settings', icon: Settings, label: 'Pengaturan App' },
       ]
     }
@@ -192,7 +192,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               ) : (
                 <Sun size={20} className="text-orange-500 group-hover:scale-110 transition-transform" />
               )}
-              <span className="text-[11px] font-black capitalize tracking-widest text-muted">Theme</span>
+              <span className="text-[11px] font-bold capitalize tracking-widest text-muted">Theme</span>
             </button>
 
             <button
@@ -201,7 +201,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               title="Keluar"
             >
               <LogOut size={20} className="text-rose-500 group-hover:scale-110 transition-transform" />
-              <span className="text-[11px] font-black capitalize tracking-widest text-muted">Keluar</span>
+              <span className="text-[11px] font-bold capitalize tracking-widest text-muted">Keluar</span>
             </button>
           </div>
 

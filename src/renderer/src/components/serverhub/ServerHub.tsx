@@ -58,10 +58,10 @@ function formatIDR(n: number | null) {
 }
 
 const statusConfig: Record<DanaLog['status'], { label: string; color: string; bg: string; icon: React.FC<any> }> = {
-  success: { label: 'PARSED', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', icon: CheckCircle2 },
-  failed: { label: 'GAGAL', color: 'text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20', icon: XCircle },
-  pending: { label: 'PENDING', color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', icon: Clock },
-  duplicate: { label: 'DUPLIKAT', color: 'text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', icon: RefreshCw },
+  success: { label: 'PARSED', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20', icon: CheckCircle2 },
+  failed: { label: 'GAGAL', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-500/10 border-rose-500/20', icon: XCircle },
+  pending: { label: 'PENDING', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20', icon: Clock },
+  duplicate: { label: 'DUPLIKAT', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-500/10 border-orange-500/20', icon: RefreshCw },
 };
 
 
@@ -87,11 +87,11 @@ function LogRow({ log, index }: { log: DanaLog; index: number }) {
         <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/20">
           {log.source.toUpperCase()}
         </span>
-        <span className="flex-1 text-sm text-slate-300 truncate font-mono">
+        <span className="flex-1 text-sm text-slate-600 dark:text-slate-300 truncate font-mono">
           {log.rawContent}
         </span>
         {log.parsed !== null && (
-          <span className="shrink-0 text-xs font-bold text-emerald-400 font-mono">
+          <span className="shrink-0 text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">
             {formatIDR(log.parsed)}
           </span>
         )}
@@ -106,8 +106,8 @@ function LogRow({ log, index }: { log: DanaLog; index: number }) {
       </div>
       {expanded && (
         <div className="px-4 pb-4 pt-1 border-t border-white/5">
-          <div className="rounded-lg bg-black/30 p-3 font-mono text-xs text-slate-400 break-all">
-            <span className="text-slate-500 select-none">RAW › </span>{log.rawContent}
+          <div className="rounded-lg bg-slate-200 dark:bg-black/30 p-3 font-mono text-xs text-slate-700 dark:text-slate-400 break-all">
+            <span className="text-slate-400 dark:text-slate-500 select-none">RAW › </span>{log.rawContent}
           </div>
           {log.docId && (
             <p className="text-[10px] text-text-muted mt-2 font-mono">
@@ -304,8 +304,8 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
                 </div>
               </div>
 
-              {/* Firebase status */}
-              <div className="relative overflow-hidden rounded-2xl bg-bg-card border border-border/50 p-4 flex items-center gap-3">
+              {/* Database status */}
+              <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#2d2d2d] border border-border/50 p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-600 dark:text-orange-400 shrink-0">
                   <Database size={20} />
                 </div>
@@ -316,13 +316,13 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
               </div>
 
               {/* Notif count */}
-              <div className="relative overflow-hidden rounded-2xl bg-bg-card border border-border/50 p-4 flex items-center gap-3">
+              <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#2d2d2d] border border-border/50 p-4 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center text-violet-600 dark:text-violet-400 shrink-0">
                   <Activity size={20} />
                 </div>
                 <div>
                   <p className="text-[9px] font-bold uppercase tracking-widest text-text-muted">Logs</p>
-                  <h3 className="text-lg font-bold text-text-main leading-none uppercase">{stats.total}</h3>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-none uppercase">{stats.total}</h3>
                 </div>
               </div>
 

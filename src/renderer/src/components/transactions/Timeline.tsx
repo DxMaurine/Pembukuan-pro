@@ -94,7 +94,7 @@ const Timeline: React.FC<TimelineProps> = ({
                         <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
                           {t.description || (t.type === 'income' ? 'Pemasukan' : 'Pengeluaran')}
                         </span>
-                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/5 text-[9px] font-black tracking-tighter text-slate-500 dark:text-text-muted rounded border border-slate-200 dark:border-white/10">
+                        <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-white/5 text-[9px] font-bold tracking-tighter text-slate-500 dark:text-text-muted rounded border border-slate-200 dark:border-white/10">
                           {getSourceLabel(t.source)}
                         </span>
                       </div>
@@ -142,9 +142,9 @@ const Timeline: React.FC<TimelineProps> = ({
         </button>
 
         <div className="flex items-center gap-1.5 px-4">
-          <span className="text-sm font-black text-primary">{currentPage}</span>
+          <span className="text-sm font-bold text-primary">{currentPage}</span>
           <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>
-          <span className="text-sm font-black text-muted">{totalPages}</span>
+          <span className="text-sm font-bold text-muted">{totalPages}</span>
         </div>
 
         <button

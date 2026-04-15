@@ -22,9 +22,10 @@ interface WalletManagerProps {
   theme: 'light' | 'dark';
   activeSubTab: 'saving' | 'qris';
   setActiveSubTab: (tab: 'saving' | 'qris') => void;
+  mutations: any[];
 }
 
-const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, storeName, theme, activeSubTab, setActiveSubTab }) => {
+const WalletManager: React.FC<WalletManagerProps> = ({ entries, mutations, loadData, api, storeName, theme, activeSubTab, setActiveSubTab }) => {
 
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -59,8 +60,20 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
   };
 
   const filteredEntries = entries.filter(e => e.type === activeSubTab);
-  const totalSaving = entries.filter(e => e.type === 'saving').reduce((s, e) => s + e.amount, 0);
-  const totalQRIS = entries.filter(e => e.type === 'qris').reduce((s, e) => s + e.amount, 0);
+
+  // Lifetime Totals
+  const lifetimeSaving = entries.filter(e => e.type === 'saving').reduce((s, e) => s + e.amount, 0);
+  const lifetimeQRIS = entries.filter(e => e.type === 'qris').reduce((s, e) => s + e.amount, 0);
+
+  // Withdrawn Totals (Mutations)
+  const withdrawnQRIS = mutations
+    .filter(m => (m.type === 'wallet_to_cash' || m.type === 'wallet_to_owner'))
+    .reduce((s, m) => s + (Number(m.amount) || 0), 0);
+
+  // Current Balances
+  const currentQRIS = Math.max(0, lifetimeQRIS - withdrawnQRIS);
+  const currentSaving = lifetimeSaving; // Assume no mutations for savings yet based on system types
+
 
   const handleAddEntry = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -130,19 +143,27 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
           <p className="text-muted dark:text-muted mt-1 italic text-sm opacity-60">Pantau saldo digital dan transaksi QR code.</p>
         </div>
         <div className="flex flex-wrap items-center gap-4">
-          <button onClick={sendWalletReport} className="btn bg-white dark:bg-white/5 border-slate-200 dark:border-white/10 flex items-center gap-2 px-6 py-3.5 rounded-xl shadow-sm hover:scale-105 transition-transform font-bold text-[10px] uppercase tracking-widest text-slate-700 dark:text-slate-300">
+          <button onClick={sendWalletReport} className="btn flex items-center gap-2 px-6 py-3.5 rounded-xl shadow-sm hover:scale-105 transition-transform font-bold text-[10px] uppercase tracking-widest">
             <Send size={16} /> Kirim ke Owner
           </button>
-          <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1.5 rounded-2xl border border-slate-200/50 dark:border-border/50">
+          <div className="flex bg-slate-100 dark:bg-white/5 p-1.5 rounded-2xl border border-slate-200/50 dark:border-white/10">
             <button
               onClick={() => handleTabChange('saving')}
-              className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeSubTab === 'saving' ? 'bg-white dark:bg-primary shadow-xl scale-105' : 'text-muted'}`}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeSubTab === 'saving'
+                  ? 'bg-white dark:bg-primary text-slate-900 dark:text-white shadow-xl scale-105'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
             >
               <Wallet size={18} /> TABUNGAN
             </button>
             <button
               onClick={() => handleTabChange('qris')}
-              className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-black transition-all ${activeSubTab === 'qris' ? 'bg-white dark:bg-primary shadow-xl scale-105' : 'text-muted'}`}
+              className={`flex items-center gap-3 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+                activeSubTab === 'qris'
+                  ? 'bg-white dark:bg-primary text-slate-900 dark:text-white shadow-xl scale-105'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+              }`}
             >
               <QrCode size={18} /> QRIS MONITOR
             </button>
@@ -165,17 +186,17 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
               <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${activeSubTab === 'saving' ? 'bg-amber-500/20 text-amber-500 shadow-lg shadow-amber-500/10' : 'bg-slate-500/10 text-slate-500'}`}>
                 <PiggyBank size={22} />
               </div>
-              <span className="text-[10px] font-black text-muted tracking-widest uppercase opacity-60">TABUNGAN AKTIF</span>
+              <span className="text-[10px] font-bold text-muted tracking-widest uppercase opacity-60">TABUNGAN AKTIF</span>
             </div>
             <div>
-              <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Saldo:</div>
-              <h3 className="text-2xl font-black italic tracking-tighter text-slate-800 dark:text-white leading-none">Rp {formatIDR(totalSaving)}</h3>
+              <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Saldo Tabungan Sisa:</div>
+              <h3 className="text-2xl font-bold italic tracking-tighter text-slate-800 dark:text-white leading-none">Rp {formatIDR(currentSaving)}</h3>
             </div>
             <div className="flex gap-2 mt-2 pt-3 border-t border-slate-200/50 dark:border-white/5">
               {activeSubTab === 'saving' ? (
                 <>
-                  <button onClick={() => quickAddSaving(10000)} className="btn px-3 py-1.5 text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+10K</button>
-                  <button onClick={() => quickAddSaving(20000)} className="btn px-3 py-1.5 text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-black uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+20K</button>
+                  <button onClick={() => quickAddSaving(10000)} className="btn px-3 py-1.5 text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+10K</button>
+                  <button onClick={() => quickAddSaving(20000)} className="btn px-3 py-1.5 text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 border-amber-500/20 font-bold uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-sm">+20K</button>
                 </>
               ) : (
                 <div className="h-[25px]"></div>
@@ -198,11 +219,14 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
               <div className={`p-3 rounded-xl group-hover:scale-110 transition-transform ${activeSubTab === 'qris' ? 'bg-blue-500/20 text-blue-500 shadow-lg shadow-blue-500/10 shadow-inner' : 'bg-slate-500/10 text-slate-500'}`}>
                 <QrCode size={22} />
               </div>
-              <span className="text-[10px] font-black text-muted tracking-widest uppercase opacity-60">TOTAL MONITOR QRIS</span>
+              <span className="text-[10px] font-bold text-muted tracking-widest uppercase opacity-60">TOTAL MONITOR QRIS</span>
             </div>
             <div>
-              <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Total Dana Masuk:</div>
-              <h3 className="text-2xl font-black italic tracking-tighter text-blue-600 dark:text-blue-400 leading-none">Rp {formatIDR(totalQRIS)}</h3>
+              <div className="text-[10px] text-muted font-bold uppercase mb-0.5 opacity-50 tracking-tight">Saldo QRIS Saat Ini:</div>
+              <h3 className="text-2xl font-bold italic tracking-tighter text-blue-600 dark:text-blue-400 leading-none">Rp {formatIDR(currentQRIS)}</h3>
+              <div className="mt-1.5 text-[12px] text-emerald-500 dark:text-emerald-500 font-bold italic opacity-50">
+                Total Terkumpul: Rp {formatIDR(lifetimeQRIS)}
+              </div>
             </div>
             <div className="flex items-center gap-2 mt-2 pt-3 border-t border-slate-200/50 dark:border-white/5">
               <Clock size={10} className="text-muted opacity-50" />
@@ -218,7 +242,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
           <button onClick={() => setShowModal(true)} className="btn btn-primary w-full py-5 rounded-2xl flex flex-col items-center gap-2 shadow-lg shadow-primary/20 hover:scale-[1.03] transition-all relative z-10 border-none">
             <div className="p-1.5 bg-white/20 rounded-lg"><Plus size={20} /></div>
             <div className="flex flex-col items-center">
-              <span className="font-black uppercase tracking-[0.15em] text-[10px] mb-0.5">Tambah Data</span>
+              <span className="font-bold uppercase tracking-[0.15em] text-[10px] mb-0.5">Tambah Data</span>
               <span className="text-[10px] opacity-70 font-medium tracking-tight">Klik untuk mencatat saldo</span>
             </div>
           </button>
@@ -260,7 +284,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                       {/* Bagian Tengah: Badge Status */}
                       <div className="flex justify-center">
                         {activeSubTab === 'qris' && (
-                          <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all duration-500 ${entry.status === 'received'
+                          <div className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-widest border transition-all duration-500 ${entry.status === 'received'
                             ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
                             : 'bg-amber-500/10 text-amber-500 border-amber-500/20 animate-pulse'
                             }`}>
@@ -272,7 +296,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
 
                       {/* Bagian Kanan: Amount & Action */}
                       <div className="flex items-center justify-end gap-6 group-hover:gap-4 transition-all">
-                        <span className="text-lg font-black tracking-tight whitespace-nowrap">Rp {formatIDR(entry.amount)}</span>
+                        <span className="text-lg font-bold tracking-tight whitespace-nowrap">Rp {formatIDR(entry.amount)}</span>
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                           <button onClick={() => handleEditClick(entry)} className="btn p-2.5 bg-slate-200 dark:bg-white/10 shadow-none hover:bg-primary/20 hover:text-primary border-none rounded-xl">
                             <Pencil size={14} />
@@ -297,9 +321,9 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                       </button>
 
                       <div className="flex items-center gap-1.5 px-4">
-                        <span className="text-sm font-black text-primary">{currentPage}</span>
+                        <span className="text-sm font-bold text-primary">{currentPage}</span>
                         <span className="text-[10px] font-bold text-muted uppercase tracking-tighter opacity-40">dari</span>
-                        <span className="text-sm font-black text-muted">{totalPages}</span>
+                        <span className="text-sm font-bold text-muted">{totalPages}</span>
                       </div>
 
                       <button
@@ -350,7 +374,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
 
                 <div className="space-y-4">
                   <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-muted block mb-2 ml-1">Keterangan / Tujuan:</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-muted block mb-2 ml-1">Keterangan / Tujuan:</label>
                     <textarea
                       className="form-input text-sm py-4 px-4 h-28 resize-none leading-relaxed placeholder:opacity-20"
                       placeholder={activeSubTab === 'saving' ? 'Contoh: Tabungan dana cadangan, Tabungan beli motor...' : 'Contoh: Pembayaran DANA dari Bpk Jono, Transfer BRI Galon...'}
@@ -380,7 +404,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                       {formData.description || 'Pencatatan Saldo'}
                     </span>
                   </div>
-                  <div className={`text-[10px] font-black px-4 py-2 rounded-full shadow-sm border ${activeSubTab === 'saving' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                  <div className={`text-[10px] font-bold px-4 py-2 rounded-full shadow-sm border ${activeSubTab === 'saving' ? 'bg-primary/10 text-primary border-primary/20' : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
                     }`}>
                     JENIS: {activeSubTab === 'saving' ? 'TABUNGAN' : 'LOG QRIS MONITOR'}
                   </div>
@@ -393,7 +417,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                       <label className="block mb-2 text-sm font-medium ml-1">Nominal Rupiah (Rp)</label>
                       <input
                         type="text"
-                        className={`form-input text-3xl font-black text-center py-6 rounded-2xl focus:ring-4 placeholder:opacity-20 ${activeSubTab === 'saving' ? 'text-primary focus:ring-primary/20' : 'text-blue-500 focus:ring-blue-500/20'
+                        className={`form-input text-3xl font-bold text-center py-6 rounded-2xl focus:ring-4 placeholder:opacity-20 ${activeSubTab === 'saving' ? 'text-primary focus:ring-primary/20' : 'text-blue-500 focus:ring-blue-500/20'
                           }`}
                         placeholder="Rp 0"
                         autoFocus
@@ -405,7 +429,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                       <label className="block mb-2 text-sm font-medium ml-1">Tanggal Eksekusi:</label>
                       <input
                         type="date"
-                        className="form-input py-3.5 px-4 font-black text-sm"
+                        className="form-input py-3.5 px-4 font-bold text-sm"
                         value={formData.date}
                         onChange={e => setFormData({ ...formData, date: e.target.value })}
                       />
@@ -416,7 +440,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                   <div className="flex flex-col justify-center gap-6">
                     {activeSubTab === 'qris' ? (
                       <div className="space-y-4">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-muted block mb-2 px-1">Konfirmasi Dana Masuk:</label>
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-muted block mb-2 px-1">Konfirmasi Dana Masuk:</label>
                         <div className="grid grid-cols-2 gap-3">
                           <button
                             type="button"
@@ -424,7 +448,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                             className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-300 ${formData.status === 'received' ? 'bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20 scale-105' : 'bg-slate-100 dark:bg-white/5 border-transparent opacity-60'}`}
                           >
                             <CheckCircle2 size={24} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Diterima</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Diterima</span>
                           </button>
                           <button
                             type="button"
@@ -432,7 +456,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                             className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all duration-300 ${formData.status === 'pending' ? 'bg-amber-500 text-white border-amber-500 shadow-lg shadow-amber-500/20 scale-105' : 'bg-slate-100 dark:bg-white/5 border-transparent opacity-60'}`}
                           >
                             <Clock size={24} />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Pending</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest">Pending</span>
                           </button>
                         </div>
                         <p className="text-[10px] text-muted italic px-1 opacity-60">* Pilih 'Diterima' jika dana sudah Bapak cairkan / campur ke kas utama laci.</p>
@@ -441,7 +465,7 @@ const WalletManager: React.FC<WalletManagerProps> = ({ entries, loadData, api, s
                       <div className="p-6 bg-primary/5 rounded-3xl border border-primary/10 space-y-3">
                         <div className="flex items-center gap-2 mb-2">
                           <TrendingUp size={16} className="text-primary" />
-                          <span className="text-[10px] font-black text-primary uppercase tracking-widest">Potensi Pertumbuhan</span>
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Potensi Pertumbuhan</span>
                         </div>
                         <p className="text-[11px] text-muted leading-relaxed">
                           Dana yang Bapak tabungkan ini akan menambah saldo 'Tabungan Aktif' dan memisahkan uang laba dari uang belanja stok.

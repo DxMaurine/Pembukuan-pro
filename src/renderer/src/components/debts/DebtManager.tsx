@@ -181,7 +181,7 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
             }}
           />
         </div>
-        <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1.5 rounded-xl border border-slate-200/50 dark:border-border/50">
+        <div className="flex bg-slate-100 dark:bg-white/5 p-1.5 rounded-xl border border-slate-200/50 dark:border-white/10">
           {['all', 'receivable', 'payable'].map((t: any) => (
             <button
               key={t}
@@ -189,13 +189,13 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
                 setFilterType(t);
                 setCurrentPage(1);
               }}
-              className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${filterType === t ? 'bg-white dark:bg-primary shadow-md' : 'text-muted'}`}
+              className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${filterType === t ? 'bg-white dark:bg-primary text-slate-900 dark:text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               {t === 'all' ? 'SEMUA' : t === 'receivable' ? 'PIUTANG' : 'HUTANG'}
             </button>
           ))}
         </div>
-        <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1.5 rounded-xl border border-slate-200/50 dark:border-border/50">
+        <div className="flex bg-slate-100 dark:bg-white/5 p-1.5 rounded-xl border border-slate-200/50 dark:border-white/10">
           {['all', 'pending', 'paid'].map((s: any) => (
             <button
               key={s}
@@ -203,7 +203,7 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
                 setFilterStatus(s);
                 setCurrentPage(1);
               }}
-              className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${filterStatus === s ? 'bg-white dark:bg-primary shadow-md' : 'text-muted'}`}
+              className={`px-5 py-2 rounded-lg text-xs font-bold transition-all ${filterStatus === s ? 'bg-white dark:bg-primary text-slate-900 dark:text-white shadow-md' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               {s === 'all' ? 'SEMUA STATUS' : s === 'pending' ? 'BELUM LUNAS' : 'LUNAS'}
             </button>
@@ -328,18 +328,18 @@ const DebtManager: React.FC<DebtManagerProps> = ({ debts, loadData, api, storeNa
                 </div>
 
                 <div className="space-y-4">
-                  <div className="flex bg-slate-100 dark:bg-bg-dark/40 p-1.5 rounded-xl border border-slate-200/50 dark:border-border/50">
+                  <div className="flex bg-slate-100 dark:bg-white/5 p-1.5 rounded-xl border border-slate-200/50 dark:border-white/10">
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'receivable' })}
-                      className={`flex-1 py-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${formData.type === 'receivable' ? 'bg-white text-emerald-600 shadow-md scale-[1.02]' : 'text-muted'}`}
+                      className={`flex-1 py-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${formData.type === 'receivable' ? 'bg-white dark:bg-emerald-500/80 text-emerald-600 dark:text-white shadow-md scale-[1.02]' : 'text-slate-500 dark:text-slate-400'}`}
                     >
                       PIUTANG (Pelanggan)
                     </button>
                     <button
                       type="button"
                       onClick={() => setFormData({ ...formData, type: 'payable' })}
-                      className={`flex-1 py-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${formData.type === 'payable' ? 'bg-white text-rose-600 shadow-md scale-[1.02]' : 'text-muted'}`}
+                      className={`flex-1 py-3.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${formData.type === 'payable' ? 'bg-white dark:bg-rose-500/80 text-rose-600 dark:text-white shadow-md scale-[1.02]' : 'text-slate-500 dark:text-slate-400'}`}
                     >
                       HUTANG (Supplier)
                     </button>
