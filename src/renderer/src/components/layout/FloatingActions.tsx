@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Plus, History, TrendingDown, ShoppingBag, X, Info, Zap, HelpCircle, Minus } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
@@ -53,19 +53,6 @@ const FloatingActions: React.FC<FloatingActionsProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const [activeGuide, setActiveGuide] = useState<typeof GUIDES[0] | null>(null);
 
-  useEffect(() => {
-    // Onboarding: Show the first guide if never seen
-    const hasSeenOnboarding = localStorage.getItem('fab_guide_onboarding');
-    if (!hasSeenOnboarding) {
-      // Small delay for drama
-      const timer = setTimeout(() => {
-        setActiveGuide(GUIDES[3]); // Focus on Input Bulanan as it's the most complex
-        localStorage.setItem('fab_guide_onboarding', 'true');
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-    return () => { };
-  }, []);
 
   const actions = [
     { ...GUIDES[0], onClick: onQuickSale },

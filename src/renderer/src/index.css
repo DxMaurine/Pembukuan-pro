@@ -154,7 +154,7 @@
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-card);
-    @apply backdrop-blur-md rounded-3xl p-6 transition-all ease-out duration-300;
+    @apply rounded-3xl p-6 transition-all ease-out duration-300;
     @apply hover:-translate-y-0.5;
   }
   .glass-card:hover {
@@ -176,18 +176,16 @@
 
   /* --- Primary button ----------------------------------- */
   .btn-primary {
-    @apply text-white shadow-md hover:brightness-110 hover:scale-[1.02] active:scale-95;
+    @apply text-white hover:brightness-110 hover:scale-[1.02] active:scale-95;
     background-color: var(--primary);
     border-color: transparent;
-    box-shadow: 0 4px 14px rgba(244, 63, 94, 0.30);
   }
 
   /* --- Success button ----------------------------------- */
   .btn-success {
-    @apply text-white shadow-md hover:brightness-110 hover:scale-[1.02];
+    @apply text-white hover:brightness-110 hover:scale-[1.02];
     background-image: linear-gradient(135deg, #10b981, #059669);
     border-color: transparent;
-    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.25);
   }
 
   /* --- Danger button ------------------------------------ */
@@ -269,7 +267,6 @@
 .swal2-styled.swal2-confirm {
   @apply !rounded-xl !font-bold !px-6 !py-3;
   background-color: var(--primary) !important;
-  box-shadow: 0 4px 14px rgba(244, 63, 94, 0.30) !important;
 }
 .swal2-styled.swal2-confirm:hover {
   filter: brightness(1.1) !important;
@@ -385,4 +382,13 @@ aside {
 /* Fix tab switcher containers using old broken token */
 .dark [class*="dark:bg-bg-dark"] {
   background-color: var(--bg-surface);
+}
+
+/* ============================================================
+   GLOBAL: Strip all colored glow box-shadows
+   Tailwind v4 generates --tw-shadow-color for shadow-{color}/{opacity}.
+   We reset them to transparent so no colored glows appear anywhere.
+   ============================================================ */
+*, *::before, *::after {
+  --tw-shadow-color: transparent !important;
 }

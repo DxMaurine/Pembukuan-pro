@@ -66,22 +66,31 @@ const BatchModal: React.FC<BatchModalProps> = ({
     (sum: number, it: any) => sum + (parseFloat(unformatIDR(it.amount)) || 0), 0
   );
 
-  const markLibur = () => {
-    setBatchData({
-      ...batchData,
-      [currentDay]: { 
-        income: '0', 
-        expenseItems: [{ name: 'LIBUR / TOKO TUTUP', amount: '0' }],
-        isLibur: true 
-      }
-    });
+  const toggleLibur = () => {
+    if (isCurrentDayLibur) {
+      // Batalkan libur: reset ke state kosong
+      setBatchData({
+        ...batchData,
+        [currentDay]: { income: '', expenseItems: [], isLibur: false }
+      });
+    } else {
+      // Set hari libur
+      setBatchData({
+        ...batchData,
+        [currentDay]: { 
+          income: '0', 
+          expenseItems: [{ name: 'LIBUR / TOKO TUTUP', amount: '0' }],
+          isLibur: true 
+        }
+      });
+    }
   };
 
-  const isCurrentDayLibur = batchData[currentDay]?.isLibur || false;
+  const isCurrentDayLibur = batchData[currentDay]?.isLibur === true;
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-[110] px-4">
-      <div className={`glass-card w-full ${batchStep === 'config' ? 'max-w-[600px]' : 'max-w-[900px]'} relative py-14 px-12 animate-scale-up transition-all duration-300`}>
+      <div className={`glass-card w-full ${batchStep === 'config' ? 'max-w-[600px]' : 'max-w-[900px]'} relative py-10 px-8 animate-scale-up transition-all duration-300 flex flex-col max-h-[90vh] overflow-hidden`}>
         <button
           className="btn absolute top-6 right-6 p-2 shadow-none bg-transparent hover:bg-slate-200 dark:hover:bg-white/10"
           onClick={() => setShowBatchModal(false)}
@@ -193,7 +202,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
             </button>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="flex flex-col gap-8 min-h-0 flex-1 overflow-hidden">
             <div className="flex justify-between items-center bg-slate-100 dark:bg-white/5 p-4 rounded-2xl border border-slate-200/50 dark:border-white/5 shadow-inner">
               <div className="flex flex-col">
                 <span className="text-[10px] uppercase font-bold text-muted">Sedang Input:</span>
@@ -201,7 +210,10 @@ const BatchModal: React.FC<BatchModalProps> = ({
               </div>
               <div className="flex items-center gap-3">
                 {isCurrentDayLibur && (
-                  <div className="text-[10px] font-bold bg-amber-500 text-white px-3 py-1.5 rounded-lg shadow-sm animate-bounce">
+                  <div
+                    title="Klik tombol Libur lagi untuk membatalkan"
+                    className="text-[10px] font-bold bg-amber-500 text-white px-3 py-1.5 rounded-lg shadow-sm animate-bounce cursor-default"
+                  >
                     HARI LIBUR
                   </div>
                 )}
@@ -210,19 +222,20 @@ const BatchModal: React.FC<BatchModalProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={markLibur}
+                  onClick={toggleLibur}
+                  title={isCurrentDayLibur ? 'Klik untuk batalkan libur' : 'Tandai sebagai hari libur'}
                   className={`btn flex items-center gap-2 py-2 px-4 text-xs font-bold transition-all ${
                     isCurrentDayLibur 
-                      ? 'bg-amber-500 text-white border-amber-500 shadow-md scale-105' 
+                      ? 'bg-amber-500 text-white border-amber-500 shadow-md scale-105 hover:bg-red-500 hover:border-red-500' 
                       : 'bg-slate-200 dark:bg-white/10 hover:bg-amber-500 hover:text-white border-transparent hover:scale-105'
                   }`}
                 >
-                  <Coffee size={14} /> Libur
+                  <Coffee size={14} /> {isCurrentDayLibur ? 'Batal Libur' : 'Libur'}
                 </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 min-h-0 flex-1">
               {/* Left Column: Income */}
               <div className="space-y-6">
                 <div>
@@ -254,7 +267,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
               </div>
 
               {/* Right Column: Detailed Expenses */}
-              <div className="flex flex-col">
+              <div className="flex flex-col min-h-0">
                 <div className="flex justify-between items-center mb-3">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted">Rincian Pengeluaran Hari Ini:</label>
                   <button
@@ -266,7 +279,7 @@ const BatchModal: React.FC<BatchModalProps> = ({
                   </button>
                 </div>
 
-                <div className="space-y-3 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
+                <div className="space-y-3 flex-1 overflow-y-auto pr-2 custom-scrollbar" style={{maxHeight: 'calc(90vh - 340px)'}}>
                   {(batchData[currentDay]?.expenseItems || []).length === 0 ? (
                     <div className="text-center py-10 opacity-30 text-xs text-muted dark:text-muted border-2 border-dashed rounded-2xl border-slate-300">
                       Belum ada rincian belanja.
@@ -310,44 +323,52 @@ const BatchModal: React.FC<BatchModalProps> = ({
               </div>
             </div>
 
-            <div className="mt-12 flex gap-4 pt-8 border-t border-slate-200 dark:border-white/5">
+            <div className="flex-shrink-0 flex items-center gap-2 pt-8 border-t border-slate-200 dark:border-white/5">
+              {/* 1. Kembali ke pilih periode */}
               <button
-                className="btn flex-1 justify-center py-4 rounded-2xl font-bold transition-all hover:bg-slate-200 dark:hover:bg-white/10"
-                onClick={() => {
-                  if (currentDay > batchConfig.startDay) {
-                    setCurrentDay(currentDay - 1);
-                  } else {
-                    setBatchStep('config');
-                  }
-                }}
+                className="btn flex-1 justify-center py-3 rounded-2xl font-semibold text-sm transition-all hover:bg-slate-200 dark:hover:bg-white/10"
+                onClick={() => setBatchStep('config')}
+                title="Kembali ke pilih periode"
               >
                 Kembali
               </button>
 
+              {/* 2. Simpan & Selesai */}
+              <button
+                className="btn flex-1 justify-center py-3 rounded-2xl font-semibold text-sm text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20 transition-all"
+                onClick={submitBatch}
+                title="Simpan semua data yang sudah diinput dan tutup"
+              >
+                Simpan & Selesai
+              </button>
+
+              {/* 3. Hari Sebelumnya */}
+              <button
+                className="btn flex-1 justify-center py-3 rounded-2xl font-semibold text-sm transition-all hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                disabled={currentDay <= batchConfig.startDay}
+                onClick={() => setCurrentDay((d: number) => d - 1)}
+              >
+                ← Hari Sebelumnya
+              </button>
+
+              {/* 4. Hari Berikutnya / Simpan Semua */}
               {currentDay < batchConfig.limitDay ? (
-                <div className="flex flex-1 gap-4">
-                  <button
-                    className="btn bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 flex-1 justify-center py-4 rounded-2xl font-bold hover:bg-emerald-500 hover:text-white transition-all"
-                    onClick={submitBatch}
-                  >
-                    Simpan & Selesai
-                  </button>
-                  <button
-                    className="btn btn-primary flex-1 justify-center py-4 rounded-2xl font-bold shadow-lg shadow-primary/20"
-                    onClick={() => setCurrentDay((d: number) => d + 1)}
-                  >
-                    Hari Berikutnya
-                  </button>
-                </div>
+                <button
+                  className="btn btn-primary flex-1 justify-center py-3 rounded-2xl font-semibold text-sm"
+                  onClick={() => setCurrentDay((d: number) => d + 1)}
+                >
+                  Hari Berikutnya →
+                </button>
               ) : (
                 <button
-                  className="btn btn-primary flex-1 justify-center py-4 rounded-2xl font-bold bg-emerald-600 border-emerald-600 text-white shadow-lg shadow-emerald-500/20"
+                  className="btn flex-1 justify-center py-3 rounded-2xl font-semibold text-sm bg-emerald-600 border-emerald-600 text-white hover:bg-emerald-700 transition-all"
                   onClick={submitBatch}
                 >
-                  Simpan Semua Data
+                  ✓ Simpan Semua Data
                 </button>
               )}
             </div>
+
           </div>
         )}
       </div>

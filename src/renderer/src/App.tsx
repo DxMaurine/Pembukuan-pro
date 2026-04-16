@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Swal from 'sweetalert2';
 import { Eye, EyeOff, Plus, History, Settings2, Store, Shield, Zap, Palette, Trash2, Info, Filter, FileText, Wallet, Handshake, ShoppingBag, Package, RefreshCw, CheckCircle2, Download } from 'lucide-react';
 import packageJson from '../../../package.json';
+import ColorPickerModal from './components/modals/ColorPickerModal';
 // Types
 import { Transaction, StockItem, Summary, Settings, Mutation } from './types';
 
@@ -75,6 +76,7 @@ const App: React.FC = () => {
   const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const [updateDownloaded, setUpdateDownloaded] = useState<boolean>(false);
   const [forceOpenPreorder, setForceOpenPreorder] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
 
   // Theme support
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -150,10 +152,16 @@ const App: React.FC = () => {
   });
 
   useEffect(() => {
-    const preset = colorPresets.find(p => p.primary === accentColor) || colorPresets[0];
-    document.documentElement.style.setProperty('--primary', preset.primary);
-    document.documentElement.style.setProperty('--primary-active', preset.active);
-    localStorage.setItem('accentColor', preset.primary);
+    // Derive an active shade: darken the chosen hex by ~15%
+    const hex = accentColor.startsWith('#') ? accentColor : '#f43f5e';
+    const r = parseInt(hex.slice(1,3),16);
+    const g = parseInt(hex.slice(3,5),16);
+    const b = parseInt(hex.slice(5,7),16);
+    const darken = (c: number) => Math.max(0, Math.round(c * 0.85)).toString(16).padStart(2,'0');
+    const activeHex = `#${darken(r)}${darken(g)}${darken(b)}`;
+    document.documentElement.style.setProperty('--primary', hex);
+    document.documentElement.style.setProperty('--primary-active', activeHex);
+    localStorage.setItem('accentColor', hex);
   }, [accentColor]);
 
   // --- Update System Listeners ---
@@ -1155,32 +1163,58 @@ const App: React.FC = () => {
                             <Palette size={24} />
                           </div>
                           <div>
-                            <h3 className="text-xl font-bold">Tema & Visual</h3>
+                            <h3 className="text-xl font-bold">Tema &amp; Visual</h3>
                             <p className="text-xs text-muted font-bold uppercase tracking-wider opacity-60">Personalisasi warna aplikasi</p>
                           </div>
                         </div>
 
                         <div className="space-y-6">
-                          <div className="space-y-4">
-                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-1">Warna Aksen Aplikasi:</label>
-                            <div className="flex flex-wrap gap-4">
+                          {/* Active color preview + open picker */}
+                          <div className="flex items-center gap-4 p-4 bg-slate-100 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10">
+                            <div
+                              className="w-14 h-14 rounded-2xl shadow-lg flex-shrink-0 border-2 border-white/20"
+                              style={{ backgroundColor: accentColor }}
+                            />
+                            <div className="flex-1">
+                              <p className="text-sm font-bold">Warna Aksen Aktif</p>
+                              <p className="text-xs text-muted font-mono mt-0.5">{accentColor.toUpperCase()}</p>
+                            </div>
+                            <button
+                              id="open-color-picker-btn"
+                              className="btn btn-primary py-2.5 px-5 text-xs font-bold uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20 hover:scale-105 transition-all flex items-center gap-2"
+                              onClick={() => setShowColorPicker(true)}
+                            >
+                              <Palette size={14} /> Pilih Warna
+                            </button>
+                          </div>
+
+                          {/* Quick preset swatches */}
+                          <div className="space-y-3">
+                            <label className="text-[10px] font-bold uppercase tracking-widest text-muted ml-1">Preset Cepat:</label>
+                            <div className="flex flex-wrap gap-3">
                               {colorPresets.map((preset) => (
                                 <button
                                   key={preset.name}
                                   onClick={() => setAccentColor(preset.primary)}
-                                  className={`group relative w-14 h-14 rounded-2xl transition-all duration-300 border-4 flex items-center justify-center ${accentColor === preset.primary
-                                    ? 'border-primary scale-110 shadow-lg shadow-primary/20'
-                                    : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105 bg-slate-100 dark:bg-white/5'
-                                    }`}
-                                  style={{ backgroundColor: preset.primary }}
+                                  title={preset.name}
+                                  className={`group relative w-12 h-12 rounded-xl transition-all duration-300 border-4 flex items-center justify-center ${
+                                    accentColor === preset.primary
+                                      ? 'border-white scale-110 shadow-lg'
+                                      : 'border-transparent opacity-60 hover:opacity-100 hover:scale-105'
+                                  }`}
+                                  style={{
+                                    backgroundColor: preset.primary,
+                                    boxShadow: accentColor === preset.primary ? `0 0 0 3px ${preset.primary}` : undefined
+                                  }}
                                 >
                                   {accentColor === preset.primary && <div className="w-2 h-2 rounded-full bg-white animate-ping" />}
-                                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity uppercase">{preset.name}</span>
+                                  <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity uppercase whitespace-nowrap">{preset.name}</span>
                                 </button>
                               ))}
                             </div>
                           </div>
-                          <div className="pt-8">
+
+                          <div className="pt-2">
                             <p className="text-[11px] text-muted font-medium italic opacity-50">*Perubahan warna akan langsung diterapkan ke seluruh elemen UI.</p>
                           </div>
                         </div>
@@ -1518,6 +1552,14 @@ const App: React.FC = () => {
           }
         }}
       />
+
+      {showColorPicker && (
+        <ColorPickerModal
+          value={accentColor}
+          onChange={(hex) => setAccentColor(hex)}
+          onClose={() => setShowColorPicker(false)}
+        />
+      )}
     </>
   );
 };
