@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Database, FolderOpen, RefreshCw, AlertCircle, CheckCircle2, Zap } from 'lucide-react';
+import { Database, FolderOpen, RefreshCw, CheckCircle2, Zap } from 'lucide-react';
 import Swal from 'sweetalert2';
 
 interface DatabaseTabProps {
