@@ -3,7 +3,7 @@
   "version": "3.2.3-Lite",
   "description": "App Pembukuan Toko",
   "main": "./out/main/index.js",
-  "author": "Antigravity", // Trigger build 3.2.3
+  "author": "Antigravity",
   "scripts": {
     "format": "prettier --write .",
     "lint": "eslint . --ext .js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
