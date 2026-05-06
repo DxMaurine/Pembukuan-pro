@@ -7,7 +7,7 @@ import bodyParser from 'body-parser';
 import fs from 'fs';
 import path from 'path';
 
-import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal, clearTransactions } from './database';
+import { readDb, saveDb, addWalletEntryInternal, updateWalletStatusLocal, clearTransactions, dbPath } from './database';
 import { listenToFirebaseUpdates, listenDanaIncoming, syncQRISToFirebase, updateFirebaseQRISStatus, syncDashboardToFirebase, listenToMobileInput, syncStoreMetadata, listenToSyncRequests, listenToMobileStockActions, updateHeartbeat } from './services/firebase';
 import { notifyQRISInternal, notifyPreorderInternal, sendReportInternal, setStatusUpdateCallback } from './services/telegram';
 import { initWhatsApp, getWhatsAppStatus, logoutWhatsApp, sendInternalMessage, setWhatsAppCallbacks } from './services/whatsapp';
@@ -167,7 +167,7 @@ function recalculateAndSync() {
 }
 
 // Watch db.json for changes from Electron UI
-const dbPath = path.resolve('f:/PEMBUKUAN APP/server/db.json');
+// dbPath is now imported from database.ts (dynamic)
 
 if (fs.existsSync(dbPath)) {
   let watchTimeout: NodeJS.Timeout | null = null;

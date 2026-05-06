@@ -1,6 +1,6 @@
 {
   "name": "pembukuan-app",
-  "version": "3.2.2-Lite",
+  "version": "3.2.3-Lite",
   "description": "App Pembukuan Toko",
   "main": "./out/main/index.js",
   "author": "Antigravity",

@@ -145,7 +145,7 @@ const defaultData: Data = {
 };
 
 
-const dbPath = path.resolve('f:/PEMBUKUAN APP/server/db.json');
+export const dbPath = process.env.DB_PATH || path.join(__dirname, 'db.json');
 
 export function readDb(): Data {
   if (!fs.existsSync(dbPath)) {
