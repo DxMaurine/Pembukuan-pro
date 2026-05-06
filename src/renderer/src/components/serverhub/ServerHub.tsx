@@ -18,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react';
 import WhatsAppManager from '../whatsapp/WhatsAppManager';
+import DatabaseTab from './DatabaseTab';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface DanaLog {
@@ -128,7 +129,7 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
   const [liveStreamActive, setLiveStreamActive] = useState(false);
   const [stats, setStats] = useState({ success: 0, failed: 0, pending: 0, duplicate: 0, total: 0 });
   const [waStatus, setWaStatus] = useState<'connected' | 'disconnected' | 'connecting'>('disconnected');
-  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'whatsapp' | 'guide' | 'server-log'>('dashboard');
+  const [activeSubTab, setActiveSubTab] = useState<'dashboard' | 'whatsapp' | 'guide' | 'server-log' | 'database'>('dashboard');
   const [serverLogs, setServerLogs] = useState<string[]>([]);
 
   const socketRef = useRef<any>(null);
@@ -270,6 +271,7 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
           { id: 'whatsapp', label: 'WhatsApp Engine', icon: MessageCircle, color: 'emerald-500' },
           { id: 'guide', label: 'Setup Guide', icon: Shield, color: 'amber-500' },
           { id: 'server-log', label: 'Server Log', icon: Terminal, color: 'rose-500' },
+          { id: 'database', label: 'Database', icon: Database, color: 'indigo-500' },
         ].map(tab => (
           <button
             key={tab.id}
@@ -537,6 +539,12 @@ const ServerHub: React.FC<ServerHubProps> = ({ api }) => {
             <p className="mt-4 text-[10px] text-text-muted font-bold tracking-widest uppercase opacity-40 text-center">
               Note: Terminal ini merekam output langsung dari proses Node.js utama backend.
             </p>
+          </div>
+        )}
+
+        {activeSubTab === 'database' && (
+          <div className="animate-fade-in pb-20">
+            <DatabaseTab api={api} />
           </div>
         )}
       </div>

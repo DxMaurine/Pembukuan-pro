@@ -156,7 +156,12 @@ const api = {
     const listener = (_event: any, info: any) => callback(info)
     ipcRenderer.on('app:update-downloaded', listener)
     return () => ipcRenderer.removeListener('app:update-downloaded', listener)
-  }
+  },
+  
+  // --- Database Management ---
+  importDatabase: () => ipcRenderer.invoke('database:import'),
+  getDbPath: () => ipcRenderer.invoke('database:get-path'),
+  relaunchApp: () => ipcRenderer.send('app:relaunch')
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

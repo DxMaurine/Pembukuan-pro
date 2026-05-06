@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { autoUpdater } from 'electron-updater'
 import { fork, ChildProcess, execSync } from 'child_process'
 import fs from 'fs'
+import { dialog } from 'electron'
 
 let serverProcess: ChildProcess | null = null
 let mainWindow: BrowserWindow | null = null
@@ -158,6 +159,54 @@ app.whenReady().then(() => {
       serverProcess.kill()
     }
     startServer()
+  })
+
+  // --- Database Management IPC ---
+  ipcMain.handle('database:get-path', () => {
+    return join(app.getPath('userData'), 'db.json')
+  })
+
+  ipcMain.handle('database:import', async () => {
+    if (!mainWindow) return { success: false, error: 'No main window' }
+
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Pilih Database (db.json) Lama',
+      filters: [{ name: 'JSON Database', extensions: ['json'] }],
+      properties: ['openFile']
+    })
+
+    if (result.canceled || result.filePaths.length === 0) {
+      return { success: false, error: 'Dibatalkan' }
+    }
+
+    const sourcePath = result.filePaths[0]
+    const destPath = join(app.getPath('userData'), 'db.json')
+
+    try {
+      // Validate if it's a valid JSON
+      const content = fs.readFileSync(sourcePath, 'utf-8')
+      JSON.parse(content) // Will throw if invalid
+
+      // Backup current DB if exists
+      if (fs.existsSync(destPath)) {
+        fs.copyFileSync(destPath, `${destPath}.bak`)
+      }
+
+      // Copy new DB
+      fs.copyFileSync(sourcePath, destPath)
+      
+      console.log('[MAIN] Database imported successfully from:', sourcePath)
+      
+      return { success: true }
+    } catch (e: any) {
+      console.error('[MAIN] Database import failed:', e)
+      return { success: false, error: e.message }
+    }
+  })
+
+  ipcMain.on('app:relaunch', () => {
+    app.relaunch()
+    app.exit()
   })
 
   createWindow()

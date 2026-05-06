@@ -1,0 +1,52 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // =========================================================================
+    // ATURAN SEMENTARA TANPA LOGIN (AUTHENTICATION)
+    // Karena aplikasi saat ini belum menggunakan Firebase Auth, 
+    // kita membatasi akses hanya ke koleksi-koleksi yang memang dipakai oleh app.
+    // Ini lebih aman daripada membuka seluruh database, meskipun Firebase 
+    // mungkin masih akan memberi peringatan karena sifatnya masih "public".
+    // =========================================================================
+
+    // Koleksi untuk notifikasi QRIS
+    match /qris_notifications/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Koleksi untuk pemasukan otomatis DANA
+    match /auto_dana_incoming/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Koleksi sinkronisasi dashboard & request (Mobile Sync)
+    match /mobile_sync/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Koleksi input dari Mobile
+    match /mobile_input/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Koleksi metadata toko (Shop Info)
+    match /metadata/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Koleksi aksi stok dari Mobile
+    match /mobile_stock_actions/{document=**} {
+      allow read, write: if true;
+    }
+
+    // =========================================================================
+    // TOLAK AKSES KE KOLEKSI LAINNYA
+    // Mencegah pihak luar membuat koleksi sembarangan di database.
+    // =========================================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
