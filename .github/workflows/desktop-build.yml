@@ -3,6 +3,8 @@ name: Desktop Build & Release
 on:
   push:
     branches: [ main, master ]
+    tags:
+      - 'v*'
     paths-ignore:
       - 'mobile/**'
       - '.github/workflows/android-build.yml'
