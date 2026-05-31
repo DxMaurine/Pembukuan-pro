@@ -17,11 +17,15 @@ export const generateProfessionalPDF = async (
 
   // Group logic for Manual Transactions
   const groupedManual = new Map<string, { income: number; expense: number; incomeDetails: string[]; expenseDetails: string[] }>();
+  const monthStr = String(filterMonth + 1).padStart(2, '0');
+  const prefix = `${filterYear}-${monthStr}`;
   let runningBalanceManual = 0;
   let totalIncomeManual = 0;
   let totalExpenseManual = 0;
 
-  const manualEvents = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const manualEvents = [...transactions]
+    .filter(t => t.date && String(t.date).startsWith(prefix))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   manualEvents.forEach(t => {
     if (!t.date) return;
     const dateStr = new Date(t.date).toLocaleDateString('id-ID');
@@ -76,7 +80,7 @@ export const generateProfessionalPDF = async (
 
   // Group logic for QRIS Transactions
   const qrisEvents = [...walletEntries]
-    .filter(w => w.type === 'qris' || w.type === 'saving')
+    .filter(w => (w.type === 'qris' || w.type === 'saving') && w.date && String(w.date).startsWith(prefix))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   let totalIncomeQRIS = 0;

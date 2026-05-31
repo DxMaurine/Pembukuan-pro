@@ -41,6 +41,14 @@ const ReportsView: React.FC<ReportsViewProps> = ({
   const yearOptions = getYearOptions();
   const [reportFilterType, setReportFilterType] = useState<'all' | 'manual' | 'qris'>('all');
 
+  // Filter walletEntries by custom date range (startDate & endDate)
+  const filteredWallet = useMemo(() => {
+    return walletEntries.filter(w => {
+      const d = w.date ? String(w.date).split('T')[0] : '';
+      return d >= startDate && d <= endDate;
+    });
+  }, [walletEntries, startDate, endDate]);
+
   // ── P&L Summary ──────────────────────────────────────────────────
   const plSummary = useMemo(() => {
     const income = transactions
@@ -49,14 +57,14 @@ const ReportsView: React.FC<ReportsViewProps> = ({
     const expense = transactions
       .filter(t => t.type === 'expense')
       .reduce((s, t) => s + (Number(t.amount) || 0), 0);
-    const qris = walletEntries
+    const qris = filteredWallet
       .filter(w => w.status === 'received' || w.type === 'saving')
       .reduce((s, w) => s + (Number(w.amount) || 0), 0);
     const totalIncome = income + qris;
     const net = totalIncome - expense;
     const margin = totalIncome > 0 ? ((net / totalIncome) * 100).toFixed(1) : '0.0';
     return { income, qris, totalIncome, expense, net, margin };
-  }, [transactions, walletEntries]);
+  }, [transactions, filteredWallet]);
 
   // ── Timeline Filter logic ────────────────────────────────────────
   const filteredTimelineTransactions = useMemo(() => {
@@ -64,7 +72,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
       return transactions.map(t => ({ ...t, source: 'manual' }));
     }
     if (reportFilterType === 'qris') {
-      return walletEntries
+      return filteredWallet
         .filter(w => w.type === 'qris' || w.type === 'saving')
         .map(w => ({
           id: w.id,
@@ -79,7 +87,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
     // 'all'
     const list: any[] = [];
     transactions.forEach(t => list.push({ ...t, source: 'manual' }));
-    walletEntries.forEach(w => {
+    filteredWallet.forEach(w => {
       list.push({
         id: w.id,
         type: 'income',
@@ -91,7 +99,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
       });
     });
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  }, [transactions, walletEntries, reportFilterType]);
+  }, [transactions, filteredWallet, reportFilterType]);
 
   // ── Export Excel ──────────────────────────────────────────────────
   const handleExportExcel = () => {
@@ -104,7 +112,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
       Nominal: Number(t.amount) || 0,
     }));
 
-    const qrisRows = walletEntries.map(w => ({
+    const qrisRows = filteredWallet.map(w => ({
       Tanggal: w.date ? String(w.date).split('T')[0] : '',
       Keterangan: w.description || 'Penerimaan QRIS/DANA',
       Kategori: w.type === 'saving' ? 'Tabungan' : 'QRIS/Digital',
