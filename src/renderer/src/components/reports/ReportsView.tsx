@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Send, FileText, FileSpreadsheet, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Timeline from '../transactions/Timeline';
@@ -39,6 +39,7 @@ const ReportsView: React.FC<ReportsViewProps> = ({
   handleDeleteTransaction,
 }) => {
   const yearOptions = getYearOptions();
+  const [reportFilterType, setReportFilterType] = useState<'all' | 'manual' | 'qris'>('all');
 
   // ── P&L Summary ──────────────────────────────────────────────────
   const plSummary = useMemo(() => {
@@ -57,10 +58,43 @@ const ReportsView: React.FC<ReportsViewProps> = ({
     return { income, qris, totalIncome, expense, net, margin };
   }, [transactions, walletEntries]);
 
+  // ── Timeline Filter logic ────────────────────────────────────────
+  const filteredTimelineTransactions = useMemo(() => {
+    if (reportFilterType === 'manual') {
+      return transactions.map(t => ({ ...t, source: 'manual' }));
+    }
+    if (reportFilterType === 'qris') {
+      return walletEntries
+        .filter(w => w.type === 'qris' || w.type === 'saving')
+        .map(w => ({
+          id: w.id,
+          type: 'income',
+          amount: w.amount,
+          description: `QRIS/DANA: ${w.description || 'Penerimaan Digital'}`,
+          category: w.type === 'saving' ? 'Tabungan' : 'QRIS',
+          date: w.date,
+          source: 'wallet'
+        }));
+    }
+    // 'all'
+    const list: any[] = [];
+    transactions.forEach(t => list.push({ ...t, source: 'manual' }));
+    walletEntries.forEach(w => {
+      list.push({
+        id: w.id,
+        type: 'income',
+        amount: w.amount,
+        description: `QRIS/DANA: ${w.description || 'Penerimaan Digital'}`,
+        category: w.type === 'saving' ? 'Tabungan' : 'QRIS',
+        date: w.date,
+        source: 'wallet'
+      });
+    });
+    return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [transactions, walletEntries, reportFilterType]);
 
   // ── Export Excel ──────────────────────────────────────────────────
   const handleExportExcel = () => {
-    // Gabungkan transaksi manual + QRIS wallet entries
     const manualRows = transactions.map(t => ({
       Tanggal: t.date ? String(t.date).split('T')[0] : '',
       Keterangan: t.description || '',
@@ -79,13 +113,21 @@ const ReportsView: React.FC<ReportsViewProps> = ({
       Nominal: Number(w.amount) || 0,
     }));
 
-    const rows = [...manualRows, ...qrisRows]
-      .sort((a, b) => a.Tanggal.localeCompare(b.Tanggal));
+    const manualWs = XLSX.utils.json_to_sheet(manualRows);
+    const qrisWs = XLSX.utils.json_to_sheet(qrisRows);
 
-    const ws = XLSX.utils.json_to_sheet(rows);
+    // Column widths for manual
+    manualWs['!cols'] = [
+      { wch: 14 }, // Tanggal
+      { wch: 40 }, // Keterangan
+      { wch: 20 }, // Kategori
+      { wch: 14 }, // Tipe
+      { wch: 16 }, // Sumber
+      { wch: 18 }, // Nominal
+    ];
 
-    // Column widths
-    ws['!cols'] = [
+    // Column widths for qris
+    qrisWs['!cols'] = [
       { wch: 14 }, // Tanggal
       { wch: 40 }, // Keterangan
       { wch: 20 }, // Kategori
@@ -95,10 +137,10 @@ const ReportsView: React.FC<ReportsViewProps> = ({
     ];
 
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, `${months[filterMonth]} ${filterYear}`);
+    XLSX.utils.book_append_sheet(wb, manualWs, `Transaksi Manual`);
+    XLSX.utils.book_append_sheet(wb, qrisWs, `Transaksi QRIS Digital`);
     XLSX.writeFile(wb, `laporan_${months[filterMonth].toLowerCase()}_${filterYear}.xlsx`);
   };
-
 
   return (
     <div className="flex flex-col gap-8 animate-fade-in pb-20">
@@ -168,13 +210,31 @@ const ReportsView: React.FC<ReportsViewProps> = ({
         <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted mb-4 px-1">
           Ringkasan Laba-Rugi — {months[filterMonth]} {filterYear}
         </p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {/* Total Pemasukan */}
+        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
+          {/* Pemasukan Manual */}
           <div className="glass-card !p-5">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-muted block mb-2">Total Masuk</span>
-            <p className="text-xl font-bold text-success leading-tight">Rp {formatIDR(plSummary.totalIncome)}</p>
+            <span className="text-[9px] font-bold uppercase tracking-widest text-muted block mb-2">Pemasukan Manual</span>
+            <p className="text-xl font-bold text-success leading-tight">Rp {formatIDR(plSummary.income)}</p>
             <p className="text-[9px] text-muted mt-1.5 font-bold uppercase opacity-60">
-              Transaksi + QRIS
+              Kas Tunai
+            </p>
+          </div>
+
+          {/* Pemasukan QRIS */}
+          <div className="glass-card !p-5">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-muted block mb-2">Pemasukan QRIS</span>
+            <p className="text-xl font-bold text-blue-500 leading-tight">Rp {formatIDR(plSummary.qris)}</p>
+            <p className="text-[9px] text-muted mt-1.5 font-bold uppercase opacity-60">
+              Digital / Transfer
+            </p>
+          </div>
+
+          {/* Total Pemasukan */}
+          <div className="glass-card !p-5 border-b-2 border-b-success">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-muted block mb-2">Total Pemasukan</span>
+            <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400 leading-tight">Rp {formatIDR(plSummary.totalIncome)}</p>
+            <p className="text-[9px] text-muted mt-1.5 font-bold uppercase opacity-60">
+              Manual + QRIS
             </p>
           </div>
 
@@ -220,9 +280,35 @@ const ReportsView: React.FC<ReportsViewProps> = ({
         </div>
       </div>
 
+      {/* ── Filter Timeline ── */}
+      <div className="flex justify-between items-center gap-4 mt-6">
+        <div className="flex bg-slate-100 dark:bg-white/5 p-1 rounded-2xl border border-slate-200/50 dark:border-white/10">
+          {[
+            { id: 'all', label: 'SEMUA ALIRAN KAS' },
+            { id: 'manual', label: 'TRANSAKSI MANUAL' },
+            { id: 'qris', label: 'TRANSAKSI QRIS' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setReportFilterType(tab.id as any);
+                setCurrentPage(1); // Reset page to 1 on filter change
+              }}
+              className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all duration-300 ${
+                reportFilterType === tab.id
+                  ? 'bg-primary text-white shadow-md'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-muted dark:hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* ── Transaction Timeline ── */}
       <Timeline
-        transactions={transactions}
+        transactions={filteredTimelineTransactions}
         currentPage={currentPage}
         setCurrentPage={setCurrentPage}
         handleEditClick={handleEditClick}
@@ -233,3 +319,4 @@ const ReportsView: React.FC<ReportsViewProps> = ({
 };
 
 export default ReportsView;
+

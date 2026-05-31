@@ -648,17 +648,85 @@ const App: React.FC = () => {
   };
 
   const sendToOwner = async () => {
+    const result = await Swal.fire({
+      title: 'Kirim Laporan ke Owner',
+      text: 'Pilih laporan yang ingin dikirimkan saat ini:',
+      icon: 'question',
+      showCancelButton: true,
+      showDenyButton: true,
+      confirmButtonText: '📝 Laporan Manual (Tunai)',
+      denyButtonText: '📱 Laporan QRIS (Digital)',
+      cancelButtonText: 'Batal',
+      confirmButtonColor: '#f43f5e',
+      denyButtonColor: '#3b82f6',
+      customClass: {
+        popup: 'rounded-3xl border border-slate-200 dark:border-white/10 dark:bg-bg-card',
+        title: 'text-lg font-bold',
+        htmlContainer: 'text-xs text-muted dark:text-muted',
+        confirmButton: 'rounded-xl font-bold text-xs uppercase px-5 py-3',
+        denyButton: 'rounded-xl font-bold text-xs uppercase px-5 py-3',
+        cancelButton: 'rounded-xl font-bold text-xs uppercase px-5 py-3'
+      }
+    });
+
+    if (result.isDismissed && result.dismiss === Swal.DismissReason.cancel) {
+      return; // Canceled
+    }
+
+    let reportType: 'manual' | 'qris' = 'manual';
+    let filename = '';
+    let caption = '';
+
+    if (result.isConfirmed) {
+      reportType = 'manual';
+      filename = `laporan_manual_${filterMonth + 1}_${filterYear}.pdf`;
+      caption = `📑 *LAPORAN BULANAN KAS TUNAI - ${months[filterMonth].toUpperCase()} ${filterYear}*`;
+    } else if (result.isDenied) {
+      reportType = 'qris';
+      filename = `laporan_qris_${filterMonth + 1}_${filterYear}.pdf`;
+      caption = `📲 *LAPORAN BULANAN QRIS & DIGITAL - ${months[filterMonth].toUpperCase()} ${filterYear}*`;
+    } else {
+      return;
+    }
+
     try {
-      const pdfBase64 = await generateProfessionalPDF(storeName, filterMonth, filterYear, transactions, walletEntries, theme);
+      Swal.fire({
+        title: 'Mengirim Laporan...',
+        text: 'Mohon tunggu sebentar.',
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading();
+        }
+      });
+
+      const pdfBase64 = await generateProfessionalPDF(
+        storeName,
+        filterMonth,
+        filterYear,
+        transactions,
+        walletEntries,
+        theme,
+        reportType
+      );
+
       await api.sendReport({
         pdfData: pdfBase64,
-        summary: summary,
-        filename: `laporan_${filterMonth + 1}_${filterYear}.pdf`,
-        caption: `📑 *LAPORAN BULANAN ${months[filterMonth].toUpperCase()} ${filterYear}*`
+        summary: reportType === 'manual' ? {
+          totalIncome: transactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0),
+          totalExpense: transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0),
+          balance: transactions.filter(t => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0) - transactions.filter(t => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0)
+        } : {
+          totalIncome: walletEntries.filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0),
+          totalExpense: 0,
+          balance: walletEntries.filter(w => w.status === 'received' || w.type === 'saving').reduce((s, w) => s + (Number(w.amount) || 0), 0)
+        },
+        filename: filename,
+        caption: caption
       });
-      Swal.fire({ title: 'Terkirim!', icon: 'success', timer: 1500, showConfirmButton: false });
+
+      Swal.fire({ title: 'Terkirim!', text: 'Laporan berhasil dikirim ke Owner.', icon: 'success', timer: 1500, showConfirmButton: false });
     } catch (err: any) {
-      Swal.fire('Error', 'Gagal membuat PDF: ' + err.message, 'error');
+      Swal.fire('Error', 'Gagal mengirim laporan: ' + err.message, 'error');
     }
   };
 

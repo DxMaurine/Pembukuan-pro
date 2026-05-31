@@ -9,31 +9,26 @@ export const generateProfessionalPDF = async (
   filterYear: number,
   transactions: any[],
   walletEntries: any[],
-  theme: 'light' | 'dark'
+  theme: 'light' | 'dark',
+  reportType: 'all' | 'manual' | 'qris' = 'all'
 ) => {
   const doc = new jsPDF();
-  let runningBalance = 0;
+  const accentColor = theme === 'dark' ? [0, 162, 255] : [244, 63, 94];
 
-  // Group logic
-  const grouped = new Map<string, { income: number; expense: number; incomeDetails: string[]; expenseDetails: string[] }>();
+  // Group logic for Manual Transactions
+  const groupedManual = new Map<string, { income: number; expense: number; incomeDetails: string[]; expenseDetails: string[] }>();
+  let runningBalanceManual = 0;
+  let totalIncomeManual = 0;
+  let totalExpenseManual = 0;
 
-  const allEvents = [
-    ...transactions.map(t => ({ ...t })),
-    ...walletEntries.map(w => ({
-      date: w.date,
-      type: 'income',
-      amount: Number(w.amount) || 0,
-      description: `QRIS: ${w.description || 'Penerimaan Digital'}`
-    }))
-  ].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  allEvents.forEach(t => {
+  const manualEvents = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  manualEvents.forEach(t => {
     if (!t.date) return;
     const dateStr = new Date(t.date).toLocaleDateString('id-ID');
-    if (!grouped.has(dateStr)) {
-      grouped.set(dateStr, { income: 0, expense: 0, incomeDetails: [], expenseDetails: [] });
+    if (!groupedManual.has(dateStr)) {
+      groupedManual.set(dateStr, { income: 0, expense: 0, incomeDetails: [], expenseDetails: [] });
     }
-    const dayData = grouped.get(dateStr)!;
+    const dayData = groupedManual.get(dateStr)!;
     if (t.type === 'income') {
       dayData.income += Number(t.amount) || 0;
       dayData.incomeDetails.push(`${t.description || 'Pemasukan'} (${formatIDR(t.amount || 0)})`);
@@ -49,40 +44,11 @@ export const generateProfessionalPDF = async (
     }
   });
 
-  // 1. Minimalist Clean Header
-  const accentColor = theme === 'dark' ? [0, 162, 255] : [244, 63, 94];
-
-  // Store Name (Top Left)
-  doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.text(storeName.toUpperCase(), 14, 20);
-
-  // Subtitle (Below Store Name)
-  doc.setTextColor(60, 60, 60);
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.text("LAPORAN RINCIAN KEUANGAN - DIGITAL PRO", 14, 28);
-
-  // Metadata (Top Right)
-  doc.setTextColor(100, 100, 100);
-  doc.setFontSize(9);
-  doc.text(`Periode: ${months[filterMonth]} ${filterYear}`, 196, 20, { align: 'right' });
-  doc.text(`Tgl Cetak: ${new Date().toLocaleString('id-ID')}`, 196, 26, { align: 'right' });
-
-  // Divider Line
-  doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
-  doc.setLineWidth(0.5);
-  doc.line(14, 32, 196, 32);
-
-  const tableData: any[][] = [];
-  let totalIncome = 0;
-  let totalExpense = 0;
-
-  grouped.forEach((dayData, dateStr) => {
-    runningBalance += (dayData.income - dayData.expense);
-    totalIncome += dayData.income;
-    totalExpense += dayData.expense;
+  const tableDataManual: any[][] = [];
+  groupedManual.forEach((dayData, dateStr) => {
+    runningBalanceManual += (dayData.income - dayData.expense);
+    totalIncomeManual += dayData.income;
+    totalExpenseManual += dayData.expense;
 
     let expenseStr = '-';
     if (dayData.expense > 0 || dayData.expenseDetails.length > 0) {
@@ -100,55 +66,191 @@ export const generateProfessionalPDF = async (
       }
     }
 
-    tableData.push([
+    tableDataManual.push([
       dateStr,
       incomeStr,
       expenseStr,
-      `Rp ${formatIDR(runningBalance)}`
+      `Rp ${formatIDR(runningBalanceManual)}`
     ]);
   });
 
-  // @ts-ignore
-  doc.autoTable({
-    startY: 40,
-    head: [['Tanggal', 'Masuk (Detail)', 'Keluar (Detail)', 'Sub Total']],
-    body: tableData,
-    styles: { fontSize: 9, cellPadding: 4, textColor: [40, 40, 40], overflow: 'linebreak' },
-    headStyles: {
-      textColor: [255, 255, 255],
-      fillColor: theme === 'dark' ? [0, 162, 255] : [244, 63, 94],
-      fontStyle: 'bold',
-      halign: 'center'
-    },
-    columnStyles: {
-      0: { halign: 'center' },
-      1: { cellWidth: 60 },
-      2: { cellWidth: 65 },
-      3: { halign: 'right', fontStyle: 'bold' }
-    }
+  // Group logic for QRIS Transactions
+  const qrisEvents = [...walletEntries]
+    .filter(w => w.type === 'qris' || w.type === 'saving')
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+  let totalIncomeQRIS = 0;
+  const tableDataQRIS: any[][] = [];
+  qrisEvents.forEach((w) => {
+    totalIncomeQRIS += Number(w.amount) || 0;
+    const dateStr = new Date(w.date).toLocaleDateString('id-ID');
+    const typeLabel = w.type === 'saving' ? 'Tabungan' : 'QRIS';
+    const statusLabel = w.status === 'received' ? 'Diterima' : 'Pending';
+    tableDataQRIS.push([
+      dateStr,
+      w.description || 'Penerimaan Digital',
+      typeLabel,
+      statusLabel,
+      `Rp ${formatIDR(w.amount)}`
+    ]);
   });
 
-  const finalY = (doc as any).lastAutoTable.finalY || 150;
+  // Store Name (Top Left)
+  doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.text(storeName.toUpperCase(), 14, 20);
+
+  // Subtitle (Below Store Name)
+  doc.setTextColor(60, 60, 60);
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  let subtitle = "LAPORAN RINCIAN KEUANGAN - DIGITAL PRO";
+  if (reportType === 'manual') subtitle = "LAPORAN RINCIAN KEUANGAN MANUAL (TUNAI)";
+  if (reportType === 'qris') subtitle = "LAPORAN MONITOR QRIS & DIGITAL";
+  doc.text(subtitle, 14, 28);
+
+  // Metadata (Top Right)
+  doc.setTextColor(100, 100, 100);
+  doc.setFontSize(9);
+  doc.text(`Periode: ${months[filterMonth]} ${filterYear}`, 196, 20, { align: 'right' });
+  doc.text(`Tgl Cetak: ${new Date().toLocaleString('id-ID')}`, 196, 26, { align: 'right' });
+
+  // Divider Line
+  doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
+  doc.setLineWidth(0.5);
+  doc.line(14, 32, 196, 32);
+
+  let finalY = 32;
+
+  // Render Table 1: Manual Transactions (if reportType is 'all' or 'manual')
+  if (reportType === 'all' || reportType === 'manual') {
+    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    const tableHeader = reportType === 'all'
+      ? "TABEL 1: RINCIAN TRANSAKSI MANUAL (KAS TUNAI)"
+      : "RINCIAN TRANSAKSI MANUAL (KAS TUNAI)";
+    doc.text(tableHeader, 14, 39);
+
+    // @ts-ignore
+    doc.autoTable({
+      startY: 42,
+      head: [['Tanggal', 'Masuk (Detail)', 'Keluar (Detail)', 'Sub Total']],
+      body: tableDataManual,
+      styles: { fontSize: 9, cellPadding: 4, textColor: [40, 40, 40], overflow: 'linebreak' },
+      headStyles: {
+        textColor: [255, 255, 255],
+        fillColor: theme === 'dark' ? [0, 162, 255] : [244, 63, 94],
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center' },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 65 },
+        3: { halign: 'right', fontStyle: 'bold' }
+      }
+    });
+
+    finalY = (doc as any).lastAutoTable.finalY || 80;
+  }
+
+  // Render Table 2: QRIS / Digital Transactions (if reportType is 'all' or 'qris')
+  if (reportType === 'all' || reportType === 'qris') {
+    doc.setTextColor(0, 102, 204); // Blue accent for digital
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    const tableHeader = reportType === 'all'
+      ? "TABEL 2: RINCIAN PENERIMAAN QRIS & DIGITAL"
+      : "RINCIAN PENERIMAAN QRIS & DIGITAL";
+    const startYCoord = reportType === 'all' ? finalY + 11 : 39;
+    doc.text(tableHeader, 14, startYCoord);
+
+    // @ts-ignore
+    doc.autoTable({
+      startY: startYCoord + 3,
+      head: [['Tanggal', 'Keterangan / Sumber', 'Tipe', 'Status', 'Nominal']],
+      body: tableDataQRIS.length > 0 ? tableDataQRIS : [['-', 'Tidak ada transaksi QRIS untuk periode ini.', '-', '-', '-']],
+      styles: { fontSize: 9, cellPadding: 4, textColor: [40, 40, 40], overflow: 'linebreak' },
+      headStyles: {
+        textColor: [255, 255, 255],
+        fillColor: [0, 102, 204],
+        fontStyle: 'bold',
+        halign: 'center'
+      },
+      columnStyles: {
+        0: { halign: 'center' },
+        1: { cellWidth: 80 },
+        2: { halign: 'center' },
+        3: { halign: 'center' },
+        4: { halign: 'right', fontStyle: 'bold' }
+      }
+    });
+
+    finalY = (doc as any).lastAutoTable.finalY || 150;
+  }
 
   // Summary Box
-  doc.setFillColor(245, 245, 245);
-  doc.roundedRect(14, finalY + 10, 182, 35, 3, 3, 'F');
+  if (reportType === 'all') {
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(14, finalY + 10, 182, 45, 3, 3, 'F');
 
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(theme === 'dark' ? 0 : 244, theme === 'dark' ? 162 : 63, theme === 'dark' ? 255 : 94);
-  doc.text("RINGKASAN AKHIR PERIODIK", 20, finalY + 18);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(theme === 'dark' ? 0 : 244, theme === 'dark' ? 162 : 63, theme === 'dark' ? 255 : 94);
+    doc.text("RINGKASAN AKHIR PERIODIK", 20, finalY + 18);
 
-  doc.setTextColor(40, 40, 40);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Total Pemasukan:`, 20, finalY + 26);
-  doc.text(`Total Pengeluaran:`, 20, finalY + 32);
-  doc.text(`Saldo Akhir:`, 20, finalY + 38);
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Pemasukan Manual (Tunai):`, 20, finalY + 26);
+    doc.text(`Total Pemasukan QRIS (Digital):`, 20, finalY + 32);
+    doc.text(`Total Pengeluaran Manual:`, 20, finalY + 38);
+    doc.text(`Saldo Akhir Bersih (Gabungan):`, 20, finalY + 44);
 
-  doc.setFont("helvetica", "bold");
-  doc.text(`Rp ${formatIDR(totalIncome)}`, 190, finalY + 26, { align: 'right' });
-  doc.text(`Rp ${formatIDR(totalExpense)}`, 190, finalY + 32, { align: 'right' });
-  doc.text(`Rp ${formatIDR(totalIncome - totalExpense)}`, 190, finalY + 38, { align: 'right' });
+    doc.setFont("helvetica", "bold");
+    doc.text(`Rp ${formatIDR(totalIncomeManual)}`, 190, finalY + 26, { align: 'right' });
+    doc.text(`Rp ${formatIDR(totalIncomeQRIS)}`, 190, finalY + 32, { align: 'right' });
+    doc.text(`Rp ${formatIDR(totalExpenseManual)}`, 190, finalY + 38, { align: 'right' });
+
+    const grandTotalIncome = totalIncomeManual + totalIncomeQRIS;
+    const grandNet = grandTotalIncome - totalExpenseManual;
+    doc.text(`Rp ${formatIDR(grandNet)}`, 190, finalY + 44, { align: 'right' });
+  } else if (reportType === 'manual') {
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(14, finalY + 10, 182, 35, 3, 3, 'F');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(theme === 'dark' ? 0 : 244, theme === 'dark' ? 162 : 63, theme === 'dark' ? 255 : 94);
+    doc.text("RINGKASAN AKHIR KAS TUNAI", 20, finalY + 18);
+
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Pemasukan Manual (Tunai):`, 20, finalY + 26);
+    doc.text(`Total Pengeluaran Manual:`, 20, finalY + 32);
+    doc.text(`Saldo Akhir Kas Tunai:`, 20, finalY + 38);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Rp ${formatIDR(totalIncomeManual)}`, 190, finalY + 26, { align: 'right' });
+    doc.text(`Rp ${formatIDR(totalExpenseManual)}`, 190, finalY + 32, { align: 'right' });
+    doc.text(`Rp ${formatIDR(totalIncomeManual - totalExpenseManual)}`, 190, finalY + 38, { align: 'right' });
+  } else if (reportType === 'qris') {
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(14, finalY + 10, 182, 26, 3, 3, 'F');
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(0, 102, 204);
+    doc.text("RINGKASAN AKHIR QRIS & DIGITAL", 20, finalY + 18);
+
+    doc.setTextColor(40, 40, 40);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Total Pemasukan QRIS (Digital):`, 20, finalY + 26);
+
+    doc.setFont("helvetica", "bold");
+    doc.text(`Rp ${formatIDR(totalIncomeQRIS)}`, 190, finalY + 26, { align: 'right' });
+  }
 
   // Footer
   const pageCount = (doc as any).internal.getNumberOfPages();
